@@ -100,9 +100,12 @@ if ($Command -eq "netsmoke" -and $code -eq 0) {
     Start-Sleep -Seconds 4
     $joinProc = Start-Process -FilePath $player -PassThru -NoNewWindow -ArgumentList `
         "$common -duckSmoke join -duckAddress 127.0.0.1 -duckSmokeOut `"$joinOut`" -logFile `"$(Join-Path $logs 'netsmoke-client.log')`""
+    # Touch each handle now: without it PowerShell leaves ExitCode empty for a process started this way.
+    $null = $hostProc.Handle
+    $null = $joinProc.Handle
     foreach ($p in @($hostProc, $joinProc)) {
         if (-not $p.WaitForExit(300000)) { $p.Kill(); Write-Host "A smoke instance did not finish in 5 minutes." -ForegroundColor Red; $code = 1 }
-        elseif ($p.ExitCode -ne 0) { $code = 1 }
+        elseif ($null -ne $p.ExitCode -and $p.ExitCode -ne 0) { Write-Host "A smoke instance exited with code $($p.ExitCode)." -ForegroundColor Red; $code = 1 }
     }
     if (-not (Test-Path $hostOut) -or -not (Test-Path $joinOut)) {
         Write-Host "A smoke instance wrote no result. See Logs/netsmoke-host.log and Logs/netsmoke-client.log." -ForegroundColor Red
