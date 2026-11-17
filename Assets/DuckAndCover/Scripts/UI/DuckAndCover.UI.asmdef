@@ -4,7 +4,8 @@
     "references": [
         "DuckAndCover.Core",
         "DuckAndCover.Game",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -66,7 +66,17 @@ nothing. If Game needs something from UI, raise an event instead of adding a ref
   must stick to those field types: no dictionaries, no properties. Derive from `TeamEvent` for
   something only one team may see. A command the Match module doesn't handle goes to the handlers
   added with `SessionHost.AddCommandHandler`.
-- **UI is code.** No prefabs for screens. Use `UITheme` colours. Team colours follow the team, not the
+- **Combat goes through `CombatServer`** (Core/Combat) on the host: it owns the ability runner (health,
+  shields, statuses), movement checks, the lag compensation history and weapons, and hooks into the
+  session with `Attach`. Movement is player-owned and server-checked (`MoveCommand`); shots are requests
+  (`FireCommand`) judged against bodies as they were at the tick the shooter saw. Deal damage only
+  through `DamageRules.Damage`. Player bodies have no colliders and sit on the Ignore Raycast layer:
+  the map answers rays (`PhysicsWorld`), the rules add hitboxes.
+- **Colour placeholder objects with `Paint`** (`Paint.Block`, `Paint.Apply`), never by setting a colour on
+  a material: runtime colour properties all showed the last colour set in real captures. The capture run
+  starts with `Paint.SelfCheck` and fails if colours collapse.
+- **UI is code.** No prefabs for screens. Build with `UIKit` (canvas, boxes, labels) and `UITheme`
+  colours. Team colours follow the team, not the
   side, because sides swap every round.
 - **Unity pitfalls:**
   - Don't use `??` or `?.` on UnityEngine objects (destroyed objects aren't really null); use `== null`.
@@ -118,5 +128,8 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
   install **Multiplayer Services** (`com.unity.services.multiplayer`) from the Package Manager, and link
   the project to a Unity Cloud project in Project Settings > Services. The package's presence defines
   `DUCK_RELAY` for the Net assembly; without it the game runs and joins by direct address (port 7777).
+- The Boot scene builds a greybox test arena in code (`BootRoom`, spots in `ArenaLayout.Placeholder`).
+  The host can add practice dummies in the lobby. Controls: WASD, mouse, Shift sprint, Ctrl or C crouch,
+  Space jump or vault, left mouse fire, R reload, 1/2 or Q or the wheel switch weapon, Esc frees the mouse.
 - F1 in the Boot scene shows a developer panel to host, join, pick a team and hero and start a match.
   Two copies on one PC: host in one, join `127.0.0.1` in the other.

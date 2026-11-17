@@ -122,3 +122,86 @@ static class MovementTests
         Check.True(ArenaLayout.Placeholder().spawnsB.Any(s => s.position == h.M(B1).position), "on a team B spawn");
     }
 }
+
+/// <summary>The movement maths the player's own machine runs (WP4).</summary>
+static class MoveMathTests
+{
+    static readonly Ruleset R = Ruleset.Default;
+    const float Dt = 1f / 60f;
+
+    static Vec3 Run(MoveInput input, float seconds, Vec3 v = default, bool grounded = true, float scale = 1f)
+    {
+        for (float t = 0f; t < seconds; t += Dt) { v = MoveMath.Step(R, v, input, grounded, scale, Dt); input.jump = false; }
+        return v;
+    }
+
+    static float Flat(Vec3 v) => (float)System.Math.Sqrt(v.x * v.x + v.z * v.z);
+
+    [Test]
+    static void SpeedsByStance()
+    {
+        Check.Near(R.walkSpeed, Flat(Run(new MoveInput { forward = 1f }, 1f)), "walking reaches walk speed", 1e-3f);
+        Check.Near(R.sprintSpeed, Flat(Run(new MoveInput { forward = 1f, sprint = true }, 1f)), "sprinting forward", 1e-3f);
+        Check.Near(R.walkSpeed, Flat(Run(new MoveInput { forward = -1f, sprint = true }, 1f)), "no sprinting backward", 1e-3f);
+        Check.Near(R.walkSpeed, Flat(Run(new MoveInput { right = 1f, sprint = true }, 1f)), "or sideways", 1e-3f);
+        Check.Near(R.crouchSpeed, Flat(Run(new MoveInput { forward = 1f, sprint = true, crouch = true }, 1f)), "crouching is slow even with sprint held", 1e-3f);
+        Check.Near(R.walkSpeed, Flat(Run(new MoveInput { forward = 1f, right = 1f }, 1f)), "diagonals aren't faster", 1e-3f);
+        Check.Near(R.walkSpeed * 0.5f, Flat(Run(new MoveInput { forward = 1f }, 1f, scale: 0.5f)), "a slow scales it", 1e-3f);
+        Check.Near(0f, Flat(Run(new MoveInput { forward = 1f }, 1f, scale: 0f)), "a stun stops it", 1e-3f);
+        Check.Near(0f, Flat(Run(new MoveInput(), 0.5f, new Vec3(5f, 0f, 0f))), "letting go stops", 1e-3f);
+    }
+
+    [Test]
+    static void FacingFollowsYaw()
+    {
+        Check.True(Vec3.Approximately(Vec3.Forward, MoveMath.Forward(0f)), "yaw 0 is +z");
+        Check.True(Vec3.Approximately(Vec3.Right, MoveMath.Forward(90f)), "yaw 90 is +x");
+        Check.True(Vec3.Approximately(Vec3.Right, MoveMath.Right(0f)), "right of +z is +x");
+        var v = Run(new MoveInput { forward = 1f, yaw = 90f }, 1f);
+        Check.True(v.x > 5f && System.Math.Abs(v.z) < 1e-3f, "forward moves along the facing");
+        Check.True(Vec3.Approximately(-Vec3.Up, MoveMath.AimDirection(0f, 90f)), "pitch 90 looks straight down");
+        Check.Near(1f, MoveMath.AimDirection(33f, -20f).Magnitude, "aim is unit length", 1e-4f);
+    }
+
+    [Test]
+    static void JumpReachesItsHeight()
+    {
+        var v = MoveMath.Step(R, Vec3.Zero, new MoveInput { jump = true }, true, 1f, Dt);
+        Check.Near(R.JumpVelocity, v.y, "a jump leaves the ground at the jump speed");
+        float y = 0f, top = 0f;
+        for (int i = 0; i < 600 && y >= 0f; i++)
+        {
+            y += v.y * Dt;
+            if (y > top) top = y;
+            v = MoveMath.Step(R, v, new MoveInput(), false, 1f, Dt);
+        }
+        Check.True(System.Math.Abs(top - R.jumpHeight) < 0.06f, "and tops out near jumpHeight (" + top + ")");
+        Check.True(MoveMath.Step(R, Vec3.Zero, new MoveInput { jump = true }, false, 1f, Dt).y < 0f, "no jumping in the air");
+        Check.True(MoveMath.Step(R, Vec3.Zero, new MoveInput { jump = true }, true, 0f, Dt).y < 0f, "or while stunned");
+    }
+
+    [Test]
+    static void AirControlIsWeaker()
+    {
+        var ground = MoveMath.Step(R, Vec3.Zero, new MoveInput { forward = 1f }, true, 1f, Dt);
+        var air = MoveMath.Step(R, Vec3.Zero, new MoveInput { forward = 1f }, false, 1f, Dt);
+        Check.Near(Flat(ground) * R.airControl, Flat(air), "the air gives a share of ground acceleration", 1e-4f);
+    }
+
+    [Test]
+    static void VaultRules()
+    {
+        Check.False(MoveMath.CanVault(R, 0.2f), "a kerb is stepped, not vaulted");
+        Check.True(MoveMath.CanVault(R, 1.0f), "a metre-high wall can be vaulted");
+        Check.False(MoveMath.CanVault(R, 2.0f), "a two-metre wall can't");
+        Vec3 from = Vec3.Zero, to = new Vec3(0f, 1f, 1f);
+        Check.True(Vec3.Approximately(from, MoveMath.VaultPosition(from, to, 0f)), "starts where you stand");
+        Check.True(Vec3.Approximately(to, MoveMath.VaultPosition(from, to, 1f)), "ends on the ledge");
+        var mid = MoveMath.VaultPosition(from, to, 0.35f);
+        Check.True(mid.y > 0.5f && mid.z == 0f, "goes up before it goes over");
+        // A vault is within what the server's checks allow.
+        var h = new CombatHarness();
+        var start = h.M(1).position;
+        for (int i = 1; i <= 7; i++) { Check.True(h.Move(1, MoveMath.VaultPosition(start, start + new Vec3(0f, 1.2f, 1.1f), i / 7f)).IsAccepted, "vault step " + i); h.Tick(); }
+    }
+}

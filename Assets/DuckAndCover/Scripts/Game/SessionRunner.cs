@@ -11,8 +11,9 @@ namespace DuckAndCover.Game
     /// <see cref="Client"/> (state, events, sending commands), which works the same on the host and
     /// on a machine that joined.
     ///
-    /// Until the first map (WP9) and the player controller (WP4) exist, a hosted match uses a
-    /// stand-in objective layout and a world where nobody stands on anything.
+    /// A hosted match also runs the combat rules (movement checks, weapons, health) against the
+    /// scene's physics. Until the first map (WP9) exists it uses a stand-in objective layout, and
+    /// until the control points do (WP6) nobody stands on any zone.
     /// </summary>
     public class SessionRunner : MonoBehaviour
     {
@@ -30,6 +31,15 @@ namespace DuckAndCover.Game
         /// <summary>The server's rules, on the host only.</summary>
         public MatchRules Match { get; private set; }
         public ScriptedWorld World { get; private set; }
+        /// <summary>Movement, weapons and health on the server; on the host only, once the session is up.</summary>
+        public CombatServer Combat { get; private set; }
+        /// <summary>
+        /// The numbers this machine moves and draws by. Clients aren't sent the host's ruleset yet, so
+        /// everyone uses the defaults; a host with changed movement numbers would correct its guests.
+        /// </summary>
+        public Ruleset ClientRules { get; private set; } = Ruleset.Default;
+        /// <summary>The weapon table, the same on every machine.</summary>
+        public WeaponLibrary Weapons { get; } = StarterWeapons.Library();
 
         public static SessionRunner Ensure()
         {
@@ -44,19 +54,23 @@ namespace DuckAndCover.Game
             id == "king_of_the_hill" ? ModeDef.KingOfTheHill() : ModeDef.CaptureAndHold();
 
         /// <summary>Host a match. With <paramref name="useJoinCode"/> it goes through Unity Relay.</summary>
-        public NetSession Host(string modeId, string playerName, bool useJoinCode, int port = 0, bool scripted = false)
+        /// <param name="rules">Other numbers than the defaults (the screenshot run shortens the waits).</param>
+        public NetSession Host(string modeId, string playerName, bool useJoinCode, int port = 0, bool scripted = false, Ruleset rules = null)
         {
             Leave();
             var events = new GameEventBus();
-            World = new ScriptedWorld();
-            var rules = scripted ? ScriptedPlay.SmokeRuleset() : Ruleset.Default;
-            Match = new MatchRules(rules, ModeById(modeId), ScriptedPlay.PlaceholderMap(), World, events);
+            if (rules == null) rules = scripted ? ScriptedPlay.SmokeRuleset() : Ruleset.Default;
+            IWorldQuery world;
+            if (scripted) world = World = new ScriptedWorld();
+            else world = new PhysicsWorld();
+            Match = new MatchRules(rules, ModeById(modeId), ScriptedPlay.PlaceholderMap(), world, events);
             Session = useJoinCode
                 ? NetSession.HostWithCode(Match, events, Settings, playerName, Token)
                 : NetSession.HostDirect(Match, events, Settings, port > 0 ? port : Settings.defaultPort, playerName, Token);
             scriptedHost = scripted;
-            scriptedAttached = false;
+            attached = false;
             hostEvents = events;
+            hostWorld = world;
             return Session;
         }
 
@@ -78,23 +92,32 @@ namespace DuckAndCover.Game
         {
             if (Session != null) Session.Shutdown();
             Session = null;
+            if (Combat != null) Combat.Dispose();
+            Combat = null;
             Match = null;
             World = null;
             hostEvents = null;
+            hostWorld = null;
         }
 
         bool scriptedHost;
-        bool scriptedAttached;
+        bool attached;
         GameEventBus hostEvents;
+        IWorldQuery hostWorld;
 
         void Update()
         {
             if (Session == null) return;
             // A relay host's SessionHost appears a moment after Host() returns.
-            if (scriptedHost && !scriptedAttached && Session.Host != null)
+            if (Match != null && !attached && Session.Host != null)
             {
-                ScriptedPlay.Attach(Session.Host, World, hostEvents);
-                scriptedAttached = true;
+                if (scriptedHost) Combat = ScriptedPlay.Attach(Session.Host, World, hostEvents);
+                else
+                {
+                    Combat = new CombatServer(Match, hostWorld, hostEvents, Settings.TickSeconds, ArenaLayout.Placeholder(), Weapons);
+                    Combat.Attach(Session.Host);
+                }
+                attached = true;
             }
             Session.Update(Time.unscaledDeltaTime, Speed);
         }

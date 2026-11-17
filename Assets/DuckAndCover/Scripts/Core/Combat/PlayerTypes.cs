@@ -132,7 +132,7 @@ namespace DuckAndCover.Core
             a.forward.Add(new SpawnPoint(2f, 0f, -11f, 0f, 1));
             a.forward.Add(new SpawnPoint(-2f, 0f, 11f, 180f, 3));
             a.forward.Add(new SpawnPoint(2f, 0f, 11f, 180f, 3));
-            a.dummies.Add(new SpawnPoint(-3f, 0f, 6f, 180f));
+            a.dummies.Add(new SpawnPoint(-3f, 0f, 7.5f, 180f));
             a.dummies.Add(new SpawnPoint(3f, 0f, 9f, 180f));
             a.dummies.Add(new SpawnPoint(7f, 0f, 3f, 225f));
             return a;

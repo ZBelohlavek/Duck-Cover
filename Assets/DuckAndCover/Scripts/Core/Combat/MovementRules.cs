@@ -144,6 +144,20 @@ namespace DuckAndCover.Core
             Publish(new PlayerPlacedEvent { playerId = playerId, position = m.position, yaw = m.yaw, placement = m.placement });
         }
 
+        /// <summary>Move a player somewhere outright (a teleport ability, a test), and tell everyone.</summary>
+        public bool Teleport(int playerId, Vec3 position, float yaw)
+        {
+            var m = Motion(playerId);
+            if (m == null) return false;
+            m.position = position;
+            m.yaw = yaw;
+            m.velocity = Vec3.Zero;
+            m.placement++;
+            AllowanceOf(playerId).metres = MaxAllowance(playerId);
+            Publish(new PlayerPlacedEvent { playerId = playerId, position = position, yaw = yaw, placement = m.placement });
+            return true;
+        }
+
         SpawnPoint PickSpot(int playerId, TeamId team, ZoneId zone)
         {
             List<SpawnPoint> spots = null;
