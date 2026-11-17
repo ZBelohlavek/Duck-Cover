@@ -1,0 +1,156 @@
+{
+  "weapons": [
+    {
+      "id": "rifle",
+      "displayName": "Rifle",
+      "kind": 0,
+      "automatic": true,
+      "fireInterval": 0.11,
+      "magazine": 28,
+      "reloadSeconds": 1.7,
+      "damage": 18,
+      "headMultiplier": 1.6,
+      "legsMultiplier": 0.85,
+      "pellets": 1,
+      "spreadDegrees": 0,
+      "range": 150,
+      "falloffStart": 30,
+      "falloffEnd": 60,
+      "falloffMinShare": 0.6,
+      "projectileSpeed": 30,
+      "projectileGravity": 9,
+      "splashRadius": 0,
+      "splashDamage": 0,
+      "splashMinShare": 0.3
+    },
+    {
+      "id": "smg",
+      "displayName": "SMG",
+      "kind": 0,
+      "automatic": true,
+      "fireInterval": 0.07,
+      "magazine": 40,
+      "reloadSeconds": 1.5,
+      "damage": 11,
+      "headMultiplier": 1.5,
+      "legsMultiplier": 0.85,
+      "pellets": 1,
+      "spreadDegrees": 0,
+      "range": 80,
+      "falloffStart": 12,
+      "falloffEnd": 30,
+      "falloffMinShare": 0.5,
+      "projectileSpeed": 30,
+      "projectileGravity": 9,
+      "splashRadius": 0,
+      "splashDamage": 0,
+      "splashMinShare": 0.3
+    },
+    {
+      "id": "shotgun",
+      "displayName": "Shotgun",
+      "kind": 0,
+      "automatic": false,
+      "fireInterval": 0.8,
+      "magazine": 6,
+      "reloadSeconds": 2.2,
+      "damage": 9,
+      "headMultiplier": 1.25,
+      "legsMultiplier": 0.85,
+      "pellets": 9,
+      "spreadDegrees": 4.5,
+      "range": 40,
+      "falloffStart": 7,
+      "falloffEnd": 18,
+      "falloffMinShare": 0.3,
+      "projectileSpeed": 30,
+      "projectileGravity": 9,
+      "splashRadius": 0,
+      "splashDamage": 0,
+      "splashMinShare": 0.3
+    },
+    {
+      "id": "pistol",
+      "displayName": "Pistol",
+      "kind": 0,
+      "automatic": false,
+      "fireInterval": 0.22,
+      "magazine": 12,
+      "reloadSeconds": 1.2,
+      "damage": 26,
+      "headMultiplier": 1.75,
+      "legsMultiplier": 0.85,
+      "pellets": 1,
+      "spreadDegrees": 0,
+      "range": 100,
+      "falloffStart": 20,
+      "falloffEnd": 45,
+      "falloffMinShare": 0.55,
+      "projectileSpeed": 30,
+      "projectileGravity": 9,
+      "splashRadius": 0,
+      "splashDamage": 0,
+      "splashMinShare": 0.3
+    },
+    {
+      "id": "launcher",
+      "displayName": "Grenade launcher",
+      "kind": 1,
+      "automatic": false,
+      "fireInterval": 0.75,
+      "magazine": 4,
+      "reloadSeconds": 2.4,
+      "damage": 45,
+      "headMultiplier": 1,
+      "legsMultiplier": 1,
+      "pellets": 1,
+      "spreadDegrees": 0,
+      "range": 120,
+      "falloffStart": 25,
+      "falloffEnd": 50,
+      "falloffMinShare": 0.6,
+      "projectileSpeed": 32,
+      "projectileGravity": 9,
+      "splashRadius": 3.5,
+      "splashDamage": 70,
+      "splashMinShare": 0.3
+    }
+  ],
+  "loadouts": [
+    {
+      "heroId": "",
+      "weapons": [
+        "rifle",
+        "pistol"
+      ]
+    },
+    {
+      "heroId": "striker",
+      "weapons": [
+        "rifle",
+        "pistol"
+      ]
+    },
+    {
+      "heroId": "vanguard",
+      "weapons": [
+        "shotgun",
+        "pistol"
+      ]
+    },
+    {
+      "heroId": "support",
+      "weapons": [
+        "smg",
+        "pistol"
+      ]
+    },
+    {
+      "heroId": "controller",
+      "weapons": [
+        "launcher",
+        "pistol"
+      ]
+    }
+  ]
+}

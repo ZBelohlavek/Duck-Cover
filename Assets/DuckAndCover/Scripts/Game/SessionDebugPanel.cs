@@ -13,7 +13,13 @@ namespace DuckAndCover.Game
     {
         static readonly string[] HeroIds = { "vanguard", "striker", "support", "controller" };
 
+        public const float Width = 380f;
+        /// <summary>The panel is on screen (so clicks on it aren't clicks into the game).</summary>
+        public static bool Showing { get; private set; }
+
         public bool visible = true;
+
+        void OnDisable() => Showing = false;
 
         string playerName = "Player";
         string address = "127.0.0.1";
@@ -27,6 +33,7 @@ namespace DuckAndCover.Game
         {
             var keyboard = UnityEngine.InputSystem.Keyboard.current;
             if (keyboard != null && keyboard.f1Key.wasPressedThisFrame) visible = !visible;
+            Showing = visible;
 
             var runner = SessionRunner.Instance;
             var client = runner == null ? null : runner.Client;
@@ -47,7 +54,7 @@ namespace DuckAndCover.Game
         void OnGUI()
         {
             if (!visible) return;
-            GUILayout.BeginArea(new Rect(12f, 12f, 380f, Screen.height - 24f), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(12f, 12f, Width, Screen.height - 24f), GUI.skin.box);
             GUILayout.Label("Duck and Cover network (F1 hides this)");
             var runner = SessionRunner.Ensure();
             var session = runner.Session;
@@ -133,6 +140,7 @@ namespace DuckAndCover.Game
             if (state.phase == MatchPhase.Lobby)
             {
                 if (GUILayout.Button("Switch to team " + me.team.Other())) client.Send(new ChooseTeamCommand { team = me.team.Other() });
+                if (client.IsHostPlayer && GUILayout.Button("Add a practice dummy to team " + me.team.Other())) client.Send(new AddDummyCommand { team = me.team.Other() });
                 if (client.IsHostPlayer && GUILayout.Button("Start match")) client.Send(new StartMatchCommand());
             }
             if (state.phase == MatchPhase.Lobby || state.phase == MatchPhase.HeroPick)
@@ -142,6 +150,8 @@ namespace DuckAndCover.Game
                     if (GUILayout.Button(hero)) client.Send(new PickHeroCommand { heroId = hero });
                 GUILayout.EndHorizontal();
             }
+            if (state.IsPlaying || state.phase == MatchPhase.Deploy)
+                GUILayout.Label("Click the game to take the mouse, Esc frees it. WASD, Shift sprint, Ctrl crouch, Space jump or vault, R reload, 1/2 weapons.");
             if (lastRejection != "") GUILayout.Label("Refused: " + lastRejection);
         }
     }

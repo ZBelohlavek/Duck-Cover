@@ -25,6 +25,8 @@ namespace DuckAndCover.Core
 
         /// <summary>The latest state from the server, or null before the first copy arrives.</summary>
         public MatchState State { get; private set; }
+        /// <summary>The whole latest state copy, with every module's part (health, positions, ammo), or null.</summary>
+        public MatchSnapshot Snapshot { get; private set; }
         public List<SessionPlayer> Roster { get; private set; } = new List<SessionPlayer>();
         public int SnapshotTick { get; private set; } = -1;
         public int SnapshotsReceived { get; private set; }
@@ -59,12 +61,16 @@ namespace DuckAndCover.Core
             return "Player " + playerId;
         }
 
-        /// <summary>Ask the server for something. The answer comes back as events and state.</summary>
+        /// <summary>
+        /// Ask the server for something. The answer comes back as events and state. The command's tick
+        /// is the latest snapshot's, unless the caller set one (a shot carries the tick its shooter
+        /// saw, for lag compensation).
+        /// </summary>
         public void Send(MatchCommand command)
         {
             if (command == null) throw new ArgumentNullException(nameof(command));
             command.playerId = PlayerId;
-            command.tick = Math.Max(0, SnapshotTick);
+            if (command.tick <= 0) command.tick = Math.Max(0, SnapshotTick);
             transport.Send(WireCodec.Encode(new CommandMessage { command = command }));
         }
 
@@ -94,6 +100,7 @@ namespace DuckAndCover.Core
                     if (s.snapshot.tick < SnapshotTick) break;
                     SnapshotTick = s.snapshot.tick;
                     State = s.snapshot.match;
+                    Snapshot = s.snapshot;
                     Roster = s.snapshot.roster ?? new List<SessionPlayer>();
                     var me = Me;
                     if (me != null) Team = me.team;

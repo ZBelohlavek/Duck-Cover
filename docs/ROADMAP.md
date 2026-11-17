@@ -10,7 +10,7 @@ https://claude.ai/artifact/JJ4fD74nbDB3AsykT2WWen
 | WP1 Match and zone rules | Scripts, Core only | Contracts | dotnet tests | Done |
 | WP2 Destruction and breach rules | Scripts, Core only | Contracts | dotnet tests, balance simulation | Ready |
 | WP3 Network foundation | Scripts | WP0, WP1 | Two-instance smoke test | In review (smoke test passed in Unity) |
-| WP4 Player and weapons | Scripts | WP0, WP3 | Smoke test, screenshots | Waiting on WP3 |
+| WP4 Player and weapons | Scripts | WP0, WP3 (and WP7's health rules) | dotnet tests, smoke test, screenshots | In review (cloud checks pass; real Unity check and capture not run yet) |
 | WP5 Breakable surfaces in Unity | Scripts | WP2, WP3 | Smoke test grid checksum, screenshots | Waiting |
 | WP6 Round presentation and objective | Scripts | WP1, WP3, WP4 | Smoke test plays a full round | Waiting |
 | WP7 Gadgets on the ability pipeline | Scripts | WP2, WP4, WP5 | Tests per gadget, smoke test | Waiting |
@@ -29,6 +29,12 @@ https://claude.ai/artifact/JJ4fD74nbDB3AsykT2WWen
   for it), `Game/SessionRunner`, `SessionDebugPanel` and `NetSmoke`; tests in `SessionTests.cs` and
   `WireTests.cs`; `Tools/netsmoke` (processes over TCP, no Unity) and `Tools/unity netsmoke` (two built
   players over Netcode).
+- WP4: rules in `Core/Combat` beside WP7's health rules (`MovementRules`, `MoveMath`, `Hitboxes`,
+  `HitHistory` and `CombatWorld` for lag compensation, `WeaponRules`, `WeaponDefs`, and `CombatServer`,
+  which puts abilities, movement and weapons together for a host); weapon data in `Data/Weapons`; Unity
+  side in `Game` (`LocalPlayer`, `CombatView`, `PlaceholderBody`, `PhysicsWorld`, `Paint`, the test arena
+  in `BootRoom`) and `UI` (`UIKit`, `Hud`); tests in `HitboxTests.cs`, `MovementTests.cs`,
+  `WeaponTests.cs` and `CombatSessionTests.cs` (helpers in `CombatHarness.cs`).
 - WP4 to WP8: `Scripts/Game` and `Scripts/UI`, with their rules in Core folders of their own
   (`Core/Combat`, `Core/Abilities`, `Core/Backline`).
 

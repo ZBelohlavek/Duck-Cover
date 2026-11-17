@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using DuckAndCover.Core;
 using UnityEngine;
 
 namespace DuckAndCover.Game
@@ -34,8 +35,95 @@ namespace DuckAndCover.Game
         /// <summary>The shot list, in order. Names start with a number so the files sort.</summary>
         static List<Shot> Shots() => new List<Shot>
         {
-            new Shot("01-boot-room", null, 1.5f),
+            new Shot("01-arena", null, 1.5f),
+            // Host a match alone with three practice dummies on the other team, and wait for play to start.
+            new Shot("02-spawn", StartPracticeMatch, 5.5f),
+            new Shot("03-dummies", () => Stand(new Vec3(0f, 0f, 1.5f)), 1.2f),
+            new Shot("04-after-shots", () => Shoot(12), 1.6f),
+            new Shot("05-bodies", () => WatchFrom(new Vector3(1.5f, 2.2f, 1.5f), new Vector3(1.5f, 1f, 8f)), 0.5f),
         };
+
+        static void StartPracticeMatch()
+        {
+            var rules = Ruleset.Default;
+            rules.heroPickSeconds = 1.5f;
+            rules.deploySeconds = 1.5f;
+            var runner = SessionRunner.Ensure();
+            runner.Host("capture_hold", "Capture", false, 0, false, rules);
+            var session = runner.Session;
+            if (session == null || session.Client == null) { Debug.LogError("Duck and Cover: the capture could not host a match."); return; }
+            if (CombatView.Instance != null && CombatView.Instance.Local != null) CombatView.Instance.Local.scripted = true;
+            session.Client.Welcomed += welcome =>
+            {
+                for (int i = 0; i < 3; i++) session.Client.Send(new AddDummyCommand { team = TeamId.B });
+                session.Client.Send(new PickHeroCommand { heroId = "striker" });
+                session.Client.Send(new StartMatchCommand());
+            };
+        }
+
+        /// <summary>Put the local player somewhere (through the server, as a teleport), facing the first practice dummy.</summary>
+        static void Stand(Vec3 feet)
+        {
+            var runner = SessionRunner.Instance;
+            var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
+            if (runner == null || runner.Combat == null || runner.Client == null || local == null)
+            {
+                Debug.LogError("Duck and Cover: the capture has no running match to stand in.");
+                return;
+            }
+            if (!local.Active) Debug.LogError("Duck and Cover: the local player was not in the world when the capture needed it (phase " + runner.Client.State.phase + ").");
+            runner.Combat.Movement.Teleport(runner.Client.PlayerId, feet, 0f);
+            CombatView.Instance.StartCoroutine(AimWhenPlaced(runner, local, feet));
+        }
+
+        static IEnumerator AimWhenPlaced(SessionRunner runner, LocalPlayer local, Vec3 feet)
+        {
+            yield return new WaitForSecondsRealtime(0.4f); // the teleport comes back through the session
+            var rules = runner.ClientRules;
+            var dummy = runner.Combat.Movement.Motion(CombatServer.FirstDummyId);
+            if (dummy == null) { Debug.LogError("Duck and Cover: the capture found no practice dummy."); yield break; }
+            Vec3 eye = feet + Vec3.Up * rules.eyeHeight;
+            Vec3 d = (Hitboxes.Chest(rules, dummy.Pose(true)) - eye).Normalized;
+            local.LookAt(Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg, -Mathf.Asin(d.y) * Mathf.Rad2Deg);
+        }
+
+        /// <summary>Fire at whatever is in front, and report whether the server counted any hits.</summary>
+        static void Shoot(int shots)
+        {
+            var runner = SessionRunner.Instance;
+            var view = CombatView.Instance;
+            if (runner == null || runner.Client == null || view == null || view.Local == null) return;
+            int hits = 0;
+            runner.Client.Events.Subscribe(e => { if (e is DamagedEvent d && d.attackerId == runner.Client.PlayerId) hits++; });
+            view.StartCoroutine(Burst(view.Local, shots, () =>
+            {
+                if (hits == 0) Debug.LogError("Duck and Cover: the capture fired " + shots + " shots at a dummy and the server counted no hits.");
+                else Debug.Log("Duck and Cover: capture shots hit " + hits + " times.");
+            }));
+        }
+
+        /// <summary>Take the camera off the player and look at the scene from outside.</summary>
+        static void WatchFrom(Vector3 position, Vector3 target)
+        {
+            var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
+            var cam = Camera.main;
+            if (local == null || cam == null) return;
+            local.freeCamera = true;
+            cam.transform.SetPositionAndRotation(position, Quaternion.LookRotation(target - position));
+        }
+
+        static IEnumerator Burst(LocalPlayer local, int shots, Action done)
+        {
+            int fired = 0;
+            float until = Time.realtimeSinceStartup + 1.2f;
+            while (fired < shots && Time.realtimeSinceStartup < until)
+            {
+                if (local.FireOnce()) fired++;
+                yield return null;
+            }
+            yield return new WaitForSecondsRealtime(0.25f);
+            done();
+        }
 
         readonly List<string> messages = new List<string>();
         readonly List<string> saved = new List<string>();
@@ -67,6 +155,15 @@ namespace DuckAndCover.Game
             StartCoroutine(Watchdog());
             Directory.CreateDirectory(outputDirectory);
             foreach (var old in Directory.GetFiles(outputDirectory, "*.png")) File.Delete(old);
+
+            // Colours first: the early captures drew every block in one colour.
+            var paintCheck = Paint.SelfCheckSetup();
+            yield return null;
+            yield return null;
+            string paint = Paint.SelfCheckRead(paintCheck);
+            if (paint != null) Debug.LogError("Duck and Cover: colour check failed, " + paint);
+            else Debug.Log("Duck and Cover: colour check passed.");
+            yield return null;
 
             foreach (var shot in Shots())
             {
@@ -102,6 +199,7 @@ namespace DuckAndCover.Game
             try
             {
                 cam.targetTexture = target;
+                Canvas.ForceUpdateCanvases(); // the HUD lays itself out for the size being rendered
                 cam.Render();
                 RenderTexture.active = target;
                 readback.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);

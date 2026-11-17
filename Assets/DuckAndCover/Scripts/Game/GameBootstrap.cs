@@ -6,13 +6,13 @@ namespace DuckAndCover.Game
 {
     /// <summary>
     /// First thing that runs in the Boot scene. For now it checks the project is wired up (render
-    /// pipeline, network package), builds a small greybox room so there is something to look at,
+    /// pipeline, network package), builds the greybox test arena, starts the player and combat view,
     /// and starts a screenshot run when one was requested. Later packages hang the menu, sessions
     /// and map loading off this.
     /// </summary>
     public class GameBootstrap : MonoBehaviour
     {
-        public const string Version = "0.0.2";
+        public const string Version = "0.0.3";
 
         void Awake()
         {
@@ -26,7 +26,9 @@ namespace DuckAndCover.Game
             if (GameObject.Find("Level") == null) BootRoom.Build();
 
             SessionRunner.Ensure();
-            if (NetSmoke.TryStart(gameObject)) return; // a scripted network run: no panel, no screenshots
+            if (NetSmoke.TryStart(gameObject)) return; // a scripted network run: no panel, no screenshots, no bodies
+
+            new GameObject("CombatView").AddComponent<CombatView>();
 
             var panel = gameObject.AddComponent<SessionDebugPanel>();
             string captureDir = CaptureRequest.Consume();
