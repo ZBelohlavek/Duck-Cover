@@ -9,7 +9,7 @@ https://claude.ai/artifact/JJ4fD74nbDB3AsykT2WWen
 | WP0 Project bootstrap | Scripts | Repo | Unity compile check | Done |
 | WP1 Match and zone rules | Scripts, Core only | Contracts | dotnet tests | In review |
 | WP2 Destruction and breach rules | Scripts, Core only | Contracts | dotnet tests, balance simulation | Ready |
-| WP3 Network foundation | Scripts | WP0, WP1 | Two-instance smoke test | In review (Unity run pending) |
+| WP3 Network foundation | Scripts | WP0, WP1 | Two-instance smoke test | In review (smoke test passed in Unity) |
 | WP4 Player and weapons | Scripts | WP0, WP3 | Smoke test, screenshots | Waiting on WP3 |
 | WP5 Breakable surfaces in Unity | Scripts | WP2, WP3 | Smoke test grid checksum, screenshots | Waiting |
 | WP6 Round presentation and objective | Scripts | WP1, WP3, WP4 | Smoke test plays a full round | Waiting |
