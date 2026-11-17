@@ -21,6 +21,7 @@ static class Program
     static readonly Dictionary<string, Func<string[], int>> Reports = new Dictionary<string, Func<string[], int>>
     {
         { "progression", ProgressionSim.Report },
+        { "scorerate", ProgressionSim.RateReport },
     };
 
     static int Main(string[] args)

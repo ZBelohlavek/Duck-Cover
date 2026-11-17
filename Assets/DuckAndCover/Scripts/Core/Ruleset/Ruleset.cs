@@ -18,6 +18,11 @@ namespace DuckAndCover.Core
         /// <summary>Smallest team that can start a match. 1 so two people can test.</summary>
         public int minPlayersPerTeam = 1;
         public int maxPlayersPerTeam = 5;
+        /// <summary>
+        /// When true a hero can be picked by only one player on each team. Off by default: teammates
+        /// may play the same hero.
+        /// </summary>
+        public bool uniqueHeroesPerTeam = false;
 
         // ---- Phases (seconds) ----
         public float heroPickSeconds = 30f;

@@ -6,7 +6,7 @@
     "rotationSeconds": 0,
     "rotationWarningSeconds": 0,
     "scoreToWin": 1000,
-    "scorePerSecond": 1,
+    "scorePerSecond": 0.8,
     "allHeldMultiplier": 2,
     "timeCapSeconds": 900,
     "mapShiftScore": 500
