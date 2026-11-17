@@ -49,7 +49,13 @@ namespace DuckAndCover.Game
             go.transform.localPosition = position;
             go.transform.localScale = size;
             var renderer = go.GetComponent<Renderer>();
-            if (renderer != null) renderer.material.color = color;
+            if (renderer != null)
+            {
+                // URP's Lit shader keeps its colour in _BaseColor; the built-in one uses _Color.
+                var material = renderer.material;
+                if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", color);
+                else material.color = color;
+            }
             return go;
         }
     }
