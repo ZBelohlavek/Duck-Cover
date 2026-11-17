@@ -1,0 +1,37 @@
+# Roadmap
+
+The base game is split into 11 work packages. Each is sized for one thread and ends in one pull
+request. The full scope and "done when" of each is in the plan:
+https://claude.ai/artifact/JJ4fD74nbDB3AsykT2WWen
+
+| Package | Kind | Depends on | Checked by | Status |
+|---|---|---|---|---|
+| WP0 Project bootstrap | Scripts | Repo | Unity compile check | Done |
+| WP1 Match, round and objective rules | Scripts, Core only | Contracts | dotnet tests | Ready |
+| WP2 Destruction and breach rules | Scripts, Core only | Contracts | dotnet tests, balance simulation | Ready |
+| WP3 Network foundation | Scripts | WP0, WP1 | Two-instance smoke test | Waiting on WP1 |
+| WP4 Player and weapons | Scripts | WP0, WP3 | Smoke test, screenshots | Waiting on WP3 |
+| WP5 Breakable surfaces in Unity | Scripts | WP2, WP3 | Smoke test grid checksum, screenshots | Waiting |
+| WP6 Round presentation and objective | Scripts | WP1, WP3, WP4 | Smoke test plays a full round | Waiting |
+| WP7 Gadgets on the ability pipeline | Scripts | WP2, WP4, WP5 | Tests per gadget, smoke test | Waiting |
+| WP8 Backline | Scripts | WP3, WP4, WP5 | Tests for energy and actions, smoke test | Waiting |
+| WP9 First map greybox | Scripts and layout | WP5, WP6 | Map validator, screenshots | Waiting |
+| WP10 Asset search and import | Models | None | Asset manifest reviewed by Zach | In progress |
+
+## Where each package puts its code
+
+- WP1: `Core/Match`, `Core/Ruleset`, `Core/Objective`, `Core/Events`; tests in `Tests/CoreSim/Tests/MatchTests.cs`
+  and `ObjectiveTests.cs`.
+- WP2: `Core/Destruction`, `Core/Breach`; tests in `DestructionTests.cs` and `BreachTests.cs`; the
+  worst-case simulation as a CoreSim report (`dotnet run --project Tests/CoreSim -- report breach`).
+- WP3: `Scripts/Net` (`NetBridge` is a stub waiting for it), `Tools/netsmoke`.
+- WP4 to WP8: `Scripts/Game` and `Scripts/UI`, with their rules in Core folders of their own
+  (`Core/Combat`, `Core/Abilities`, `Core/Backline`).
+
+## Playable milestones
+
+1. Two players move and shoot each other over the network in an empty room (WP0, WP3, WP4).
+2. A full round with plant and defuse (WP1, WP6).
+3. Walls break, stay broken and hit their limits (WP2, WP5, WP7).
+4. Dead players matter (WP8).
+5. First real map with art, ready for a playtest with friends (WP9, WP10).
