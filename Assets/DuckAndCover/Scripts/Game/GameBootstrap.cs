@@ -12,7 +12,7 @@ namespace DuckAndCover.Game
     /// </summary>
     public class GameBootstrap : MonoBehaviour
     {
-        public const string Version = "0.0.1";
+        public const string Version = "0.0.2";
 
         void Awake()
         {
@@ -25,9 +25,14 @@ namespace DuckAndCover.Game
 
             if (GameObject.Find("Level") == null) BootRoom.Build();
 
+            SessionRunner.Ensure();
+            if (NetSmoke.TryStart(gameObject)) return; // a scripted network run: no panel, no screenshots
+
+            var panel = gameObject.AddComponent<SessionDebugPanel>();
             string captureDir = CaptureRequest.Consume();
             if (captureDir != null)
             {
+                panel.visible = false;
                 var director = gameObject.AddComponent<ScreenshotDirector>();
                 director.outputDirectory = captureDir;
             }

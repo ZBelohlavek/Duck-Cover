@@ -9,7 +9,7 @@ https://claude.ai/artifact/JJ4fD74nbDB3AsykT2WWen
 | WP0 Project bootstrap | Scripts | Repo | Unity compile check | Done |
 | WP1 Match and zone rules | Scripts, Core only | Contracts | dotnet tests | In review |
 | WP2 Destruction and breach rules | Scripts, Core only | Contracts | dotnet tests, balance simulation | Ready |
-| WP3 Network foundation | Scripts | WP0, WP1 | Two-instance smoke test | Waiting on WP1 |
+| WP3 Network foundation | Scripts | WP0, WP1 | Two-instance smoke test | In review (Unity run pending) |
 | WP4 Player and weapons | Scripts | WP0, WP3 | Smoke test, screenshots | Waiting on WP3 |
 | WP5 Breakable surfaces in Unity | Scripts | WP2, WP3 | Smoke test grid checksum, screenshots | Waiting |
 | WP6 Round presentation and objective | Scripts | WP1, WP3, WP4 | Smoke test plays a full round | Waiting |
@@ -24,7 +24,11 @@ https://claude.ai/artifact/JJ4fD74nbDB3AsykT2WWen
   `MatchTests.cs`, `ZoneTests.cs`, `SpawnTests.cs` and `ModeDataTests.cs` (helpers in `MatchHarness.cs`).
 - WP2: `Core/Destruction`, `Core/Breach`; tests in `DestructionTests.cs` and `BreachTests.cs`; the
   worst-case simulation as a CoreSim report (`dotnet run --project Tests/CoreSim -- report breach`).
-- WP3: `Scripts/Net` (`NetBridge` is a stub waiting for it), `Tools/netsmoke`.
+- WP3: `Core/Session` (the session itself, no network library: `SessionHost`, `SessionClient`, the wire
+  format, scripted play), `Scripts/Net` (`NetSession`: Netcode for GameObjects and Unity Relay as a pipe
+  for it), `Game/SessionRunner`, `SessionDebugPanel` and `NetSmoke`; tests in `SessionTests.cs` and
+  `WireTests.cs`; `Tools/netsmoke` (processes over TCP, no Unity) and `Tools/unity netsmoke` (two built
+  players over Netcode).
 - WP4 to WP8: `Scripts/Game` and `Scripts/UI`, with their rules in Core folders of their own
   (`Core/Combat`, `Core/Abilities`, `Core/Backline`).
 

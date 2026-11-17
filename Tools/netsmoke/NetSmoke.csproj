@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The network smoke test without Unity: separate processes over real TCP sockets, running the
+       same session code (Assets/DuckAndCover/Scripts/Core/Session) the game uses.
+       Usage, from the repo root: dotnet run, with project Tools/netsmoke (see Program.cs) -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>NetSmokeTool</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/DuckAndCover/Scripts/Core/**/*.cs" />
+  </ItemGroup>
+</Project>

@@ -212,6 +212,60 @@ namespace UnityEngine
         public static void Quit(int exitCode) { }
     }
 
+    public static class Time
+    {
+        public static float deltaTime => 0f;
+        public static float unscaledDeltaTime => 0f;
+        public static float time => 0f;
+        public static float realtimeSinceStartup => 0f;
+    }
+
+    public static class Screen
+    {
+        public static int width => 0;
+        public static int height => 0;
+    }
+
+    public struct Mathf
+    {
+        public static int CeilToInt(float f) => (int)Math.Ceiling(f);
+        public static int RoundToInt(float f) => (int)Math.Round(f);
+        public static float Clamp01(float value) => value < 0f ? 0f : value > 1f ? 1f : value;
+    }
+
+    public class GUIStyle
+    {
+        public static implicit operator GUIStyle(string str) => null;
+    }
+
+    public class GUISkin : ScriptableObject
+    {
+        public GUIStyle box { get; set; }
+        public GUIStyle label { get; set; }
+        public GUIStyle button { get; set; }
+    }
+
+    public class GUI
+    {
+        public static GUISkin skin { get; set; }
+    }
+
+    public sealed class GUILayoutOption { }
+
+    public class GUILayout
+    {
+        public static void BeginArea(Rect screenRect) { }
+        public static void BeginArea(Rect screenRect, GUIStyle style) { }
+        public static void EndArea() { }
+        public static void BeginHorizontal(params GUILayoutOption[] options) { }
+        public static void EndHorizontal() { }
+        public static void Label(string text, params GUILayoutOption[] options) { }
+        public static bool Button(string text, params GUILayoutOption[] options) => false;
+        public static string TextField(string text, params GUILayoutOption[] options) => text;
+        public static string TextField(string text, int maxLength, params GUILayoutOption[] options) => text;
+        public static void Space(float pixels) { }
+    }
+
     public static class SystemInfo
     {
         public static Rendering.GraphicsDeviceType graphicsDeviceType => default;
@@ -274,6 +328,31 @@ namespace UnityEditor
     public class EditorBuildSettingsScene
     {
         public EditorBuildSettingsScene(string path, bool enable) { }
+        public string path { get; set; }
+        public bool enabled { get; set; }
+    }
+
+    public enum BuildTarget { StandaloneOSX = 2, StandaloneWindows = 5, StandaloneWindows64 = 19, StandaloneLinux64 = 24 }
+
+    [Flags]
+    public enum BuildOptions { None = 0, Development = 1 }
+
+    public struct BuildPlayerOptions
+    {
+        public string[] scenes { get; set; }
+        public string locationPathName { get; set; }
+        public BuildTarget target { get; set; }
+        public BuildOptions options { get; set; }
+    }
+
+    public class BuildPipeline
+    {
+        public static Build.Reporting.BuildReport BuildPlayer(BuildPlayerOptions buildPlayerOptions) => null;
+    }
+
+    public class EditorUserBuildSettings
+    {
+        public static BuildTarget activeBuildTarget => default;
     }
 
     public class EditorBuildSettings : UnityEngine.Object
@@ -306,15 +385,205 @@ namespace UnityEditor.SceneManagement
     }
 }
 
+namespace UnityEditor.Build.Reporting
+{
+    public enum BuildResult { Unknown = 0, Succeeded = 1, Failed = 2, Cancelled = 3 }
+
+    public struct BuildSummary
+    {
+        public BuildResult result { get; }
+        public int totalErrors { get; }
+    }
+
+    public sealed class BuildReport : UnityEngine.Object
+    {
+        public BuildSummary summary => default;
+    }
+}
+
+namespace UnityEngine.InputSystem
+{
+    public class InputControl { }
+
+    public class InputDevice : InputControl { }
+
+    namespace Controls
+    {
+        public class ButtonControl : InputControl
+        {
+            public bool isPressed => false;
+            public bool wasPressedThisFrame => false;
+        }
+
+        public class KeyControl : ButtonControl { }
+    }
+
+    public class Keyboard : InputDevice
+    {
+        public static Keyboard current { get; }
+        public Controls.KeyControl f1Key => null;
+    }
+}
+
+namespace Unity.Collections
+{
+    public enum Allocator { Invalid = 0, None = 1, Temp = 2, TempJob = 3, Persistent = 4 }
+}
+
+namespace Unity.Networking.Transport.Relay
+{
+    public struct RelayServerData { }
+}
+
 namespace Unity.Netcode
 {
+    public enum NetworkDelivery { Unreliable, UnreliableSequenced, Reliable, ReliableSequenced, ReliableFragmentedSequenced }
+
+    public abstract class NetworkTransport : UnityEngine.MonoBehaviour { }
+
+    [Serializable]
+    public class NetworkConfig
+    {
+        public NetworkTransport NetworkTransport = null;
+        public uint TickRate = 30;
+        public bool ConnectionApproval = false;
+        public byte[] ConnectionData = new byte[0];
+        public bool EnableSceneManagement = true;
+    }
+
     public class NetworkManager : UnityEngine.MonoBehaviour
     {
-        public static NetworkManager Singleton { get; }
+        public const ulong ServerClientId = 0;
+        public static NetworkManager Singleton { get; private set; }
+        public NetworkConfig NetworkConfig;
+        public ulong LocalClientId { get; internal set; }
         public bool IsListening { get; }
         public bool IsServer { get; }
         public bool IsClient { get; }
         public bool IsHost { get; }
         public bool IsConnectedClient { get; }
+        public string DisconnectReason => "";
+        public CustomMessagingManager CustomMessagingManager { get; private set; }
+        public Action<ConnectionApprovalRequest, ConnectionApprovalResponse> ConnectionApprovalCallback { get; set; }
+        public event Action<ulong> OnClientConnectedCallback;
+        public event Action<ulong> OnClientDisconnectCallback;
+        public bool StartServer() => true;
+        public bool StartClient() => true;
+        public bool StartHost() => true;
+        public void DisconnectClient(ulong clientId) { }
+        public void DisconnectClient(ulong clientId, string reason = null) { }
+        public void Shutdown(bool discardMessageQueue = false) { }
+
+        public class ConnectionApprovalResponse
+        {
+            public bool Approved;
+            public bool CreatePlayerObject;
+            public uint? PlayerPrefabHash;
+            public UnityEngine.Vector3? Position;
+            public UnityEngine.Quaternion? Rotation;
+            public bool Pending;
+            public string Reason;
+        }
+
+        public struct ConnectionApprovalRequest
+        {
+            public byte[] Payload;
+            public ulong ClientNetworkId;
+        }
+    }
+
+    public class CustomMessagingManager
+    {
+        public delegate void HandleNamedMessageDelegate(ulong senderClientId, FastBufferReader messagePayload);
+        public void RegisterNamedMessageHandler(string name, HandleNamedMessageDelegate callback) { }
+        public void UnregisterNamedMessageHandler(string name) { }
+        public void SendNamedMessage(string messageName, ulong clientId, FastBufferWriter messageStream, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced) { }
+    }
+
+    public struct FastBufferWriter : IDisposable
+    {
+        public struct ForPrimitives { }
+        public FastBufferWriter(int size, Unity.Collections.Allocator allocator, int maxSize = -1) { }
+        public int Length => 0;
+        public int Position => 0;
+        public void WriteValueSafe<T>(in T value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> { }
+        public void WriteBytesSafe(byte[] value, int size = -1, int offset = 0) { }
+        public void Dispose() { }
+    }
+
+    public struct FastBufferReader : IDisposable
+    {
+        public int Length => 0;
+        public int Position => 0;
+        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> { value = default; }
+        public void ReadBytesSafe(ref byte[] value, int size, int offset = 0) { }
+        public void Dispose() { }
     }
 }
+
+namespace Unity.Netcode.Transports.UTP
+{
+    public class UnityTransport : NetworkTransport
+    {
+        public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null) { }
+        public void SetRelayServerData(Unity.Networking.Transport.Relay.RelayServerData serverData) { }
+    }
+}
+
+#if DUCK_RELAY
+// Unity services (com.unity.services.multiplayer). Written from the documented API, not checked
+// against the package source: the registry is out of reach from the cloud.
+namespace Unity.Services.Core
+{
+    public enum ServicesInitializationState { Uninitialized, Initializing, Initialized }
+
+    public static class UnityServices
+    {
+        public static ServicesInitializationState State => default;
+        public static System.Threading.Tasks.Task InitializeAsync() => System.Threading.Tasks.Task.CompletedTask;
+    }
+}
+
+namespace Unity.Services.Authentication
+{
+    public interface IAuthenticationService
+    {
+        bool IsSignedIn { get; }
+        System.Threading.Tasks.Task SignInAnonymouslyAsync();
+    }
+
+    public static class AuthenticationService
+    {
+        public static IAuthenticationService Instance => null;
+    }
+}
+
+namespace Unity.Services.Relay.Models
+{
+    public class Allocation { public Guid AllocationId { get; } }
+    public class JoinAllocation { public Guid AllocationId { get; } }
+
+    public static class AllocationUtils
+    {
+        public static Unity.Networking.Transport.Relay.RelayServerData ToRelayServerData(this Allocation allocation, string connectionType) => default;
+        public static Unity.Networking.Transport.Relay.RelayServerData ToRelayServerData(this JoinAllocation allocation, string connectionType) => default;
+    }
+}
+
+namespace Unity.Services.Relay
+{
+    using Unity.Services.Relay.Models;
+
+    public interface IRelayService
+    {
+        System.Threading.Tasks.Task<Allocation> CreateAllocationAsync(int maxConnections, string region = null);
+        System.Threading.Tasks.Task<string> GetJoinCodeAsync(Guid allocationId);
+        System.Threading.Tasks.Task<JoinAllocation> JoinAllocationAsync(string joinCode);
+    }
+
+    public static class RelayService
+    {
+        public static IRelayService Instance => null;
+    }
+}
+#endif
