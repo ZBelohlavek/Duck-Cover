@@ -164,6 +164,7 @@ namespace UnityEngine
         public void SetActive(bool value) { }
         public T AddComponent<T>() where T : Component => null;
         public T GetComponent<T>() => default;
+        public T GetComponentInChildren<T>(bool includeInactive) => default;
         public static GameObject Find(string name) => null;
         public static GameObject CreatePrimitive(PrimitiveType type) => null;
     }

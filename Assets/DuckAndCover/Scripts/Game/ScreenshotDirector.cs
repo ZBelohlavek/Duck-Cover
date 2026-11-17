@@ -157,7 +157,10 @@ namespace DuckAndCover.Game
             foreach (var old in Directory.GetFiles(outputDirectory, "*.png")) File.Delete(old);
 
             // Colours first: the early captures drew every block in one colour.
-            string paint = Paint.SelfCheck();
+            var paintCheck = Paint.SelfCheckSetup();
+            yield return null;
+            yield return null;
+            string paint = Paint.SelfCheckRead(paintCheck);
             if (paint != null) Debug.LogError("Duck and Cover: colour check failed, " + paint);
             else Debug.Log("Duck and Cover: colour check passed.");
             yield return null;

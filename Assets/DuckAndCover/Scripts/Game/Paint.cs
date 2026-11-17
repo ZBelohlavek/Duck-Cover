@@ -79,16 +79,16 @@ namespace DuckAndCover.Game
         }
 
         /// <summary>
-        /// Renders a red, a green and a blue block in front of a camera of its own and reads the
-        /// middle pixel of each. Returns null when each block shows its own colour, otherwise what
-        /// was seen. Used by the screenshot run.
+        /// Puts a red, a green and a blue block in front of a camera of its own. Wait a couple of
+        /// frames, then call <see cref="SelfCheckRead"/>: rendering in the frame the blocks were made
+        /// showed all three in the last colour even though the game drew them correctly afterwards,
+        /// so the check looks at what a player would see.
         /// </summary>
-        public static string SelfCheck()
+        public static GameObject SelfCheckSetup()
         {
             var root = new GameObject("PaintSelfCheck");
             root.transform.position = new Vector3(0f, -500f, 0f);
-            var colors = new[] { new Color(0.9f, 0.1f, 0.1f), new Color(0.1f, 0.8f, 0.1f), new Color(0.1f, 0.2f, 0.9f) };
-            for (int i = 0; i < 3; i++) Block(root.transform, "Check" + i, new Vector3(-2f + 2f * i, 0f, 4f), Vector3.one * 1.5f, colors[i], false);
+            for (int i = 0; i < 3; i++) Block(root.transform, "Check" + i, new Vector3(-2f + 2f * i, 0f, 4f), Vector3.one * 1.5f, CheckColors[i], false);
 
             var lightObject = new GameObject("CheckLight");
             lightObject.transform.SetParent(root.transform, false);
@@ -103,6 +103,18 @@ namespace DuckAndCover.Game
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = Color.black;
             cam.enabled = false;
+            return root;
+        }
+
+        static readonly Color[] CheckColors = { new Color(0.9f, 0.1f, 0.1f), new Color(0.1f, 0.8f, 0.1f), new Color(0.1f, 0.2f, 0.9f) };
+
+        /// <summary>
+        /// Renders the blocks from <see cref="SelfCheckSetup"/> and reads the middle pixel of each.
+        /// Returns null when each block shows its own colour, otherwise what was seen. Removes the blocks.
+        /// </summary>
+        public static string SelfCheckRead(GameObject root)
+        {
+            var cam = root.GetComponentInChildren<Camera>(true);
 
             const int w = 300, h = 100;
             var target = new RenderTexture(w, h, 24);

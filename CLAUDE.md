@@ -74,7 +74,7 @@ nothing. If Game needs something from UI, raise an event instead of adding a ref
   the map answers rays (`PhysicsWorld`), the rules add hitboxes.
 - **Colour placeholder objects with `Paint`** (`Paint.Block`, `Paint.Apply`), never by setting a colour on
   a material: runtime colour properties all showed the last colour set in real captures. The capture run
-  starts with `Paint.SelfCheck` and fails if colours collapse.
+  starts with the `Paint` self check (two frames after its blocks are made) and fails if colours collapse.
 - **UI is code.** No prefabs for screens. Build with `UIKit` (canvas, boxes, labels) and `UITheme`
   colours. Team colours follow the team, not the
   side, because sides swap every round.
