@@ -83,8 +83,9 @@ nothing. If Game needs something from UI, raise an event instead of adding a ref
   - Don't name a method `Start(...)` or `Update(...)` with parameters.
   - `Object.Destroy` is deferred to the end of the frame.
 - **Scenes.** Boot is generated: edit `Editor/SceneSetup.cs` and rerun it (`Tools/unity.ps1 scenes` or
-  the menu **Duck and Cover > Rebuild Scenes**) rather than editing it by hand. Maps (WP9 on) are laid
-  out in the editor and committed; SceneSetup never touches them.
+  the menu **Duck and Cover > Rebuild Scenes**) rather than editing it by hand. The first map is
+  a greybox built from data at runtime (see Setup facts); art for it, and later maps, may be laid out
+  in the editor and committed, and SceneSetup never touches them.
 - **Meta files.** Commit a `.meta` beside every new file and folder under `Assets/`. Keep GUIDs stable;
   scenes reference scripts by GUID.
 - **Paid assets:** never commit imported or extracted pack files (`Assets/Synty/`, `Assets/ThirdParty/`,
@@ -128,8 +129,13 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
   install **Multiplayer Services** (`com.unity.services.multiplayer`) from the Package Manager, and link
   the project to a Unity Cloud project in Project Settings > Services. The package's presence defines
   `DUCK_RELAY` for the Net assembly; without it the game runs and joins by direct address (port 7777).
-- The Boot scene builds a greybox test arena in code (`BootRoom`, spots in `ArenaLayout.Placeholder`).
-  The host can add practice dummies in the lobby. Controls: WASD, mouse, Shift sprint, Ctrl or C crouch,
+- The Boot scene builds the first map, Gantry Yard, as a greybox in code: `Core/Maps/GantryYard.cs` is
+  the layout (blocks, zones, spawn spots, the shift), `Game/MapScene` builds it and `Game/MapView` colours
+  the zones and rolls the shutters up when `MatchState.mapShifted` turns on. Check a map change with
+  `dotnet run --project Tests/CoreSim -- report map map.svg` (walk times and a top-down plan); the
+  `MapValidator` tests fail on broken symmetry, unreachable zones, spawns that see each other, or a
+  shift that opens nothing.
+- The host can add practice dummies in the lobby. Controls: WASD, mouse, Shift sprint, Ctrl or C crouch,
   Space jump or vault, left mouse fire, R reload, 1/2 or Q or the wheel switch weapon, Esc frees the mouse.
 - F1 in the Boot scene shows a developer panel to host, join, pick a team and hero and start a match.
   Two copies on one PC: host in one, join `127.0.0.1` in the other.

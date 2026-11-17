@@ -12,8 +12,8 @@ namespace DuckAndCover.Game
     /// on a machine that joined.
     ///
     /// A hosted match also runs the combat rules (movement checks, weapons, health) against the
-    /// scene's physics. Until the first map (WP9) exists it uses a stand-in objective layout, and
-    /// until the control points do (WP6) nobody stands on any zone.
+    /// scene's physics, on the first map (WP9): its zones, spawn spots and the zone cylinders that
+    /// say who stands where. Scripted runs (the smoke test) keep their stand-in layout.
     /// </summary>
     public class SessionRunner : MonoBehaviour
     {
@@ -38,6 +38,8 @@ namespace DuckAndCover.Game
         /// everyone uses the defaults; a host with changed movement numbers would correct its guests.
         /// </summary>
         public Ruleset ClientRules { get; private set; } = Ruleset.Default;
+        /// <summary>The map every machine builds and plays (only one so far).</summary>
+        public MapDef Map { get; } = MapCatalog.Default;
         /// <summary>The weapon table, the same on every machine.</summary>
         public WeaponLibrary Weapons { get; } = StarterWeapons.Library();
 
@@ -63,7 +65,8 @@ namespace DuckAndCover.Game
             IWorldQuery world;
             if (scripted) world = World = new ScriptedWorld();
             else world = new PhysicsWorld();
-            Match = new MatchRules(rules, ModeById(modeId), ScriptedPlay.PlaceholderMap(), world, events);
+            var objective = scripted ? ScriptedPlay.PlaceholderMap() : Map.ToMatchMap();
+            Match = new MatchRules(rules, ModeById(modeId), objective, world, events);
             Session = useJoinCode
                 ? NetSession.HostWithCode(Match, events, Settings, playerName, Token)
                 : NetSession.HostDirect(Match, events, Settings, port > 0 ? port : Settings.defaultPort, playerName, Token);
@@ -114,7 +117,8 @@ namespace DuckAndCover.Game
                 if (scriptedHost) Combat = ScriptedPlay.Attach(Session.Host, World, hostEvents);
                 else
                 {
-                    Combat = new CombatServer(Match, hostWorld, hostEvents, Settings.TickSeconds, ArenaLayout.Placeholder(), Weapons);
+                    var combat = Combat = new CombatServer(Match, hostWorld, hostEvents, Settings.TickSeconds, Map.ToLayout(), Weapons);
+                    if (hostWorld is PhysicsWorld physics) physics.ZoneQuery = zone => Map.PlayersInZone(zone, combat.Movement.Motions);
                     Combat.Attach(Session.Host);
                 }
                 attached = true;

@@ -35,13 +35,25 @@ namespace DuckAndCover.Game
         /// <summary>The shot list, in order. Names start with a number so the files sort.</summary>
         static List<Shot> Shots() => new List<Shot>
         {
-            new Shot("01-arena", null, 1.5f),
+            // The whole map from above team A's end, then the hall shutter before and after the shift.
+            new Shot("01-map", null, 1.5f),
+            new Shot("02-shutter-shut", () => LookAt(new Vector3(-14f, 2.5f, 1f), new Vector3(-14f, 1.5f, -14f)), 0.4f),
+            new Shot("03-shutter-open", () => MapView.PreviewShift = true, MapView.ShiftSeconds + 0.6f),
+            new Shot("04-hall-inside", () => LookAt(new Vector3(-14f, 1.7f, -21f), new Vector3(-14f, 1.4f, -6f)), 0.4f),
+            new Shot("05-middle", () => { MapView.PreviewShift = false; LookAt(new Vector3(-22f, 4.3f, 2f), new Vector3(0f, 0.5f, 0f)); }, MapView.ShiftSeconds + 0.6f),
             // Host a match alone with three practice dummies on the other team, and wait for play to start.
-            new Shot("02-spawn", StartPracticeMatch, 5.5f),
-            new Shot("03-dummies", () => Stand(new Vec3(0f, 0f, 1.5f)), 1.2f),
-            new Shot("04-after-shots", () => Shoot(12), 1.6f),
-            new Shot("05-bodies", () => WatchFrom(new Vector3(1.5f, 2.2f, 1.5f), new Vector3(1.5f, 1f, 8f)), 0.5f),
+            new Shot("06-spawn", StartPracticeMatch, 5.5f),
+            new Shot("07-dummies", () => Stand(new Vec3(-4f, 0f, -8.5f)), 1.2f),
+            new Shot("08-after-shots", () => Shoot(12), 1.6f),
+            new Shot("09-bodies", () => WatchFrom(new Vector3(-2.5f, 2.2f, 4f), new Vector3(1.5f, 1f, 9f)), 0.5f),
         };
+
+        /// <summary>Point the camera before a match starts (nobody is playing, so nothing moves it back).</summary>
+        static void LookAt(Vector3 position, Vector3 target)
+        {
+            var cam = Camera.main;
+            if (cam != null) cam.transform.SetPositionAndRotation(position, Quaternion.LookRotation(target - position));
+        }
 
         static void StartPracticeMatch()
         {

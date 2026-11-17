@@ -15,7 +15,7 @@ https://claude.ai/artifact/JJ4fD74nbDB3AsykT2WWen
 | WP6 Round presentation and objective | Scripts | WP1, WP3, WP4 | Smoke test plays a full round | Waiting |
 | WP7 Gadgets on the ability pipeline | Scripts | WP2, WP4, WP5 | Tests per gadget, smoke test | Waiting |
 | WP8 Backline | Scripts | WP3, WP4, WP5 | Tests for energy and actions, smoke test | Waiting |
-| WP9 First map greybox | Scripts and layout | WP5, WP6 | Map validator, screenshots | Waiting |
+| WP9 First map greybox | Scripts and layout | WP6 (zones answered by the map itself for now) | Map validator, screenshots | In review (cloud checks pass; real Unity capture not run yet) |
 | WP10 Asset search and import | Models | None | Asset manifest reviewed by Zach | In progress |
 
 ## Where each package puts its code
@@ -35,6 +35,9 @@ https://claude.ai/artifact/JJ4fD74nbDB3AsykT2WWen
   side in `Game` (`LocalPlayer`, `CombatView`, `PlaceholderBody`, `PhysicsWorld`, `Paint`, the test arena
   in `BootRoom`) and `UI` (`UIKit`, `Hud`); tests in `HitboxTests.cs`, `MovementTests.cs`,
   `WeaponTests.cs` and `CombatSessionTests.cs` (helpers in `CombatHarness.cs`).
+- WP9: the map as data in `Core/Maps` (`MapDef`, the layout in `GantryYard`, `MapNav` and `MapValidator`
+  for the fairness checks); `Game/MapScene` builds the greybox and `Game/MapView` shows zone owners and
+  the shift; tests and the `report map` plan in `MapTests.cs`.
 - WP4 to WP8: `Scripts/Game` and `Scripts/UI`, with their rules in Core folders of their own
   (`Core/Combat`, `Core/Abilities`, `Core/Backline`).
 
