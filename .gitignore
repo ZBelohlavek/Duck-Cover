@@ -38,6 +38,9 @@ crashlytics-build.properties
 !/Tests/**/*.csproj
 /Tests/**/bin/
 /Tests/**/obj/
+!/Tools/**/*.csproj
+/Tools/**/bin/
+/Tools/**/obj/
 
 .DS_Store
 Thumbs.db

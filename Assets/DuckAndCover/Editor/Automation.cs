@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using DuckAndCover.Game;
 using UnityEditor;
+using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
@@ -35,6 +36,28 @@ namespace DuckAndCover.EditorTools
         {
             SceneSetup.Build();
             QuitIfBatch(0);
+        }
+
+        /// <summary>
+        /// -executeMethod DuckAndCover.EditorTools.Automation.BuildSmokePlayer [-smokeBuild path]
+        /// Builds a development player for the network smoke test (Tools/unity netsmoke runs it twice).
+        /// </summary>
+        public static void BuildSmokePlayer()
+        {
+            SceneSetup.EnsureScenes();
+            var target = EditorUserBuildSettings.activeBuildTarget;
+            string fallback = "Builds/NetSmoke/DuckAndCover" + (target == BuildTarget.StandaloneWindows64 || target == BuildTarget.StandaloneWindows ? ".exe" : "");
+            var options = new BuildPlayerOptions
+            {
+                scenes = new[] { SceneSetup.BootPath },
+                locationPathName = Argument("-smokeBuild") ?? fallback,
+                target = target,
+                options = BuildOptions.Development,
+            };
+            var report = BuildPipeline.BuildPlayer(options);
+            bool ok = report != null && report.summary.result == BuildResult.Succeeded;
+            Debug.Log("Duck and Cover: smoke player build " + (ok ? "succeeded: " : "FAILED: ") + options.locationPathName);
+            QuitIfBatch(ok ? 0 : 1);
         }
 
         static void StartCapture(string folder, bool exitWhenDone)

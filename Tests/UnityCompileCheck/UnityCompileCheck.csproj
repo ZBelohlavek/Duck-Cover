@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- Compile-only check of every Unity script against minimal API stubs (no Unity install needed).
-       Usage, from the repo root: dotnet build Tests/UnityCompileCheck -->
+       Usage, from the repo root: dotnet build Tests/UnityCompileCheck (add -p:Relay=true for the join-code code) -->
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>net8.0</TargetFramework>
@@ -9,6 +9,10 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <NoWarn>CS0067;CS0414;CS0169;CS0649</NoWarn>
     <DefineConstants>$(DefineConstants);UNITY_EDITOR</DefineConstants>
+  </PropertyGroup>
+  <!-- dotnet build Tests/UnityCompileCheck -p:Relay=true also compiles the join-code (Unity Relay) code. -->
+  <PropertyGroup Condition="'$(Relay)' == 'true'">
+    <DefineConstants>$(DefineConstants);DUCK_RELAY</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../Assets/DuckAndCover/Scripts/**/*.cs" />
