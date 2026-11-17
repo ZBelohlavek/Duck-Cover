@@ -1,0 +1,13 @@
+{
+    "id": "king_of_the_hill",
+    "displayName": "King of the Hill",
+    "zoneSet": "hills",
+    "activeZoneCount": 1,
+    "rotationSeconds": 120,
+    "rotationWarningSeconds": 20,
+    "scoreToWin": 500,
+    "scorePerSecond": 2,
+    "allHeldMultiplier": 1,
+    "timeCapSeconds": 900,
+    "mapShiftScore": 250
+}

@@ -1,0 +1,13 @@
+{
+    "id": "capture_hold",
+    "displayName": "Capture and Hold",
+    "zoneSet": "points",
+    "activeZoneCount": 0,
+    "rotationSeconds": 0,
+    "rotationWarningSeconds": 0,
+    "scoreToWin": 1000,
+    "scorePerSecond": 1,
+    "allHeldMultiplier": 2,
+    "timeCapSeconds": 900,
+    "mapShiftScore": 500
+}

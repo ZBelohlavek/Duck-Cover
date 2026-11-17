@@ -45,9 +45,8 @@ static class ContractTests
     {
         Check.Equal(TeamId.B, TeamId.A.Other(), "other team");
         Check.Equal(TeamId.None, TeamId.None.Other(), "no team has no other");
-        Check.Equal(Side.Defense, Side.Attack.Other(), "other side");
-        Check.False(SiteId.None.IsValid, "default site is none");
-        Check.True(new SiteId(2) == new SiteId(2), "site equality");
+        Check.False(ZoneId.None.IsValid, "default zone is none");
+        Check.True(new ZoneId(2) == new ZoneId(2), "zone equality");
         Check.False(SurfaceCell.None.IsValid, "no cell");
         Check.False(default(SurfaceCell).IsValid, "default cell is not valid (surface ids start at 1)");
         Check.True(new SurfaceCell(1, 0, 0).IsValid, "first cell of the first surface");

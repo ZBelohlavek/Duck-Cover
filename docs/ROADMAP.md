@@ -7,7 +7,7 @@ https://claude.ai/artifact/JJ4fD74nbDB3AsykT2WWen
 | Package | Kind | Depends on | Checked by | Status |
 |---|---|---|---|---|
 | WP0 Project bootstrap | Scripts | Repo | Unity compile check | Done |
-| WP1 Match, round and objective rules | Scripts, Core only | Contracts | dotnet tests | Ready |
+| WP1 Match and zone rules | Scripts, Core only | Contracts | dotnet tests | In review |
 | WP2 Destruction and breach rules | Scripts, Core only | Contracts | dotnet tests, balance simulation | Ready |
 | WP3 Network foundation | Scripts | WP0, WP1 | Two-instance smoke test | Waiting on WP1 |
 | WP4 Player and weapons | Scripts | WP0, WP3 | Smoke test, screenshots | Waiting on WP3 |
@@ -20,8 +20,8 @@ https://claude.ai/artifact/JJ4fD74nbDB3AsykT2WWen
 
 ## Where each package puts its code
 
-- WP1: `Core/Match`, `Core/Ruleset`, `Core/Objective`, `Core/Events`; tests in `Tests/CoreSim/Tests/MatchTests.cs`
-  and `ObjectiveTests.cs`.
+- WP1: `Core/Match`, `Core/Ruleset`, `Core/Zones`, `Core/Spawn`, `Core/Events`, mode data in `Data/Modes`; tests in
+  `MatchTests.cs`, `ZoneTests.cs`, `SpawnTests.cs` and `ModeDataTests.cs` (helpers in `MatchHarness.cs`).
 - WP2: `Core/Destruction`, `Core/Breach`; tests in `DestructionTests.cs` and `BreachTests.cs`; the
   worst-case simulation as a CoreSim report (`dotnet run --project Tests/CoreSim -- report breach`).
 - WP3: `Scripts/Net` (`NetBridge` is a stub waiting for it), `Tools/netsmoke`.

@@ -56,15 +56,30 @@ namespace DuckAndCover.Core
         public Vec3 target;
     }
 
-    /// <summary>Choose a loadout (and later a hero) during the pick phase.</summary>
-    public class PickLoadoutCommand : MatchCommand
+    /// <summary>Choose a hero during hero pick. One of each hero per team.</summary>
+    public class PickHeroCommand : MatchCommand
     {
-        public string loadoutId;
+        public string heroId;
     }
 
-    /// <summary>Defenders vote for the site pair they will guard. Ids come from the map.</summary>
-    public class VoteSiteCommand : MatchCommand
+    /// <summary>
+    /// Choose where to come back after an elimination: <see cref="ZoneId.None"/> for the base, or
+    /// the team's forward point, which is used only while the team holds it uncontested.
+    /// The choice stays until changed.
+    /// </summary>
+    public class PickSpawnCommand : MatchCommand
     {
-        public int sitePair;
+        public ZoneId zone;
+    }
+
+    /// <summary>
+    /// Take one of the two upgrades offered at a level (Progression, WP8). Allowed at any moment,
+    /// alive or waiting to respawn.
+    /// </summary>
+    public class ChooseUpgradeCommand : MatchCommand
+    {
+        public int level;
+        /// <summary>0 for the first (left) option, 1 for the second (right).</summary>
+        public int option;
     }
 }
