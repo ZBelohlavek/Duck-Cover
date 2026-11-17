@@ -171,6 +171,15 @@ namespace DuckAndCover.UI
             }
         }
 
+        /// <summary>Whether the player has picked their ultimate's form, if their hero offers one (the server holds the ultimate until then).</summary>
+        static bool FormPicked(MatchSnapshot snapshot, PlayerState me, Ruleset rules)
+        {
+            var progression = rules.progression == null ? new ProgressionRuleset() : rules.progression;
+            if (!HeroServer.OffersUltimateForm(HeroData.Catalog.Resolve(me.heroId), progression)) return true;
+            var mine = snapshot == null || snapshot.progression == null ? null : snapshot.progression.Player(me.id);
+            return mine != null && mine.HasPicked(progression.UltimateFormLevel());
+        }
+
         void ShowAbilities(MatchSnapshot snapshot, PlayerState me, HeroUnit unit)
         {
             var lib = HeroData.Abilities;
@@ -189,6 +198,7 @@ namespace DuckAndCover.UI
                 {
                     int need = Mathf.Max(def.unlockLevel, rules.ultimateUnlockLevel);
                     if (me.level < need) { status = "Unlocks at level " + need; color = UITheme.TextDim; }
+                    else if (!FormPicked(snapshot, me, rules)) { status = "Pick its form (hold Z or V)"; color = UITheme.TextDim; }
                     else if (unit.ultimateCharge >= def.ultimateCost - 0.01f) { status = "Ready"; color = UITheme.Warning; }
                     else { status = Mathf.FloorToInt(100f * unit.ultimateCharge / Mathf.Max(1f, def.ultimateCost)) + "%"; color = UITheme.TextDim; }
                 }

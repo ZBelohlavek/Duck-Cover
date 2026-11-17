@@ -34,12 +34,14 @@ namespace DuckAndCover.Core
             var problems = Validate(heroes ?? throw new ArgumentNullException(nameof(heroes)), combat.Abilities.Library, combat.Weapons.Library);
             if (problems.Count > 0) throw new ArgumentException("Can't run heroes: " + string.Join("; ", problems));
             Progression = new ProgressionRules(combat.Match, heroes, world ?? throw new ArgumentNullException(nameof(world)), events);
+            combat.Abilities.UseCheck = UltimateHeld;
             events.Subscribe(OnEvent);
         }
 
         public void Dispose()
         {
             events.Unsubscribe(OnEvent);
+            if (Combat.Abilities.UseCheck == (Func<int, string, string>)UltimateHeld) Combat.Abilities.UseCheck = null;
             Progression.Dispose();
         }
 
@@ -74,6 +76,27 @@ namespace DuckAndCover.Core
                     Progression.RecordSupport(shield.sourceId, shield.targetId, shield.amount);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Why the ultimate can't be used yet: the hero offers two forms of it and the player hasn't
+        /// picked one. Null for everything else (and for heroes with no forms on offer).
+        /// </summary>
+        public string UltimateHeld(int playerId, string abilityId)
+        {
+            var p = Combat.Match.State.Player(playerId);
+            var hero = p == null ? null : Heroes.Resolve(p.heroId);
+            if (hero == null || abilityId != hero.ultimateId) return null;
+            if (!OffersUltimateForm(hero, Progression.Rules)) return null;
+            return Progression.UltimateForm(playerId) == null ? "pick the ultimate's form first" : null;
+        }
+
+        /// <summary>Whether leveling offers this hero a choice of ultimate form (so the ultimate waits for it).</summary>
+        public static bool OffersUltimateForm(HeroDef hero, ProgressionRuleset rules)
+        {
+            int level = rules == null ? 0 : rules.UltimateFormLevel();
+            var offer = level > 0 && hero != null ? hero.Level(level) : null;
+            return offer != null && offer.options != null && offer.options.Length > 0;
         }
 
         /// <summary>The hero's abilities (ultimate last), passive and max health. Unknown heroes get the catalog's fallback.</summary>

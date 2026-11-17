@@ -314,4 +314,15 @@ namespace DuckAndCover.Core
     {
         bool HasLineOfSight(Vec3 from, int playerId, int tick);
     }
+
+    /// <summary>
+    /// Optional extra the world can implement so a caster's rays and their objects' sight lines are
+    /// judged like their shots: past the caster's own body and through their own team's barriers
+    /// (with friendly fire off). <see cref="CombatWorld"/> implements it.
+    /// </summary>
+    public interface ICasterQuery
+    {
+        bool RaycastFor(int casterId, Vec3 origin, Vec3 dir, float max, int tick, out HitInfo hit);
+        bool HasLineOfSightFor(int viewerId, Vec3 from, int playerId, int tick);
+    }
 }

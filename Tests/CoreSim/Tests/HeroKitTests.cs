@@ -102,7 +102,11 @@ static class HeroKitTests
         h.Unit(A1).ultimateCharge = 100f;
         Check.False(h.Use(A1, 2, Ahead).IsAccepted, "locked at level 1");
         h.LevelTo(A1, 5);
-        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "open at level 5");
+        var held = h.Use(A1, 2, Ahead);
+        Check.False(held.IsAccepted, "held at level 5 until a form is picked");
+        Check.True(held.reason.Contains("form"), "and says why: " + held.reason);
+        Check.True(h.PickForm(A1, "lancer_focused_volley").IsAccepted, "pick Focused Volley");
+        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "open once the form is picked");
     }
 
     // ---- Every upgrade ----
@@ -184,7 +188,12 @@ static class HeroKitTests
         Check.True(h.FireAt(A2, h.ChestOf(B1)).IsAccepted, "teammate fires through");
         Check.True(h.Health(B1) < b1, "teammates' shots pass through");
         Check.True(h.UseAt(B1, 1, A1).IsAccepted, "enemy Tracer Mark");
-        Check.False(h.Unit(A1).HasStatus("lancer_marked"), "ability rays stop on it too");
+        Check.False(h.Unit(A1).HasStatus("lancer_marked"), "enemy ability rays stop on it too");
+        Check.True(h.UseAt(A2, 1, B1).IsAccepted, "teammate Tracer Mark");
+        Check.True(h.Unit(B1).HasStatus("lancer_marked"), "teammates' ability rays pass through");
+        Vec3 behind = h.ChestOf(A1) + new Vec3(0f, 0f, -0.5f);
+        Check.True(h.Combat.World.HasLineOfSightFor(A2, behind, B1, h.S.tick), "a teammate's sentry sees through it");
+        Check.False(h.Combat.World.HasLineOfSightFor(B1, h.ChestOf(B1) + new Vec3(0f, 0f, 0.5f), A1, h.S.tick), "an enemy's doesn't");
 
         // Shot down, it's gone.
         h.Abilities.DamageObject(spawned.objectId, 10000f, B1);
@@ -237,6 +246,7 @@ static class HeroKitTests
         h.Place(A1, 0f, 0f);
         h.Place(B1, 0f, 5f);
         h.LevelTo(A1, 5);
+        h.PickForm(A1, "bulwark_iron_ring");
         Check.True(h.Use(A1, 2, Ahead).IsAccepted, "ultimate");
         Check.True(h.Shield(A1) >= 100f - 1e-3f, "a 100 shield");
         h.Run(0.6f);
@@ -252,7 +262,7 @@ static class HeroKitTests
         h.Place(A1, 0f, 0f);
         h.Place(B1, 0f, 5f);
         h.LevelTo(A1, 5);
-        h.Heroes.ApplyUpgrade(A1, "bulwark", "bulwark_lockdown");
+        Check.True(h.PickForm(A1, "bulwark_lockdown").IsAccepted, "pick Lockdown");
         Check.True(h.Use(A1, 2, Ahead).IsAccepted, "ultimate");
         Check.True(h.Unit(B1).HasStatus(AbilityLibrary.RootStatus), "rooted");
     }
@@ -306,6 +316,7 @@ static class HeroKitTests
         h.Place(A1, 0f, 0f);
         h.Place(B1, 0f, 10f);
         h.LevelTo(A1, 5);
+        h.PickForm(A1, "lancer_storm_volley");
         Check.True(h.UseAt(A1, 2, B1).IsAccepted, "volley");
         Check.Near(300f, h.Health(B1), "nothing during the wind-up");
         h.Run(0.55f);
@@ -362,6 +373,7 @@ static class HeroKitTests
         h.Place(A1, 0f, 0f);
         h.Place(A2, 0f, 10f);
         h.LevelTo(A1, 5);
+        h.PickForm(A1, "mender_broad_aegis");
         Check.True(h.Use(A1, 2, Ahead).IsAccepted, "aegis");
         Check.Near(100f, h.Shield(A1), "self");
         Check.Near(100f, h.Shield(A2), "teammate 10 m away");
@@ -413,6 +425,7 @@ static class HeroKitTests
         h.Place(A1, 0f, 0f);
         h.Place(B1, 2f, 20f);
         h.LevelTo(A1, 5);
+        h.PickForm(A1, "rigger_snaring_gate");
         Check.True(h.Use(A1, 2, new Vec3(0f, -0.1f, 1f)).IsAccepted, "gate");
         var gate = h.Last<ObjectSpawnedEvent>();
         Check.True(gate != null && gate.blocksMovement && gate.width == 8f && gate.height == 4f, "an 8 by 4 m gate");

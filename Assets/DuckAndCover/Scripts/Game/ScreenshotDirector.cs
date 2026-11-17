@@ -77,6 +77,8 @@ namespace DuckAndCover.Game
             if (runner == null || runner.Heroes == null) return;
             int rigger = CombatServer.FirstDummyId + 1;
             while (runner.Heroes.Progression.Level(rigger) < 5 && runner.Heroes.Progression.Grant(rigger, 500f, ExperienceSource.Match) > 0f) { }
+            int formLevel = runner.Heroes.Progression.Rules.UltimateFormLevel();
+            if (formLevel > 0) runner.Heroes.Progression.Apply(new ChooseUpgradeCommand { playerId = rigger, level = formLevel, option = 0 });
             var unit = runner.Combat.Abilities.Unit(rigger);
             if (unit != null) unit.ultimateCharge = runner.Match.Rules.ultimateChargeMax;
             if (!DummyCast(runner, rigger, 2, runner.Client.PlayerId, 0f)) Debug.LogError("Duck and Cover: the capture's Rigger could not raise its gate.");

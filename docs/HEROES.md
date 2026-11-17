@@ -3,7 +3,7 @@
 Generated from the hero and ability data in `Assets/DuckAndCover/Data/Resources` (WP11). The data files are
 the source of truth; numbers here are the ones the tests check. All names and kits are original.
 
-Levels: traits at 2, 4, 6 and 8, talents at 3, 7 and 9, the ultimate unlocks at 5 with a choice of two forms,
+Levels: traits at 2, 4, 6 and 8, talents at 3, 7 and 9, the ultimate unlocks at 5 once you pick one of its two forms,
 and a capstone at 10. Keys: E and F abilities, X ultimate, hold Z or V for the left or right upgrade.
 
 ## Bulwark (vanguard)

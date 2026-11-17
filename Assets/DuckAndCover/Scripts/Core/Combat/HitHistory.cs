@@ -131,7 +131,7 @@ namespace DuckAndCover.Core
     /// contract's lag-compensated Raycast and PlayersInSphere, and WP7's optional position and line of
     /// sight queries, so abilities hit the same bodies weapons do.
     /// </summary>
-    public sealed class CombatWorld : IWorldQuery, IPositionQuery, ILineOfSightQuery
+    public sealed class CombatWorld : IWorldQuery, IPositionQuery, ILineOfSightQuery, ICasterQuery
     {
         readonly IWorldQuery geometry;
         readonly Ruleset rules;
@@ -182,6 +182,9 @@ namespace DuckAndCover.Core
 
         public bool Raycast(Vec3 origin, Vec3 dir, float max, int tick, out HitInfo hit) => RaycastFrom(-1, origin, dir, max, tick, out hit);
 
+        /// <summary>An ability's ray, judged like the caster's shots.</summary>
+        public bool RaycastFor(int casterId, Vec3 origin, Vec3 dir, float max, int tick, out HitInfo hit) => RaycastFrom(casterId, origin, dir, max, tick, out hit);
+
         public int[] PlayersInZone(ZoneId zone) => geometry.PlayersInZone(zone);
 
         /// <summary>Players whose chest is within the radius at the tick, in id order.</summary>
@@ -205,14 +208,19 @@ namespace DuckAndCover.Core
         }
 
         /// <summary>Nothing of the map between the point and the player's chest.</summary>
-        public bool HasLineOfSight(Vec3 from, int playerId, int tick)
+        public bool HasLineOfSight(Vec3 from, int playerId, int tick) => HasLineOfSightFor(-1, from, playerId, tick);
+
+        /// <summary>Line of sight for something a player owns (a sentry): their own team's barriers don't block it.</summary>
+        public bool HasLineOfSightFor(int viewerId, Vec3 from, int playerId, int tick)
         {
             if (!History.PoseAt(playerId, tick, out var pose)) return false;
             Vec3 to = Hitboxes.Chest(rules, pose);
             Vec3 d = to - from;
             float len = d.Magnitude;
             if (len < 1e-4f) return true;
-            if (SolidObjects.Raycast(Objects, from, d / len, len - 1e-3f, null, out _)) return false;
+            Func<ObjectState, bool> skip = null;
+            if (PassesObject != null && viewerId >= 0) skip = o => PassesObject(viewerId, o);
+            if (SolidObjects.Raycast(Objects, from, d / len, len - 1e-3f, skip, out _)) return false;
             return !(geometry.Raycast(from, d / len, len, tick, out var hit) && hit.kind != HitKind.Player && hit.distance < len - 1e-3f);
         }
     }

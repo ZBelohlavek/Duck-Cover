@@ -158,7 +158,9 @@ namespace DuckAndCover.Core
         {
             var area = Query(obj.position, obj.radius, obj.def.affects, obj.ownerId, obj.team, 0, Match.tick);
             var ids = new List<int>(area.targets);
-            if (obj.def.needsLineOfSight && world is ILineOfSightQuery los)
+            if (obj.def.needsLineOfSight && world is ICasterQuery caster)
+                ids.RemoveAll(id => !caster.HasLineOfSightFor(obj.ownerId, obj.position, id, Match.tick));
+            else if (obj.def.needsLineOfSight && world is ILineOfSightQuery los)
                 ids.RemoveAll(id => !los.HasLineOfSight(obj.position, id, Match.tick));
             if (obj.def.maxTargets > 0 && ids.Count > obj.def.maxTargets) ids.RemoveRange(obj.def.maxTargets, ids.Count - obj.def.maxTargets);
             area.targets = ids.ToArray();
