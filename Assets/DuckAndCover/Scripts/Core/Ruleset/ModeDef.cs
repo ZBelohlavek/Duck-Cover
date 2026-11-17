@@ -40,7 +40,9 @@ namespace DuckAndCover.Core
             zoneSet = "points",
             activeZoneCount = 0,
             scoreToWin = 1000,
-            scorePerSecond = 1f,
+            // 0.8 rather than 1: bot matches then run about 14 minutes and four players in five
+            // reach level 10 (dotnet run --project Tests/CoreSim -- report scorerate).
+            scorePerSecond = 0.8f,
             allHeldMultiplier = 2f,
             timeCapSeconds = 900f,
             mapShiftScore = 500,

@@ -287,7 +287,7 @@ static class ProgressionSim
             ("Levels give no strength", new Options { strengthAtMaxLevel = 0f }),
             ("Levels double strength", new Options { strengthAtMaxLevel = 1f }),
             ("Team A 15% stronger", new Options { teamASkill = 1.15f }),
-            ("First to 1250", new Options { mode = LongerMode(1250) }),
+            ("1 point a second (old)", new Options { mode = Rate(1f) }),
         };
         Console.WriteLine("{0,-26}{1,8}{2,14}{3,9}{4,9}{5,16}{6,9}{7,9}{8,10}{9,10}{10,8}{11,8}",
             "", "length", "(10%-90%)", "level 5", "level 10", "(10%-90%)", "hit 10", "end lvl", "xp lead", "score ld", "gap", "support");
@@ -310,11 +310,38 @@ static class ProgressionSim
         return 0;
     }
 
-    static ModeDef LongerMode(int score)
+    /// <summary>
+    /// Match length and levels at different point rates, first to 1000:
+    ///   dotnet run --project Tests/CoreSim -- report scorerate [matches] [seed] [rate ...]
+    /// </summary>
+    public static int RateReport(string[] args)
+    {
+        int matches = args.Length > 0 ? int.Parse(args[0]) : 1000;
+        int seed = args.Length > 1 ? int.Parse(args[1]) : 1;
+        var rates = new List<float>();
+        for (int i = 2; i < args.Length; i++) rates.Add(float.Parse(args[i], System.Globalization.CultureInfo.InvariantCulture));
+        if (rates.Count == 0) rates.AddRange(new[] { 1f, 0.9f, 0.85f, 0.8f, 0.75f, 0.7f });
+        Console.WriteLine("Point rate: " + matches + " bot matches per row, 5v5 capture and hold, first to " + ModeDef.CaptureAndHold().scoreToWin + ", seed " + seed);
+        Console.WriteLine();
+        Console.WriteLine("{0,-22}{1,8}{2,14}{3,10}{4,9}{5,9}{6,9}", "points per second", "length", "(10%-90%)", "time cap", "level 10", "hit 10", "end lvl");
+        foreach (float rate in rates)
+        {
+            var mode = ModeDef.CaptureAndHold();
+            mode.scorePerSecond = rate;
+            var s = Run(matches, seed, new Options { mode = mode });
+            Console.WriteLine("{0,-22}{1,8}{2,14}{3,10}{4,9}{5,9}{6,9}", rate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture),
+                Min(s.medianLength), Min(s.p10Length) + "-" + Min(s.p90Length), Share(s.timeCapShare), Min(s.medianLevel10),
+                Share(s.reachedLevel10), s.averageFinalLevel.ToString("F1"));
+        }
+        Console.WriteLine();
+        Console.WriteLine("time cap   share of matches that end on the time cap instead of the score");
+        return 0;
+    }
+
+    static ModeDef Rate(float scorePerSecond)
     {
         var m = ModeDef.CaptureAndHold();
-        m.scoreToWin = score;
-        m.mapShiftScore = score / 2;
+        m.scorePerSecond = scorePerSecond;
         return m;
     }
 

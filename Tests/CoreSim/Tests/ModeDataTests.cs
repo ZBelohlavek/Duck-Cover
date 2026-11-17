@@ -43,7 +43,7 @@ static class ModeDataTests
             var first = h.S.zones.First(z => z.active).id;
             h.Take(first, TeamId.A);
             h.Run(5f);
-            Check.True(h.S.scoreA >= 5, file + " scores from data");
+            Check.True(h.S.scoreA >= 3, file + " scores from data");
         }
     }
 }
