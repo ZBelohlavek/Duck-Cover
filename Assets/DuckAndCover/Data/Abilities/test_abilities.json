@@ -1,0 +1,205 @@
+{
+  "abilities": [
+    {
+      "id": "test_dash",
+      "displayName": "Test Dash",
+      "description": "Dash 6 m along your aim. Talent tag healTrail leaves a healing patch where you started.",
+      "cooldown": 6,
+      "charges": 1,
+      "targeting": { "shape": "self" },
+      "effects": [
+        { "kind": "push", "amount": 6, "duration": 0.25, "direction": "aim" },
+        { "kind": "spawn", "objectId": "test_heal_trail", "tag": "healTrail" }
+      ]
+    },
+    {
+      "id": "test_grenade",
+      "displayName": "Test Grenade",
+      "description": "Lands where you aim and bursts a second later, hurting and slowing enemies in the blast.",
+      "cooldown": 10,
+      "targeting": { "shape": "sphere", "origin": "aimPoint", "range": 20, "radius": 4, "affects": "enemies" },
+      "effects": [
+        { "kind": "damage", "amount": 60, "delay": 1 },
+        { "kind": "slow", "amount": 0.3, "duration": 2, "delay": 1 }
+      ]
+    },
+    {
+      "id": "test_overdrive",
+      "displayName": "Test Overdrive",
+      "description": "Ultimate. You and nearby teammates move and recover abilities faster for a while.",
+      "ultimate": true,
+      "ultimateCost": 100,
+      "duration": 6,
+      "targeting": { "shape": "sphere", "origin": "caster", "radius": 6, "affects": "alliesAndSelf" },
+      "effects": [
+        { "kind": "status", "status": "test_haste" }
+      ]
+    },
+    {
+      "id": "test_regen",
+      "displayName": "Test Regeneration",
+      "description": "Passive. Regain health when you have not been hit for a few seconds.",
+      "passive": true,
+      "stats": [
+        { "stat": "healthRegen", "op": "add", "value": 4 }
+      ]
+    },
+    {
+      "id": "test_patch",
+      "displayName": "Test Patch",
+      "description": "Heal the teammate you aim at and clear what is slowing or stunning them.",
+      "cooldown": 8,
+      "targeting": { "shape": "ray", "range": 30, "affects": "allies" },
+      "effects": [
+        { "kind": "heal", "amount": 50 },
+        { "kind": "cleanse" }
+      ]
+    },
+    {
+      "id": "test_guard",
+      "displayName": "Test Guard",
+      "description": "Shield yourself for 4 seconds.",
+      "cooldown": 12,
+      "targeting": { "shape": "self" },
+      "effects": [
+        { "kind": "shield", "amount": 60, "duration": 4 }
+      ]
+    },
+    {
+      "id": "test_bolt",
+      "displayName": "Test Bolt",
+      "description": "After a short wind-up, stun the enemy you aim at and knock them back.",
+      "cooldown": 14,
+      "castTime": 0.5,
+      "targeting": { "shape": "ray", "range": 25, "affects": "enemies" },
+      "effects": [
+        { "kind": "damage", "amount": 20 },
+        { "kind": "stun", "duration": 1 },
+        { "kind": "push", "amount": 3, "duration": 0.2, "direction": "away" }
+      ]
+    },
+    {
+      "id": "test_burn_shot",
+      "displayName": "Test Burn Shot",
+      "description": "Set the enemy you aim at burning. Repeat hits stack up to three times.",
+      "cooldown": 1,
+      "targeting": { "shape": "ray", "range": 30, "affects": "enemies" },
+      "effects": [
+        { "kind": "status", "status": "test_burn" }
+      ]
+    },
+    {
+      "id": "test_mine",
+      "displayName": "Test Mine",
+      "description": "Place a mine that arms after a second, then hurts and slows the first enemies to come near.",
+      "cooldown": 9,
+      "charges": 2,
+      "targeting": { "shape": "sphere", "origin": "aimPoint", "range": 8, "radius": 0.5, "affects": "enemies" },
+      "effects": [
+        { "kind": "spawn", "objectId": "test_mine" }
+      ]
+    },
+    {
+      "id": "test_turret",
+      "displayName": "Test Turret",
+      "description": "Place a small turret that shoots the nearest enemy it can see.",
+      "cooldown": 20,
+      "targeting": { "shape": "sphere", "origin": "aimPoint", "range": 5, "radius": 0.5, "affects": "enemies" },
+      "effects": [
+        { "kind": "spawn", "objectId": "test_turret" }
+      ]
+    },
+    {
+      "id": "test_barrier",
+      "displayName": "Test Barrier",
+      "description": "Raise a barrier that blocks shots and movement until it is broken or runs out.",
+      "cooldown": 15,
+      "targeting": { "shape": "sphere", "origin": "aimPoint", "range": 4, "radius": 0.5, "affects": "enemies" },
+      "effects": [
+        { "kind": "spawn", "objectId": "test_barrier" }
+      ]
+    }
+  ],
+  "statuses": [
+    {
+      "id": "test_haste",
+      "displayName": "Overdrive",
+      "negative": false,
+      "duration": 6,
+      "stacking": "refresh",
+      "stats": [
+        { "stat": "moveSpeed", "op": "percent", "value": 0.25 },
+        { "stat": "cooldownRate", "op": "percent", "value": 0.5 }
+      ]
+    },
+    {
+      "id": "test_burn",
+      "displayName": "Burning",
+      "negative": true,
+      "duration": 3,
+      "stacking": "stack",
+      "maxStacks": 3,
+      "interval": 0.5,
+      "tickEffects": [
+        { "kind": "damage", "amount": 5 }
+      ]
+    }
+  ],
+  "objects": [
+    {
+      "id": "test_heal_trail",
+      "displayName": "Healing Patch",
+      "lifetime": 4,
+      "radius": 3,
+      "trigger": "pulse",
+      "interval": 1,
+      "affects": "alliesAndSelf",
+      "effects": [
+        { "kind": "heal", "amount": 10 }
+      ]
+    },
+    {
+      "id": "test_mine",
+      "displayName": "Mine",
+      "lifetime": 60,
+      "health": 30,
+      "radius": 3,
+      "trigger": "proximity",
+      "armTime": 1,
+      "affects": "enemies",
+      "consumeOnTrigger": true,
+      "maxPerOwner": 2,
+      "effects": [
+        { "kind": "damage", "amount": 40 },
+        { "kind": "slow", "amount": 0.5, "duration": 3 }
+      ]
+    },
+    {
+      "id": "test_turret",
+      "displayName": "Turret",
+      "lifetime": 20,
+      "health": 100,
+      "radius": 12,
+      "trigger": "pulse",
+      "interval": 0.5,
+      "armTime": 1,
+      "affects": "enemies",
+      "maxTargets": 1,
+      "needsLineOfSight": true,
+      "maxPerOwner": 1,
+      "effects": [
+        { "kind": "damage", "amount": 8 }
+      ]
+    },
+    {
+      "id": "test_barrier",
+      "displayName": "Barrier",
+      "lifetime": 8,
+      "health": 300,
+      "trigger": "none",
+      "maxPerOwner": 1,
+      "blocksMovement": true,
+      "blocksShots": true
+    }
+  ]
+}
