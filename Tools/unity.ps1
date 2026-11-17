@@ -6,13 +6,14 @@
   ./Tools/unity.ps1 check      # compile the project; lists compiler errors, exit code 1 if any
   ./Tools/unity.ps1 capture    # play the Boot scene and save screenshots + log.txt to Screenshots/
   ./Tools/unity.ps1 scenes     # rebuild the generated scenes in Assets/DuckAndCover/Scenes
+  ./Tools/unity.ps1 netsmoke   # build a player, run it twice (host + client, no graphics), compare the results
 
 .NOTES
   Close the Unity editor first: Unity can't open a project that's already open.
   Set UNITY_PATH to Unity.exe if it isn't installed in the default Unity Hub folder.
 #>
 param(
-    [Parameter(Mandatory = $true)][ValidateSet("check", "capture", "scenes")][string]$Command
+    [Parameter(Mandatory = $true)][ValidateSet("check", "capture", "scenes", "netsmoke")][string]$Command
 )
 
 $ErrorActionPreference = "Stop"
@@ -53,6 +54,12 @@ switch ($Command) {
         $unityArgs = @("-batchmode", "-nographics", "-projectPath", $project, "-logFile", $log,
                   "-executeMethod", "DuckAndCover.EditorTools.Automation.CreateScenes")
     }
+    "netsmoke" {
+        $smokeDir = Join-Path $project "Builds/NetSmoke"
+        $player = Join-Path $smokeDir "DuckAndCover.exe"
+        $unityArgs = @("-batchmode", "-nographics", "-projectPath", $project, "-logFile", $log,
+                  "-executeMethod", "DuckAndCover.EditorTools.Automation.BuildSmokePlayer", "-smokeBuild", $player)
+    }
 }
 
 # Unity.exe is a windowed app, so start it with -Wait (the call operator wouldn't wait),
@@ -78,4 +85,38 @@ if ($Command -eq "capture") {
     if (Test-Path $report) { Write-Host ""; Get-Content $report }
 }
 Write-Host "`nUnity exited with code $code"
+
+if ($Command -eq "netsmoke" -and $code -eq 0) {
+    # Two copies of the built game with no graphics: one hosts, one joins, scripted players run a
+    # whole match, and each writes what it ended up believing. The files must be identical.
+    $port = 7790
+    $hostOut = Join-Path $logs "netsmoke-host.txt"
+    $joinOut = Join-Path $logs "netsmoke-client.txt"
+    Remove-Item $hostOut, $joinOut -ErrorAction SilentlyContinue
+    $common = "-batchmode -nographics -duckPort $port"
+    Write-Host "`nStarting host and client..."
+    $hostProc = Start-Process -FilePath $player -PassThru -NoNewWindow -ArgumentList `
+        "$common -duckSmoke host -duckPlayers 2 -duckSmokeOut `"$hostOut`" -logFile `"$(Join-Path $logs 'netsmoke-host.log')`""
+    Start-Sleep -Seconds 4
+    $joinProc = Start-Process -FilePath $player -PassThru -NoNewWindow -ArgumentList `
+        "$common -duckSmoke join -duckAddress 127.0.0.1 -duckSmokeOut `"$joinOut`" -logFile `"$(Join-Path $logs 'netsmoke-client.log')`""
+    # Touch each handle now: without it PowerShell leaves ExitCode empty for a process started this way.
+    $null = $hostProc.Handle
+    $null = $joinProc.Handle
+    foreach ($p in @($hostProc, $joinProc)) {
+        if (-not $p.WaitForExit(300000)) { $p.Kill(); Write-Host "A smoke instance did not finish in 5 minutes." -ForegroundColor Red; $code = 1 }
+        elseif ($null -ne $p.ExitCode -and $p.ExitCode -ne 0) { Write-Host "A smoke instance exited with code $($p.ExitCode)." -ForegroundColor Red; $code = 1 }
+    }
+    if (-not (Test-Path $hostOut) -or -not (Test-Path $joinOut)) {
+        Write-Host "A smoke instance wrote no result. See Logs/netsmoke-host.log and Logs/netsmoke-client.log." -ForegroundColor Red
+        $code = 1
+    } else {
+        $a = Get-Content $hostOut -Raw
+        $b = Get-Content $joinOut -Raw
+        Write-Host "`nHost:`n$a`nClient:`n$b"
+        if ($a -ne $b) { Write-Host "NETSMOKE FAILED: host and client disagree." -ForegroundColor Red; $code = 1 }
+        elseif ($code -eq 0) { Write-Host "NETSMOKE PASSED: host and client agree." -ForegroundColor Green }
+        else { Write-Host "NETSMOKE FAILED: an instance reported errors." -ForegroundColor Red }
+    }
+}
 exit $code

@@ -48,9 +48,19 @@ namespace DuckAndCover.Game
         void OnLog(string message, string stack, LogType type)
         {
             if (type == LogType.Log) return;
+            if (type == LogType.Exception && IsEditorSearchIndexing(stack))
+            {
+                // Unity's own Search window indexer throws once on a project with a fresh Library.
+                // It is not the game's, so list it without failing the run.
+                messages.Add("[Editor, ignored] " + message);
+                return;
+            }
             if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert) errors++;
             messages.Add("[" + type + "] " + message + (type == LogType.Exception ? "\n" + stack : ""));
         }
+
+        static bool IsEditorSearchIndexing(string stack) =>
+            stack != null && stack.Contains("UnityEditor.Search.SearchInit") && !stack.Contains("DuckAndCover");
 
         IEnumerator Start()
         {
