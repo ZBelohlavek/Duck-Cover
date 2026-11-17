@@ -1,0 +1,388 @@
+{
+    "id": "mender",
+    "displayName": "Mender",
+    "role": "support",
+    "weaponId": "mender_sidearm",
+    "maxHealth": 200,
+    "abilities": [
+        "mender_field",
+        "mender_purge"
+    ],
+    "ultimateId": "mender_aegis",
+    "passiveId": "mender_fieldkit",
+    "levels": [
+        {
+            "level": 2,
+            "options": [
+                "mender_bedside_manner",
+                "mender_nimble"
+            ]
+        },
+        {
+            "level": 3,
+            "options": [
+                "mender_wide_field",
+                "mender_lasting_field"
+            ]
+        },
+        {
+            "level": 4,
+            "options": [
+                "mender_fast_reload",
+                "mender_sturdy"
+            ]
+        },
+        {
+            "level": 5,
+            "options": [
+                "mender_long_aegis",
+                "mender_broad_aegis"
+            ]
+        },
+        {
+            "level": 6,
+            "options": [
+                "mender_efficient",
+                "mender_charged"
+            ]
+        },
+        {
+            "level": 7,
+            "options": [
+                "mender_quickening_purge",
+                "mender_deep_purge"
+            ]
+        },
+        {
+            "level": 8,
+            "options": [
+                "mender_steadfast",
+                "mender_survivor"
+            ]
+        },
+        {
+            "level": 9,
+            "options": [
+                "mender_rich_field",
+                "mender_rapid_purge"
+            ]
+        },
+        {
+            "level": 10,
+            "options": [
+                "mender_lifeline",
+                "mender_battle_medic"
+            ]
+        }
+    ],
+    "upgrades": [
+        {
+            "id": "mender_bedside_manner",
+            "displayName": "Bedside Manner",
+            "description": "Your healing is 10% stronger.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "healingDone",
+                    "op": "percent",
+                    "value": 0.1,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_nimble",
+            "displayName": "Nimble",
+            "description": "Move 6% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "moveSpeed",
+                    "op": "percent",
+                    "value": 0.06,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_wide_field",
+            "displayName": "Wide Field",
+            "description": "Mending Field reaches 1.5 m further.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "mender_field",
+                    "param": "object.radius",
+                    "op": "add",
+                    "value": 1.5,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_lasting_field",
+            "displayName": "Lasting Field",
+            "description": "Mending Field lasts 3 seconds longer.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "mender_field",
+                    "param": "object.lifetime",
+                    "op": "add",
+                    "value": 3,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_fast_reload",
+            "displayName": "Fast Reload",
+            "description": "Reload 20% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "reloadSpeed",
+                    "op": "percent",
+                    "value": 0.2,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_sturdy",
+            "displayName": "Sturdy",
+            "description": "+25 max health.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "maxHealth",
+                    "op": "add",
+                    "value": 25,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_long_aegis",
+            "displayName": "Long Aegis",
+            "description": "Aegis Pulse shields last 4 seconds longer.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "mender_aegis",
+                    "param": "effect.shield.duration",
+                    "op": "add",
+                    "value": 4,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_broad_aegis",
+            "displayName": "Broad Aegis",
+            "description": "Aegis Pulse reaches 6 m further.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "mender_aegis",
+                    "param": "radius",
+                    "op": "add",
+                    "value": 6,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_efficient",
+            "displayName": "Efficient",
+            "description": "Abilities recover 15% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "cooldownRate",
+                    "op": "percent",
+                    "value": 0.15,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_charged",
+            "displayName": "Charged",
+            "description": "Your ultimate charges 20% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "ultimateChargeRate",
+                    "op": "percent",
+                    "value": 0.2,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_quickening_purge",
+            "displayName": "Quickening Purge",
+            "description": "Purge also speeds everyone it reaches up by 25% for 3 seconds.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "mender_purge",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "purgeHaste"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_deep_purge",
+            "displayName": "Deep Purge",
+            "description": "Purge heals 40 more.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "mender_purge",
+                    "param": "effect.heal.amount",
+                    "op": "add",
+                    "value": 40,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_steadfast",
+            "displayName": "Steadfast",
+            "description": "Take 15% less damage while on a point.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "damageTaken",
+                    "op": "multiply",
+                    "value": 0.85,
+                    "when": "onPoint"
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_survivor",
+            "displayName": "Survivor",
+            "description": "Regain 8 more health a second when you haven't been hit for a while.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "healthRegen",
+                    "op": "add",
+                    "value": 8,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_rich_field",
+            "displayName": "Rich Field",
+            "description": "Mending Field heals 10 more each second.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "mender_field",
+                    "param": "object.effect.heal.amount",
+                    "op": "add",
+                    "value": 10,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_rapid_purge",
+            "displayName": "Rapid Purge",
+            "description": "Purge recovers 30% sooner.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "mender_purge",
+                    "param": "cooldown",
+                    "op": "multiply",
+                    "value": 0.7,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_lifeline",
+            "displayName": "Lifeline",
+            "description": "Your healing and shields are 20% stronger.",
+            "kind": "capstone",
+            "stats": [
+                {
+                    "stat": "healingDone",
+                    "op": "percent",
+                    "value": 0.2,
+                    "when": ""
+                },
+                {
+                    "stat": "shieldStrength",
+                    "op": "percent",
+                    "value": 0.2,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_battle_medic",
+            "displayName": "Battle Medic",
+            "description": "Your weapons deal 15% more damage and you take 10% less.",
+            "kind": "capstone",
+            "stats": [
+                {
+                    "stat": "weaponDamage",
+                    "op": "percent",
+                    "value": 0.15,
+                    "when": ""
+                },
+                {
+                    "stat": "damageTaken",
+                    "op": "multiply",
+                    "value": 0.9,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        }
+    ]
+}

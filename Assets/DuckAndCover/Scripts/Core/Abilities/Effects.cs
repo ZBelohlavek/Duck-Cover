@@ -108,7 +108,7 @@ namespace DuckAndCover.Core
             if (ctx.ability != null) ctx.ability.objects.TryGetValue(ctx.effect.objectId, out def);
             if (def == null) def = ctx.runner.Library.Object(ctx.effect.objectId);
             if (def == null) return;
-            ctx.runner.SpawnObject(def, ctx.sourceId, ctx.point, ctx.abilityId);
+            ctx.runner.SpawnObject(def, ctx.sourceId, ctx.point, ctx.abilityId, ctx.aim);
         }
     }
 

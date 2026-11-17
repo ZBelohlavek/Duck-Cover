@@ -48,6 +48,14 @@ namespace DuckAndCover.Core
             Abilities = new AbilityRunner(match, abilities ?? new AbilityLibrary(), World, events);
             Movement = new MovementRules(match, Damage, History, events, layout);
             Weapons = new WeaponRules(match, Damage, Movement, World, events, weapons ?? StarterWeapons.Library(), tickSeconds);
+            // Placed barriers and gates stop shots and rays; shots hurt placed objects.
+            World.Objects = Abilities.State.objects;
+            World.PassesObject = (shooterId, o) =>
+            {
+                var p = Match.State.Player(shooterId);
+                return p != null && p.team == o.team && !Rules.friendlyFire;
+            };
+            Weapons.DamageObject = (objectId, amount, attackerId) => Abilities.DamageObject(objectId, amount, attackerId);
             events.Subscribe(OnEvent);
         }
 

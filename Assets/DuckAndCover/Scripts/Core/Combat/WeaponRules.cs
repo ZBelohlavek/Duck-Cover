@@ -24,6 +24,11 @@ namespace DuckAndCover.Core
         int nextProjectileId = 1;
 
         public WeaponLibrary Library { get; }
+        /// <summary>
+        /// Hurts a placed object (barrier, turret, mine) a shot hit: object id, final amount, attacker.
+        /// Set by <see cref="CombatServer"/> to the ability rules; null = shots don't hurt objects.
+        /// </summary>
+        public Func<int, float, int, float> DamageObject;
         Ruleset Rules => match.Rules;
         MatchState State => match.State;
 
@@ -160,7 +165,11 @@ namespace DuckAndCover.Core
             };
             var targets = new List<int>();
             var amounts = new List<float>();
-            var passThrough = PassThrough(cmd.playerId);
+            var objects = new List<int>();
+            var objectAmounts = new List<float>();
+            // A healing weapon stops on teammates (to heal them) instead of passing through.
+            var passThrough = w.allyHeal > 0f ? null : PassThrough(cmd.playerId);
+            float scale = WeaponDamage(cmd.playerId);
             for (int i = 0; i < w.pellets; i++)
             {
                 Vec3 d = SpreadPattern.Direction(dir, i, w.pellets, w.spreadDegrees);
@@ -171,17 +180,49 @@ namespace DuckAndCover.Core
                     continue;
                 }
                 shot.ends[i] = hit.point;
+                if (hit.kind == HitKind.Device)
+                {
+                    Add(objects, objectAmounts, hit.deviceId, w.damage * scale * w.Falloff(hit.distance));
+                    continue;
+                }
                 if (hit.kind != HitKind.Player) continue;
                 shot.hitPlayers[i] = hit.playerId;
                 shot.hitParts[i] = hit.bodyPart;
-                float amount = w.damage * w.Falloff(hit.distance) * w.PartMultiplier(hit.bodyPart);
-                int k = targets.IndexOf(hit.playerId);
-                if (k < 0) { targets.Add(hit.playerId); amounts.Add(amount); }
-                else amounts[k] += amount;
+                float share = w.Falloff(hit.distance) * w.PartMultiplier(hit.bodyPart);
+                // Heal shots on teammates are kept as negative amounts until the end.
+                float amount = w.allyHeal > 0f && IsTeammate(cmd.playerId, hit.playerId) ? -w.allyHeal * share : w.damage * scale * share;
+                Add(targets, amounts, hit.playerId, amount);
             }
             Publish(shot);
-            // One damage call per target per shot, in the order the pellets reached them.
-            for (int i = 0; i < targets.Count; i++) combat.Damage(cmd.playerId, targets[i], amounts[i], w.id);
+            // One damage (or heal) call per target per shot, in the order the pellets reached them.
+            for (int i = 0; i < targets.Count; i++)
+            {
+                if (amounts[i] < 0f) combat.Heal(cmd.playerId, targets[i], -amounts[i], w.id);
+                else combat.Damage(cmd.playerId, targets[i], amounts[i], w.id);
+            }
+            HurtObjects(cmd.playerId, objects, objectAmounts);
+        }
+
+        static void Add(List<int> ids, List<float> amounts, int id, float amount)
+        {
+            int k = ids.IndexOf(id);
+            if (k < 0) { ids.Add(id); amounts.Add(amount); }
+            else amounts[k] += amount;
+        }
+
+        bool IsTeammate(int shooterId, int targetId)
+        {
+            var a = State.Player(shooterId);
+            var b = State.Player(targetId);
+            return a != null && b != null && shooterId != targetId && a.team == b.team;
+        }
+
+        /// <summary>Objects take the attacker's damageDealt too, as abilities' damage to objects does.</summary>
+        void HurtObjects(int attackerId, List<int> objects, List<float> amounts)
+        {
+            if (DamageObject == null) return;
+            float dealt = Math.Max(0f, combat.Stat(attackerId, StatIds.DamageDealt));
+            for (int i = 0; i < objects.Count; i++) DamageObject(objects[i], amounts[i] * dealt, attackerId);
         }
 
         void Launch(FireCommand cmd, WeaponDef w, WeaponState s, Vec3 dir)
@@ -223,9 +264,21 @@ namespace DuckAndCover.Core
 
         void StartReload(WeaponState s, WeaponDef w)
         {
-            s.reloadLeft = Math.Max(1e-3f, w.reloadSeconds);
-            Publish(new ReloadStartedEvent { playerId = s.playerId, weaponId = w.id, seconds = w.reloadSeconds });
+            float seconds = ReloadSeconds(s.playerId, w);
+            s.reloadLeft = Math.Max(1e-3f, seconds);
+            Publish(new ReloadStartedEvent { playerId = s.playerId, weaponId = w.id, seconds = seconds });
         }
+
+        // ---- Hero stats (traits, talents, statuses) ----
+
+        /// <summary>Seconds a reload takes for this player: the weapon's, divided by their reloadSpeed stat.</summary>
+        public float ReloadSeconds(int playerId, WeaponDef w) => w.reloadSeconds / Math.Max(0.1f, combat.Stat(playerId, StatIds.ReloadSpeed));
+
+        /// <summary>Seconds between shots for this player: the weapon's, divided by their fireRate stat.</summary>
+        public float FireInterval(int playerId, WeaponDef w) => w.fireInterval / Math.Max(0.1f, combat.Stat(playerId, StatIds.FireRate));
+
+        /// <summary>The player's weaponDamage stat (1 = the weapon's own numbers).</summary>
+        float WeaponDamage(int playerId) => Math.Max(0f, combat.Stat(playerId, StatIds.WeaponDamage));
 
         public CommandResult Switch(int playerId, int slot)
         {
@@ -275,7 +328,7 @@ namespace DuckAndCover.Core
                     s.reloadLeft -= dt;
                     if (s.reloadLeft <= 0f) { s.reloadLeft = 0f; s.ammo[s.current] = w.magazine; }
                 }
-                s.fireCredit = Math.Min(Rules.fireBurstShots, s.fireCredit + dt / w.fireInterval);
+                s.fireCredit = Math.Min(Rules.fireBurstShots, s.fireCredit + dt / FireInterval(s.playerId, w));
             }
             TickProjectiles(dt);
         }
@@ -295,12 +348,12 @@ namespace DuckAndCover.Core
                 bool done = false;
                 if (len > 1e-5f && world.RaycastFrom(p.ownerId, before, step / len, len, State.tick, out var hit, PassThrough(p.ownerId)))
                 {
-                    Explode(p, hit.point, hit.kind == HitKind.Player ? hit.playerId : -1);
+                    Explode(p, hit.point, hit.kind == HitKind.Player ? hit.playerId : -1, hit.kind == HitKind.Device ? hit.deviceId : -1);
                     done = true;
                 }
                 else if (p.age >= Rules.projectileMaxSeconds)
                 {
-                    Explode(p, after, -1);
+                    Explode(p, after, -1, -1);
                     done = true;
                 }
                 else p.position = after;
@@ -308,7 +361,7 @@ namespace DuckAndCover.Core
             }
         }
 
-        void Explode(ProjectileState p, Vec3 point, int direct)
+        void Explode(ProjectileState p, Vec3 point, int direct, int directObject)
         {
             var w = Library.Weapon(p.weaponId);
             Publish(new ProjectileExplodedEvent
@@ -317,16 +370,19 @@ namespace DuckAndCover.Core
                 splashRadius = w == null ? 0f : w.splashRadius,
             });
             if (w == null) return;
+            float scale = WeaponDamage(p.ownerId);
             var targets = new List<int>();
             var amounts = new List<float>();
-            if (direct >= 0 && w.damage > 0f) { targets.Add(direct); amounts.Add(w.damage); }
+            if (direct >= 0 && w.damage > 0f) { targets.Add(direct); amounts.Add(w.damage * scale); }
+            if (directObject >= 0)
+                HurtObjects(p.ownerId, new List<int> { directObject }, new List<float> { (w.damage + w.splashDamage) * scale });
             if (w.splashRadius > 0f && w.splashDamage > 0f)
             {
                 foreach (int id in world.PlayersInSphere(point, w.splashRadius, State.tick))
                 {
                     if (!world.History.PoseAt(id, State.tick, out var pose)) continue;
                     float dist = Vec3.Distance(Hitboxes.Chest(Rules, pose), point);
-                    float amount = w.SplashAt(dist);
+                    float amount = w.SplashAt(dist) * scale;
                     if (id == p.ownerId) amount *= Rules.selfSplashShare;
                     if (amount <= 0f) continue;
                     Vec3 toward = (Hitboxes.Chest(Rules, pose) - point).Normalized;

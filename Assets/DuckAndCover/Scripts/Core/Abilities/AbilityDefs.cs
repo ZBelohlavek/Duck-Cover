@@ -198,6 +198,19 @@ namespace DuckAndCover.Core
         public bool blocksMovement;
         /// <summary>Stops shots and rays (the Game layer gives it a collider).</summary>
         public bool blocksShots;
+        /// <summary>
+        /// Size of a solid object (a barrier or gate): a wall this wide and high, <see cref="SolidDepth"/>
+        /// thick, standing on its spot and facing the caster's aim. Shots and ability rays stop on it
+        /// when <see cref="blocksShots"/> is set. 0 = no solid shape.
+        /// </summary>
+        public float width;
+        public float height;
+
+        /// <summary>Thickness of every solid object (metres).</summary>
+        public const float SolidDepth = 0.3f;
+
+        /// <summary>Has a wall shape that blocks shots.</summary>
+        public bool IsSolid => blocksShots && width > 0f && height > 0f;
         public EffectDef[] effects = new EffectDef[0];
 
         public ObjectDef Clone()
@@ -208,7 +221,7 @@ namespace DuckAndCover.Core
         }
     }
 
-    /// <summary>A data file of ability definitions (Data/Abilities/*.json). Its root object for JsonUtility.</summary>
+    /// <summary>A data file of ability definitions (Data/Resources/Abilities/*.json). Its root object for JsonUtility.</summary>
     [Serializable]
     public class AbilityDataFile
     {

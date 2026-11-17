@@ -2,7 +2,7 @@
     "id": "test_hero",
     "displayName": "Test Hero",
     "role": "striker",
-    "weaponId": "test_rifle",
+    "weaponId": "rifle",
     "abilities": [
         "test_dash",
         "test_grenade"

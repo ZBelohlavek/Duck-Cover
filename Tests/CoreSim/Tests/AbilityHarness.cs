@@ -89,7 +89,7 @@ sealed class AbilityHarness
     public MatchState S => Match.State;
     public DamageRules Combat => Abilities.Combat;
 
-    public static string DataDir => Path.Combine(Repo.Root, "Assets", "DuckAndCover", "Data", "Abilities");
+    public static string DataDir => Path.Combine(Repo.Root, "Assets", "DuckAndCover", "Data", "Resources", "Abilities");
 
     /// <summary>Loads a data file the strict way: public fields only, and a key that is no field is an error.</summary>
     public static AbilityDataFile LoadFile(string name = "test_abilities.json") =>

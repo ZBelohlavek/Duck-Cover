@@ -138,6 +138,14 @@ namespace DuckAndCover.Core
 
         public HitHistory History { get; }
 
+        /// <summary>
+        /// Barriers and gates placed by abilities (set by <see cref="CombatServer"/>): solid ones stop
+        /// rays and block line of sight like walls, and report a Device hit with the object's id.
+        /// </summary>
+        public IReadOnlyList<ObjectState> Objects;
+        /// <summary>Whether a shooter's ray passes through an object (their own team's, with friendly fire off).</summary>
+        public Func<int, ObjectState, bool> PassesObject;
+
         /// <param name="geometry">Answers Raycast for map geometry (players are ignored) and PlayersInZone.</param>
         public CombatWorld(IWorldQuery geometry, HitHistory history, Ruleset rules)
         {
@@ -155,6 +163,13 @@ namespace DuckAndCover.Core
         {
             dir = dir.Normalized;
             bool wall = geometry.Raycast(origin, dir, max, tick, out var world) && world.kind != HitKind.Player;
+            Func<ObjectState, bool> skip = null;
+            if (PassesObject != null && shooterId >= 0) skip = o => PassesObject(shooterId, o);
+            if (SolidObjects.Raycast(Objects, origin, dir, wall ? world.distance : max, skip, out var solid))
+            {
+                world = solid;
+                wall = true;
+            }
             float limit = wall ? world.distance : max;
             if (History.Raycast(origin, dir, limit, tick, shooterId, out var body, passThrough) && (!wall || body.distance < world.distance))
             {
@@ -197,6 +212,7 @@ namespace DuckAndCover.Core
             Vec3 d = to - from;
             float len = d.Magnitude;
             if (len < 1e-4f) return true;
+            if (SolidObjects.Raycast(Objects, from, d / len, len - 1e-3f, null, out _)) return false;
             return !(geometry.Raycast(from, d / len, len, tick, out var hit) && hit.kind != HitKind.Player && hit.distance < len - 1e-3f);
         }
     }
