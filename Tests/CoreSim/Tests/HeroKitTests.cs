@@ -421,4 +421,36 @@ static class HeroKitTests
         h.Heroes.ApplyUpgrade(A1, "lancer", "lancer_hair_trigger");
         Check.Near(rifle.fireInterval / 1.1f, h.Combat.Weapons.FireInterval(A1, rifle), "fire 10% faster");
     }
+
+    // ---- Over the network ----
+
+    [Test]
+    static void ScriptedMatchWithHeroesAgreesEverywhere()
+    {
+        var h = new SessionHarness(ModeDef.CaptureAndHold(), heroes: true);
+        var scripts = new List<ScriptedPlayer>();
+        for (int i = 0; i < 10; i++)
+        {
+            var c = h.Join();
+            var s = new ScriptedPlayer(c, 10);
+            scripts.Add(s);
+            c.SnapshotReceived += s.Step;
+        }
+        h.RunTo(MatchPhase.MatchEnd, 60000);
+        h.Ticks(4);
+        var s0 = h.Match.State;
+        var used = h.Events.History.OfType<AbilityUsedEvent>().ToList();
+        Check.True(used.Select(e => e.abilityId).Distinct().Count() >= 8, "most abilities were used: " + string.Join(",", used.Select(e => e.abilityId).Distinct()));
+        Check.True(used.Any(e => e.slot == 2), "an ultimate was used (levels " + string.Join(",", s0.players.Select(p => p.level))
+            + ", charge " + string.Join(",", h.Clients[0].Snapshot.abilities.units.Select(u => (int)u.ultimateCharge)) + ", time " + (int)s0.elapsed + ")");
+        Check.True(h.Events.History.OfType<UpgradeChosenEvent>().Count() >= 20, "upgrades were chosen");
+        Check.True(h.Events.History.OfType<ObjectSpawnedEvent>().Any(), "objects were placed");
+        Check.True(s0.players.Any(p => p.level >= 5), "someone reached level 5");
+        string truth = SessionDigest.Of(s0);
+        for (int i = 0; i < h.Clients.Count; i++)
+            Check.Equal(truth, SessionDigest.Of(h.Clients[i].State), "client " + (i + 1) + " agrees with the host");
+        var snap = h.Clients[0].Snapshot;
+        Check.True(snap.progression != null && snap.progression.players.Count == 10, "levels reach the clients");
+        Check.True(snap.abilities.units.Any(u => u.changes.Count > 0), "talents reach the clients");
+    }
 }
