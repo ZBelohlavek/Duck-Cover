@@ -131,10 +131,10 @@ static class SessionTests
         c.Events.Subscribe(e => { if (e is CommandRejectedEvent r) cSaw.Add(r); });
 
         h.Send(a, new PickHeroCommand { heroId = "striker" });
-        h.Send(c, new PickHeroCommand { heroId = "striker" });
+        h.Send(c, new PickHeroCommand { heroId = "" });
         Check.Equal(1, cSaw.Count, "the refused player is told");
         Check.Equal("PickHeroCommand", cSaw[0].command, "which command");
-        Check.True(cSaw[0].reason.Contains("already picked"), "and why: " + cSaw[0].reason);
+        Check.True(cSaw[0].reason.Contains("no hero"), "and why: " + cSaw[0].reason);
         Check.Equal(0, aSaw.Count + bSaw.Count, "nobody else is");
 
         h.Send(b, new StartMatchCommand());

@@ -113,9 +113,10 @@ namespace DuckAndCover.Core
                     if (p == null || !p.connected) return CommandResult.Reject("unknown player");
                     if (State.phase != MatchPhase.Lobby && State.phase != MatchPhase.HeroPick) return CommandResult.Reject("heroes are picked before the match starts");
                     if (string.IsNullOrEmpty(pick.heroId)) return CommandResult.Reject("no hero given");
-                    foreach (var mate in State.players)
-                        if (mate != p && mate.connected && mate.team == p.team && mate.heroId == pick.heroId)
-                            return CommandResult.Reject("a teammate already picked " + pick.heroId);
+                    if (Rules.uniqueHeroesPerTeam)
+                        foreach (var mate in State.players)
+                            if (mate != p && mate.connected && mate.team == p.team && mate.heroId == pick.heroId)
+                                return CommandResult.Reject("a teammate already picked " + pick.heroId);
                     p.heroId = pick.heroId;
                     Publish(new HeroPickedEvent { playerId = p.id, team = p.team, heroId = p.heroId });
                     return CommandResult.Accepted;

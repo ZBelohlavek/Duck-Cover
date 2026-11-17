@@ -81,22 +81,36 @@ static class MatchTests
     }
 
     [Test]
-    static void HeroPickIsUniquePerTeam()
+    static void TeammatesCanPickTheSameHero()
     {
         var h = new MatchHarness(toPlay: false);
+        h.Match.StartMatch();
+        Check.True(h.Match.Apply(new PickHeroCommand { playerId = h.A[0], heroId = "vanguard" }).IsAccepted, "first pick");
+        Check.True(h.Match.Apply(new PickHeroCommand { playerId = h.A[1], heroId = "vanguard" }).IsAccepted, "a teammate can take the same hero");
+        Check.True(h.Match.Apply(new PickHeroCommand { playerId = h.B[0], heroId = "vanguard" }).IsAccepted, "so can the other team");
+        Check.True(h.Match.Apply(new PickHeroCommand { playerId = h.A[0], heroId = "striker" }).IsAccepted, "change your mind during pick");
+        Check.False(h.Match.Apply(new PickHeroCommand { playerId = h.A[2], heroId = "" }).IsAccepted, "empty pick");
+        Check.False(h.Match.Apply(new PickHeroCommand { playerId = 999, heroId = "support" }).IsAccepted, "unknown player");
+        Check.Equal(4, h.Of<HeroPickedEvent>().Count, "an event per accepted pick");
+        Check.Equal("vanguard", h.S.Player(h.A[1]).heroId, "the duplicate pick stands");
+        h.RunTo(MatchPhase.Play);
+        Check.False(h.Match.Apply(new PickHeroCommand { playerId = h.A[3], heroId = "controller" }).IsAccepted, "no picks once playing");
+        Check.Equal(CommandStatus.NotHandled, h.Match.Apply(new ChooseUpgradeCommand { playerId = h.A[0], level = 2 }).status, "upgrades belong to Progression");
+        Check.Equal(CommandStatus.NotHandled, h.Match.Apply(new FireCommand { playerId = h.A[0] }).status, "firing belongs to Combat");
+    }
+
+    [Test]
+    static void HeroPickCanBeMadeUniquePerTeam()
+    {
+        var rules = Ruleset.Default;
+        rules.uniqueHeroesPerTeam = true;
+        var h = new MatchHarness(toPlay: false, rules: rules);
         h.Match.StartMatch();
         Check.True(h.Match.Apply(new PickHeroCommand { playerId = h.A[0], heroId = "vanguard" }).IsAccepted, "first pick");
         Check.False(h.Match.Apply(new PickHeroCommand { playerId = h.A[1], heroId = "vanguard" }).IsAccepted, "teammate can't take the same hero");
         Check.True(h.Match.Apply(new PickHeroCommand { playerId = h.B[0], heroId = "vanguard" }).IsAccepted, "the other team can");
         Check.True(h.Match.Apply(new PickHeroCommand { playerId = h.A[0], heroId = "striker" }).IsAccepted, "change your mind during pick");
         Check.True(h.Match.Apply(new PickHeroCommand { playerId = h.A[1], heroId = "vanguard" }).IsAccepted, "freed hero can be taken");
-        Check.False(h.Match.Apply(new PickHeroCommand { playerId = h.A[2], heroId = "" }).IsAccepted, "empty pick");
-        Check.False(h.Match.Apply(new PickHeroCommand { playerId = 999, heroId = "support" }).IsAccepted, "unknown player");
-        Check.Equal(4, h.Of<HeroPickedEvent>().Count, "an event per accepted pick");
-        h.RunTo(MatchPhase.Play);
-        Check.False(h.Match.Apply(new PickHeroCommand { playerId = h.A[3], heroId = "controller" }).IsAccepted, "no picks once playing");
-        Check.Equal(CommandStatus.NotHandled, h.Match.Apply(new ChooseUpgradeCommand { playerId = h.A[0], level = 2 }).status, "upgrades belong to Progression");
-        Check.Equal(CommandStatus.NotHandled, h.Match.Apply(new FireCommand { playerId = h.A[0] }).status, "firing belongs to Combat");
     }
 
     [Test]
@@ -106,14 +120,14 @@ static class MatchTests
         h.Take(Mid, TeamId.A);
         int before = h.S.scoreA;
         h.Run(10f);
-        Check.Equal(before + 10, h.S.scoreA, "one point a second for one point");
+        Check.Equal(before + 8, h.S.scoreA, "0.8 points a second for one point");
         Check.Equal(0, h.S.scoreB, "B holds nothing");
 
         h.Take(NearB, TeamId.B);
         int a = h.S.scoreA, b = h.S.scoreB;
         h.Run(10f);
-        Check.Equal(a + 10, h.S.scoreA, "A still 1/s");
-        Check.Equal(b + 10, h.S.scoreB, "B now 1/s");
+        Check.Equal(a + 8, h.S.scoreA, "A still 0.8/s");
+        Check.Equal(b + 8, h.S.scoreB, "B now 0.8/s");
 
         // A takes all three: neutralise B's point, capture it, and capture A's own.
         h.Take(NearA, TeamId.A);
@@ -121,10 +135,10 @@ static class MatchTests
         h.RunUntil(() => h.Zone(NearB).owner == TeamId.A, 30f);
         h.World.ClearAll();
         Check.Equal(3, h.S.ZonesHeld(TeamId.A), "A holds all three");
-        Check.Near(6f, h.Match.Zones.ScoreRate(TeamId.A), "holding all three doubles the rate");
+        Check.Near(4.8f, h.Match.Zones.ScoreRate(TeamId.A), "holding all three doubles the rate");
         a = h.S.scoreA;
         h.Run(10f);
-        Check.Equal(a + 60, h.S.scoreA, "6 points a second");
+        Check.Equal(a + 48, h.S.scoreA, "4.8 points a second");
     }
 
     [Test]

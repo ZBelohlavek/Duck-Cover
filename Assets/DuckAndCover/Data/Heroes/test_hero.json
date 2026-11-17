@@ -1,0 +1,381 @@
+{
+    "id": "test_hero",
+    "displayName": "Test Hero",
+    "role": "striker",
+    "weaponId": "test_rifle",
+    "abilities": [
+        "test_dash",
+        "test_grenade"
+    ],
+    "ultimateId": "test_overdrive",
+    "passiveId": "test_regen",
+    "levels": [
+        {
+            "level": 2,
+            "options": [
+                "sturdy",
+                "quick_step"
+            ]
+        },
+        {
+            "level": 3,
+            "options": [
+                "cluster_grenade",
+                "short_dash"
+            ]
+        },
+        {
+            "level": 4,
+            "options": [
+                "fast_hands",
+                "point_holder"
+            ]
+        },
+        {
+            "level": 5,
+            "options": [
+                "long_overdrive",
+                "wide_overdrive"
+            ]
+        },
+        {
+            "level": 6,
+            "options": [
+                "dug_in",
+                "quick_recovery"
+            ]
+        },
+        {
+            "level": 7,
+            "options": [
+                "big_blast",
+                "double_dash"
+            ]
+        },
+        {
+            "level": 8,
+            "options": [
+                "sharpshooter",
+                "thick_plating"
+            ]
+        },
+        {
+            "level": 9,
+            "options": [
+                "hot_shrapnel",
+                "trail_dash"
+            ]
+        },
+        {
+            "level": 10,
+            "options": [
+                "power_surge",
+                "last_stand"
+            ]
+        }
+    ],
+    "upgrades": [
+        {
+            "id": "sturdy",
+            "displayName": "Sturdy",
+            "description": "+25 max health.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "maxHealth",
+                    "op": "add",
+                    "value": 25,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "quick_step",
+            "displayName": "Quick Step",
+            "description": "Move 8% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "moveSpeed",
+                    "op": "percent",
+                    "value": 0.08,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "cluster_grenade",
+            "displayName": "Cluster Grenade",
+            "description": "The grenade splits into three.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "test_grenade",
+                    "param": "count",
+                    "op": "add",
+                    "value": 2,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "short_dash",
+            "displayName": "Short Fuse Dash",
+            "description": "Dash cooldown 25% shorter.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "test_dash",
+                    "param": "cooldown",
+                    "op": "multiply",
+                    "value": 0.75,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "fast_hands",
+            "displayName": "Fast Hands",
+            "description": "Reload 15% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "reloadSpeed",
+                    "op": "percent",
+                    "value": 0.15,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "point_holder",
+            "displayName": "Point Holder",
+            "description": "Capture 20% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "captureSpeed",
+                    "op": "percent",
+                    "value": 0.2,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "long_overdrive",
+            "displayName": "Long Overdrive",
+            "description": "Overdrive lasts 3 seconds longer.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "test_overdrive",
+                    "param": "duration",
+                    "op": "add",
+                    "value": 3,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "wide_overdrive",
+            "displayName": "Wide Overdrive",
+            "description": "Overdrive reaches teammates within 8 m.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "test_overdrive",
+                    "param": "radius",
+                    "op": "set",
+                    "value": 8,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "dug_in",
+            "displayName": "Dug In",
+            "description": "Take 10% less damage on a held point.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "damageTaken",
+                    "op": "multiply",
+                    "value": 0.9,
+                    "when": "onHeldPoint"
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "quick_recovery",
+            "displayName": "Quick Recovery",
+            "description": "Cooldowns run 10% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "cooldownRate",
+                    "op": "percent",
+                    "value": 0.1,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "big_blast",
+            "displayName": "Big Blast",
+            "description": "Grenade radius +1 m.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "test_grenade",
+                    "param": "radius",
+                    "op": "add",
+                    "value": 1,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "double_dash",
+            "displayName": "Double Dash",
+            "description": "Dash holds two charges.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "test_dash",
+                    "param": "charges",
+                    "op": "add",
+                    "value": 1,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "sharpshooter",
+            "displayName": "Sharpshooter",
+            "description": "Weapon damage +5%.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "weaponDamage",
+                    "op": "percent",
+                    "value": 0.05,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "thick_plating",
+            "displayName": "Thick Plating",
+            "description": "Take 8% less damage.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "damageTaken",
+                    "op": "multiply",
+                    "value": 0.92,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "hot_shrapnel",
+            "displayName": "Hot Shrapnel",
+            "description": "Grenade damage +15%.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "test_grenade",
+                    "param": "effect.damage.amount",
+                    "op": "percent",
+                    "value": 0.15,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "trail_dash",
+            "displayName": "Mending Dash",
+            "description": "The dash leaves a healing trail.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "test_dash",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "healTrail"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "power_surge",
+            "displayName": "Power Surge",
+            "description": "Abilities reach 15% wider.",
+            "kind": "capstone",
+            "stats": [
+                {
+                    "stat": "abilityRadius",
+                    "op": "percent",
+                    "value": 0.15,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "last_stand",
+            "displayName": "Last Stand",
+            "description": "+50 max health and 10% faster below half health.",
+            "kind": "capstone",
+            "stats": [
+                {
+                    "stat": "maxHealth",
+                    "op": "add",
+                    "value": 50,
+                    "when": ""
+                },
+                {
+                    "stat": "moveSpeed",
+                    "op": "percent",
+                    "value": 0.1,
+                    "when": "lowHealth"
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        }
+    ]
+}

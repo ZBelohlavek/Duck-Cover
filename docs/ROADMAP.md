@@ -7,7 +7,7 @@ https://claude.ai/artifact/JJ4fD74nbDB3AsykT2WWen
 | Package | Kind | Depends on | Checked by | Status |
 |---|---|---|---|---|
 | WP0 Project bootstrap | Scripts | Repo | Unity compile check | Done |
-| WP1 Match and zone rules | Scripts, Core only | Contracts | dotnet tests | In review |
+| WP1 Match and zone rules | Scripts, Core only | Contracts | dotnet tests | Done |
 | WP2 Destruction and breach rules | Scripts, Core only | Contracts | dotnet tests, balance simulation | Ready |
 | WP3 Network foundation | Scripts | WP0, WP1 | Two-instance smoke test | In review (smoke test passed in Unity) |
 | WP4 Player and weapons | Scripts | WP0, WP3 (and WP7's health rules) | dotnet tests, smoke test, screenshots | In review (cloud checks pass; real Unity check and capture not run yet) |

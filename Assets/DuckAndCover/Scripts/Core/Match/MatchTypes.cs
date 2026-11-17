@@ -7,7 +7,7 @@ namespace DuckAndCover.Core
     {
         /// <summary>Before StartMatch: players join and pick teams.</summary>
         Lobby = 0,
-        /// <summary>Each player picks a hero, one of each per team.</summary>
+        /// <summary>Each player picks a hero. Teammates may pick the same one unless the ruleset says otherwise.</summary>
         HeroPick = 1,
         /// <summary>Teams wait in their spawn rooms; the points are locked.</summary>
         Deploy = 2,
