@@ -49,7 +49,16 @@ namespace DuckAndCover.Game
             go.transform.localPosition = position;
             go.transform.localScale = size;
             var renderer = go.GetComponent<Renderer>();
-            if (renderer != null) renderer.material.color = color;
+            if (renderer != null)
+            {
+                // Each block gets its own copy of the default material, so one colour can't leak to the
+                // others. URP's Lit shader keeps its colour in _BaseColor; the built-in one uses _Color.
+                var material = new Material(renderer.sharedMaterial);
+                material.name = name;
+                if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", color);
+                if (material.HasProperty("_Color")) material.SetColor("_Color", color);
+                renderer.sharedMaterial = material;
+            }
             return go;
         }
     }
