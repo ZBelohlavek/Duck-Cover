@@ -209,6 +209,28 @@ static class HeroKitTests
     }
 
     [Test]
+    static void TheServerLetsADashThrough()
+    {
+        var h = With(A1, "bulwark");
+        h.Place(A1, 0f, 0f);
+        h.Run(1f); // a full movement allowance
+        var m = h.M(A1);
+        Check.True(h.Use(A1, 1, Ahead).IsAccepted, "rush");
+        // The client plays the 7 m charge out over 0.35 s, one move a tick.
+        for (int i = 1; i <= 7; i++)
+        {
+            var to = new Vec3(0f, 0f, i * 1f);
+            var r = h.Combat.Apply(new MoveCommand { playerId = A1, position = to, yaw = 0f, placement = m.placement });
+            Check.True(r.IsAccepted, "dash step " + i + " accepted");
+            h.Tick();
+        }
+        Check.Near(7f, h.M(A1).position.z, "arrived");
+        h.Run(3f);
+        var jump = h.Combat.Apply(new MoveCommand { playerId = A1, position = new Vec3(0f, 0f, 7f + 9f), yaw = 0f, placement = m.placement });
+        Check.False(jump.IsAccepted, "the dash's extra metres don't last");
+    }
+
+    [Test]
     static void HoldTheLineLocksDownTheArea()
     {
         var h = With(A1, "bulwark", B1, "lancer");

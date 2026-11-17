@@ -33,6 +33,8 @@ namespace DuckAndCover.Game
         public ScriptedWorld World { get; private set; }
         /// <summary>Movement, weapons and health on the server; on the host only, once the session is up.</summary>
         public CombatServer Combat { get; private set; }
+        /// <summary>Hero kits, leveling and upgrades on the server (WP11); on the host only, once the session is up.</summary>
+        public HeroServer Heroes { get; private set; }
         /// <summary>
         /// The numbers this machine moves and draws by. Clients aren't sent the host's ruleset yet, so
         /// everyone uses the defaults; a host with changed movement numbers would correct its guests.
@@ -92,6 +94,8 @@ namespace DuckAndCover.Game
         {
             if (Session != null) Session.Shutdown();
             Session = null;
+            if (Heroes != null) Heroes.Dispose();
+            Heroes = null;
             if (Combat != null) Combat.Dispose();
             Combat = null;
             Match = null;
@@ -111,11 +115,13 @@ namespace DuckAndCover.Game
             // A relay host's SessionHost appears a moment after Host() returns.
             if (Match != null && !attached && Session.Host != null)
             {
-                if (scriptedHost) Combat = ScriptedPlay.Attach(Session.Host, World, hostEvents);
+                if (scriptedHost) Combat = ScriptedPlay.Attach(Session.Host, World, hostEvents, HeroData.Catalog, HeroData.Abilities);
                 else
                 {
-                    Combat = new CombatServer(Match, hostWorld, hostEvents, Settings.TickSeconds, ArenaLayout.Placeholder(), Weapons);
+                    Combat = new CombatServer(Match, hostWorld, hostEvents, Settings.TickSeconds, ArenaLayout.Placeholder(), Weapons, HeroData.Abilities);
                     Combat.Attach(Session.Host);
+                    Heroes = new HeroServer(Combat, HeroData.Catalog, hostWorld, hostEvents);
+                    Heroes.Attach(Session.Host);
                 }
                 attached = true;
             }

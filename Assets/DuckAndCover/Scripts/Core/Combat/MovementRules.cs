@@ -198,7 +198,11 @@ namespace DuckAndCover.Core
                 if (alive && CanMove(m.playerId))
                 {
                     var a = AllowanceOf(m.playerId);
-                    a.metres = Math.Min(MaxAllowance(m.playerId), a.metres + TopSpeed(m.playerId) * Rules.moveTolerance * dt);
+                    float cap = MaxAllowance(m.playerId);
+                    // Running refills up to the cap. Metres a push gave above it (a dash) are kept while
+                    // the dash plays out, then fade at the cap's size a second, so they can't be saved up.
+                    if (a.metres <= cap) a.metres = Math.Min(cap, a.metres + TopSpeed(m.playerId) * Rules.moveTolerance * dt);
+                    else a.metres = Math.Max(cap, a.metres - cap * dt);
                 }
                 history.Record(m.playerId, State.tick, m.Pose(alive));
             }

@@ -91,6 +91,18 @@ namespace UnityEngine
     public sealed class Resources
     {
         public static T GetBuiltinResource<T>(string path) where T : Object => null;
+        public static T[] LoadAll<T>(string path) where T : Object => null;
+    }
+
+    public class TextAsset : Object
+    {
+        public string text => null;
+    }
+
+    public static class JsonUtility
+    {
+        public static T FromJson<T>(string json) => default;
+        public static string ToJson(object obj) => null;
     }
 
     public sealed class Font : Object { }
@@ -361,6 +373,7 @@ namespace UnityEngine
     public struct Mathf
     {
         public static int CeilToInt(float f) => (int)Math.Ceiling(f);
+        public static int FloorToInt(float f) => (int)Math.Floor(f);
         public static int RoundToInt(float f) => (int)Math.Round(f);
         public static float Clamp01(float value) => value < 0f ? 0f : value > 1f ? 1f : value;
         public const float Rad2Deg = 57.29578f;
@@ -618,6 +631,11 @@ namespace UnityEngine.InputSystem
         public Controls.KeyControl digit1Key => null;
         public Controls.KeyControl digit2Key => null;
         public Controls.KeyControl digit3Key => null;
+        public Controls.KeyControl eKey => null;
+        public Controls.KeyControl fKey => null;
+        public Controls.KeyControl xKey => null;
+        public Controls.KeyControl zKey => null;
+        public Controls.KeyControl vKey => null;
     }
 
     public class Pointer : InputDevice

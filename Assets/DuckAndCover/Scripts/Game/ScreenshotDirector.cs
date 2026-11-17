@@ -41,7 +41,73 @@ namespace DuckAndCover.Game
             new Shot("03-dummies", () => Stand(new Vec3(0f, 0f, 1.5f)), 1.2f),
             new Shot("04-after-shots", () => Shoot(12), 1.6f),
             new Shot("05-bodies", () => WatchFrom(new Vector3(1.5f, 2.2f, 1.5f), new Vector3(1.5f, 1f, 8f)), 0.5f),
+            // Hero kits (WP11): the dummies are given heroes and use their abilities toward the player.
+            new Shot("06-abilities", DummiesUseAbilities, 1.6f),
+            new Shot("07-gate", DummyRaisesGate, 1.0f),
+            new Shot("08-hero-hud", LevelUpAndLook, 1.2f),
         };
+
+        static readonly string[] DummyHeroes = { "bulwark", "rigger", "mender" };
+
+        /// <summary>Give each practice dummy a hero (server side) and have it use an ability toward the player.</summary>
+        static void DummiesUseAbilities()
+        {
+            var runner = SessionRunner.Instance;
+            if (runner == null || runner.Heroes == null || runner.Client == null) { Debug.LogError("Duck and Cover: the capture has no hero server."); return; }
+            int me = runner.Client.PlayerId;
+            int used = 0;
+            for (int i = 0; i < DummyHeroes.Length; i++)
+            {
+                int dummy = CombatServer.FirstDummyId + i;
+                if (!runner.Heroes.GiveKit(dummy, DummyHeroes[i]).IsAccepted) continue;
+                // Bulwark: a panel toward the player. Rigger: a mine and a sentry on the floor ahead. Mender: a field near its feet.
+                if (DummyCast(runner, dummy, 0, me, i == 0 ? 0f : i == 1 ? -0.3f : -0.6f)) used++;
+                if (i == 1 && DummyCast(runner, dummy, 1, me, -0.5f)) used++;
+            }
+            // The player's Lancer marks the first dummy (the camera already faces it).
+            var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
+            if (local != null) local.UseAbility(1, "lancer_mark");
+            if (used < 4) Debug.LogError("Duck and Cover: the capture's dummies used " + used + " abilities, expected 4.");
+            WatchFrom(new Vector3(-6f, 6f, -3f), new Vector3(1f, 0f, 6f));
+        }
+
+        static void DummyRaisesGate()
+        {
+            var runner = SessionRunner.Instance;
+            if (runner == null || runner.Heroes == null) return;
+            int rigger = CombatServer.FirstDummyId + 1;
+            while (runner.Heroes.Progression.Level(rigger) < 5 && runner.Heroes.Progression.Grant(rigger, 500f, ExperienceSource.Match) > 0f) { }
+            var unit = runner.Combat.Abilities.Unit(rigger);
+            if (unit != null) unit.ultimateCharge = runner.Match.Rules.ultimateChargeMax;
+            if (!DummyCast(runner, rigger, 2, runner.Client.PlayerId, 0f)) Debug.LogError("Duck and Cover: the capture's Rigger could not raise its gate.");
+        }
+
+        /// <summary>Back to the player's eyes, a few levels up, so the ability bar and the upgrade on offer show.</summary>
+        static void LevelUpAndLook()
+        {
+            var runner = SessionRunner.Instance;
+            var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
+            if (runner == null || runner.Heroes == null || local == null) return;
+            runner.Heroes.Progression.Grant(runner.Client.PlayerId, 1000f, ExperienceSource.Match);
+            local.freeCamera = false;
+        }
+
+        /// <summary>A dummy uses an ability (server side, as a client's command would), aimed at a player's chest, dipped by <paramref name="dip"/>.</summary>
+        static bool DummyCast(SessionRunner runner, int dummy, int slot, int targetId, float dip)
+        {
+            var rules = runner.Match.Rules;
+            var from = runner.Combat.Movement.Motion(dummy);
+            var to = runner.Combat.Movement.Motion(targetId);
+            if (from == null || to == null) return false;
+            Vec3 eye = from.position + Vec3.Up * rules.eyeHeight;
+            Vec3 dir = (Hitboxes.Chest(rules, to.Pose(true)) - eye).Normalized + Vec3.Up * dip;
+            var result = runner.Combat.Apply(new UseAbilityCommand
+            {
+                playerId = dummy, slot = slot, abilityId = "", aimOrigin = eye, aimDirection = dir.Normalized, tick = runner.Match.State.tick,
+            });
+            if (!result.IsAccepted) Debug.LogWarning("Duck and Cover: capture dummy " + dummy + " slot " + slot + " refused: " + result.reason);
+            return result.IsAccepted;
+        }
 
         static void StartPracticeMatch()
         {
@@ -56,7 +122,7 @@ namespace DuckAndCover.Game
             session.Client.Welcomed += welcome =>
             {
                 for (int i = 0; i < 3; i++) session.Client.Send(new AddDummyCommand { team = TeamId.B });
-                session.Client.Send(new PickHeroCommand { heroId = "striker" });
+                session.Client.Send(new PickHeroCommand { heroId = "lancer" });
                 session.Client.Send(new StartMatchCommand());
             };
         }

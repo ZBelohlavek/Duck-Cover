@@ -8,8 +8,10 @@ namespace DuckAndCover.UI
 {
     /// <summary>
     /// The fighting HUD: crosshair and hit marker, health and shield, the weapon and its ammo, the
-    /// respawn countdown, and who took whom down. It reads the latest state and the local player;
-    /// it decides nothing. Score, zones and the level-up prompt come with later packages (WP6, WP12).
+    /// hero's abilities with their cooldowns, level and experience, the upgrade on offer, the respawn
+    /// countdown, and who took whom down. It reads the latest state and the local player; it decides
+    /// nothing. Score and zones come with WP6; the ability and upgrade panels here are plain text
+    /// stand-ins until the hero UI (WP12).
     /// </summary>
     public class Hud : MonoBehaviour
     {
@@ -22,7 +24,10 @@ namespace DuckAndCover.UI
         Canvas canvas;
         GameObject fight;
         RectTransform healthFill, shieldFill;
-        Text healthText, weaponText, ammoText, stanceText, centerText, feedText;
+        Text healthText, weaponText, ammoText, stanceText, centerText, feedText, levelText, choiceText;
+        readonly List<Text> abilityTexts = new List<Text>();
+        GameObject choicePanel;
+        static readonly string[] AbilityKeys = { "E", "F", "X" };
         GameObject hitMarker;
         readonly List<Image> hitTicks = new List<Image>();
         readonly List<KeyValuePair<float, string>> feed = new List<KeyValuePair<float, string>>();
@@ -76,6 +81,21 @@ namespace DuckAndCover.UI
             UIKit.Box(f, "WeaponBack", br, new Vector2(-40f, 40f), new Vector2(300f, 110f), UITheme.Panel);
             ammoText = UIKit.Label(f, "Ammo", br, new Vector2(-60f, 78f), new Vector2(260f, 60f), "", 44, UITheme.Text, TextAnchor.MiddleRight);
             weaponText = UIKit.Label(f, "Weapon", br, new Vector2(-60f, 48f), new Vector2(260f, 30f), "", 22, UITheme.TextDim, TextAnchor.MiddleRight);
+
+            // Bottom middle: the hero's abilities (E, F, X for the ultimate), level above them.
+            var bm = new Vector2(0.5f, 0f);
+            for (int i = 0; i < 3; i++)
+            {
+                float x = (i - 1) * 230f;
+                UIKit.Box(f, "AbilityBack" + i, bm, new Vector2(x, 40f), new Vector2(220f, 76f), UITheme.Panel);
+                abilityTexts.Add(UIKit.Label(f, "Ability" + i, bm, new Vector2(x, 42f), new Vector2(204f, 72f), "", 20, UITheme.Text, TextAnchor.MiddleCenter));
+            }
+            levelText = UIKit.Label(f, "Level", bm, new Vector2(0f, 124f), new Vector2(680f, 30f), "", 22, UITheme.TextDim, TextAnchor.MiddleCenter);
+
+            // Right middle: the upgrade on offer, when there is one.
+            var rm = new Vector2(1f, 0.5f);
+            choicePanel = UIKit.Box(f, "ChoiceBack", rm, new Vector2(-40f, 0f), new Vector2(520f, 230f), UITheme.Panel).gameObject;
+            choiceText = UIKit.Label(choicePanel.transform, "Choice", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(490f, 210f), "", 20, UITheme.Text, TextAnchor.MiddleLeft);
 
             // Messages in the middle, and the feed top right. These show outside the fight too.
             centerText = UIKit.Label(root, "Center", new Vector2(0.5f, 0.5f), new Vector2(0f, 160f), new Vector2(1200f, 80f), "", 40, UITheme.Text, TextAnchor.MiddleCenter);
@@ -139,6 +159,9 @@ namespace DuckAndCover.UI
             ammoText.color = local.Reloading ? UITheme.Warning : local.Ammo == 0 ? UITheme.Danger : UITheme.Text;
             stanceText.text = local.Vaulting ? "Vaulting" : local.Crouched ? "Crouched" : local.Sprinting ? "Sprinting" : "";
 
+            ShowAbilities(snapshot, me, unit);
+            ShowChoice(snapshot, me, local);
+
             bool hit = Time.time - local.LastHitAt < HitMarkerSeconds;
             if (hitMarker.activeSelf != hit) hitMarker.SetActive(hit);
             if (hit)
@@ -146,6 +169,69 @@ namespace DuckAndCover.UI
                 Color c = local.LastHitEliminated ? UITheme.Danger : local.LastHitWasHead ? UITheme.Warning : UITheme.Text;
                 foreach (var tick in hitTicks) tick.color = c;
             }
+        }
+
+        void ShowAbilities(MatchSnapshot snapshot, PlayerState me, HeroUnit unit)
+        {
+            var lib = HeroData.Abilities;
+            var rules = SessionRunner.Instance.ClientRules;
+            for (int i = 0; i < abilityTexts.Count; i++)
+            {
+                var label = abilityTexts[i];
+                var slot = unit != null && i < unit.slots.Count ? unit.slots[i] : null;
+                var baseDef = slot == null ? null : lib.Ability(slot.abilityId);
+                if (baseDef == null) { label.text = ""; continue; }
+                var def = AbilityParams.Resolve(baseDef, unit.changes, lib, rules.minCooldownSeconds).def;
+                string key = def.ultimate ? AbilityKeys[2] : i < 2 ? AbilityKeys[i] : "";
+                string status;
+                Color color = UITheme.Text;
+                if (def.ultimate)
+                {
+                    int need = Mathf.Max(def.unlockLevel, rules.ultimateUnlockLevel);
+                    if (me.level < need) { status = "Unlocks at level " + need; color = UITheme.TextDim; }
+                    else if (unit.ultimateCharge >= def.ultimateCost - 0.01f) { status = "Ready"; color = UITheme.Warning; }
+                    else { status = Mathf.FloorToInt(100f * unit.ultimateCharge / Mathf.Max(1f, def.ultimateCost)) + "%"; color = UITheme.TextDim; }
+                }
+                else if (slot.casting) status = "Casting";
+                else if (slot.charges > 0) status = def.charges > 1 ? "Ready (" + slot.charges + ")" : "Ready";
+                else
+                {
+                    float rate = Mathf.Max(0.01f, unit.stats.Get(StatIds.CooldownRate));
+                    status = (slot.rechargeLeft / rate).ToString("0.0") + " s";
+                    color = UITheme.TextDim;
+                }
+                label.text = "[" + key + "] " + def.displayName + "\n" + status;
+                label.color = color;
+            }
+
+            var hero = HeroData.Catalog.Resolve(me.heroId);
+            var prog = snapshot.progression == null ? null : snapshot.progression.Player(me.id);
+            levelText.text = (hero == null ? "" : hero.displayName + "   ") + "Level " + me.level + (prog == null ? "" : "   " + Mathf.FloorToInt(prog.xp) + " xp");
+        }
+
+        void ShowChoice(MatchSnapshot snapshot, PlayerState me, LocalPlayer local)
+        {
+            int level = LocalPlayer.PendingLevel(snapshot, me.id);
+            var hero = level > 0 ? HeroData.Catalog.Resolve(me.heroId) : null;
+            var offer = hero == null ? null : hero.Level(level);
+            bool show = offer != null && offer.options != null && offer.options.Length >= 2;
+            if (choicePanel.activeSelf != show) choicePanel.SetActive(show);
+            if (!show) return;
+            var left = hero.Upgrade(offer.options[0]);
+            var right = hero.Upgrade(offer.options[1]);
+            string kind = left == null ? "upgrade" : left.kind;
+            var text = new System.Text.StringBuilder();
+            text.Append("Level ").Append(level).Append(": choose a ").Append(kind).Append("\n\n");
+            text.Append(Option("Hold Z", left, local.ChoiceHeld == 0 ? local.ChoiceProgress : 0f)).Append("\n\n");
+            text.Append(Option("Hold V", right, local.ChoiceHeld == 1 ? local.ChoiceProgress : 0f));
+            choiceText.text = text.ToString();
+        }
+
+        static string Option(string key, UpgradeDef u, float progress)
+        {
+            if (u == null) return key + ": ?";
+            string bar = progress > 0f ? "  " + new string('|', Mathf.CeilToInt(progress * 10f)) : "";
+            return key + ": " + u.displayName + bar + "\n   " + u.description;
         }
 
         string CenterMessage(MatchSnapshot snapshot, PlayerState me)
