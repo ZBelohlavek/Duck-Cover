@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Runs the engine-free game rules (Assets/DuckAndCover/Scripts/Core) outside Unity.
+       Usage, from the repo root: dotnet run, with project Tests/CoreSim (see Program.cs) -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- Unity compiles C# 9: keep the rules to what Unity can build. -->
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Assets/DuckAndCover/Scripts/Core/**/*.cs" />
+  </ItemGroup>
+</Project>

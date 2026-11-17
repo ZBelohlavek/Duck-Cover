@@ -1,0 +1,55 @@
+# Unity generated
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+sysinfo.txt
+*.apk
+*.aab
+crashlytics-build.properties
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.slnx
+*.user
+*.userprefs
+*.suo
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Test harness build output (the csproj files under Tests/ are tracked)
+!/Tests/**/*.csproj
+/Tests/**/bin/
+/Tests/**/obj/
+
+.DS_Store
+Thumbs.db
+
+# Output of Tools/unity capture
+/Screenshots/
+
+# Paid asset packs are kept as .unitypackage files in AssetPackages/ (Git LFS) and imported into
+# Assets/ThirdParty/ on each machine. Never commit the imported files.
+*.unitypackage
+!/AssetPackages/**/*.unitypackage
+/Assets/Synty/
+/Assets/Synty.meta
+/Assets/ThirdParty/
+/Assets/ThirdParty.meta

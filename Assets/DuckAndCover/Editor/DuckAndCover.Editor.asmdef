@@ -1,0 +1,21 @@
+{
+    "name": "DuckAndCover.Editor",
+    "rootNamespace": "DuckAndCover.EditorTools",
+    "references": [
+        "DuckAndCover.Core",
+        "DuckAndCover.Net",
+        "DuckAndCover.Game",
+        "DuckAndCover.UI"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
