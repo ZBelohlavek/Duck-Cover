@@ -4,7 +4,8 @@ namespace DuckAndCover.Core
 {
     /// <summary>
     /// Core -> world. Core never touches physics; it asks through this. Implemented in Unity by the
-    /// Game layer (WP4 Raycast, WP5 CellAt, WP6 InSite) and by fakes in Tests/CoreSim.
+    /// Game layer (WP4 Raycast, WP6 PlayersInZone, WP7 PlayersInSphere, WP5 CellAt) and by fakes in
+    /// Tests/CoreSim.
     /// </summary>
     public interface IWorldQuery
     {
@@ -14,10 +15,22 @@ namespace DuckAndCover.Core
         /// </summary>
         bool Raycast(Vec3 origin, Vec3 dir, float max, int tick, out HitInfo hit);
 
-        /// <summary>True if the player is standing inside the given charge site.</summary>
-        bool InSite(int playerId, SiteId site);
+        /// <summary>
+        /// Every player whose body is inside the zone's volume right now, alive or not, in any order.
+        /// The rules filter out eliminated and disconnected players themselves. Never null.
+        /// </summary>
+        int[] PlayersInZone(ZoneId zone);
 
-        /// <summary>The breakable cell at a world point, or <see cref="SurfaceCell.None"/>.</summary>
+        /// <summary>
+        /// Players within <paramref name="radius"/> metres of <paramref name="center"/> as they were at
+        /// <paramref name="tick"/> (area abilities, WP7). Never null.
+        /// </summary>
+        int[] PlayersInSphere(Vec3 center, float radius, int tick);
+
+        /// <summary>
+        /// The breakable cell at a world point, or <see cref="SurfaceCell.None"/>. Breakable cover is a
+        /// later package; until then implementations return None.
+        /// </summary>
         SurfaceCell CellAt(Vec3 point);
     }
 

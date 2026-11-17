@@ -16,9 +16,9 @@ and fix what you find before reporting back.
 ```
 Assets/DuckAndCover/
   Scripts/Core/   Game rules in plain C# (asmdef DuckAndCover.Core, noEngineReferences). Runs in Tests/CoreSim.
-          Common/     Vec3, TeamId, Side, SiteId
+          Common/     Vec3, TeamId, ZoneId
           Contracts/  IWorldQuery, INetBridge, MatchCommand, IAbility, ISupportAction, IGameEvents
-          <Module>/   Match, Ruleset, Destruction, Breach, Objective, Combat, Backline, Abilities (one folder each)
+          <Module>/   Match, Ruleset, Zones, Spawn, Events (WP1); Progression, Heroes, Abilities, Stats, Combat (one folder each)
   Scripts/Net/    The only code that touches Netcode for GameObjects (asmdef DuckAndCover.Net)
   Scripts/Game/   Player, weapons, surfaces, devices, objective, map components; GameBootstrap,
                   ScreenshotDirector, CaptureRequest (asmdef DuckAndCover.Game)

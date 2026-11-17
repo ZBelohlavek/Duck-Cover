@@ -2,10 +2,7 @@ using System;
 
 namespace DuckAndCover.Core
 {
-    /// <summary>
-    /// One of the two teams in a match. Teams keep their id for the whole match; which side they
-    /// play (attack or defense) changes between rounds, so never use TeamId to mean a side.
-    /// </summary>
+    /// <summary>One of the two teams in a match. Teams keep their id for the whole match.</summary>
     public enum TeamId
     {
         None = -1,
@@ -13,40 +10,31 @@ namespace DuckAndCover.Core
         B = 1,
     }
 
-    /// <summary>The role a team plays in the current round.</summary>
-    public enum Side
-    {
-        Attack = 0,
-        Defense = 1,
-    }
-
     public static class TeamIdExtensions
     {
         public static TeamId Other(this TeamId team) =>
             team == TeamId.A ? TeamId.B : team == TeamId.B ? TeamId.A : TeamId.None;
-
-        public static Side Other(this Side side) => side == Side.Attack ? Side.Defense : Side.Attack;
     }
 
     /// <summary>
-    /// A charge site on the map. Ids come from the map definition; the Objective module decides how
-    /// sites are grouped into the pairs defenders vote on. Default (0) is reserved for "no site".
+    /// A control point (or a king-of-the-hill spot) on the map. Ids come from the map definition.
+    /// Default (0) is reserved for "no zone".
     /// </summary>
     [Serializable]
-    public struct SiteId : IEquatable<SiteId>
+    public struct ZoneId : IEquatable<ZoneId>
     {
         public int value;
 
-        public SiteId(int value) { this.value = value; }
+        public ZoneId(int value) { this.value = value; }
 
-        public static readonly SiteId None = new SiteId(0);
+        public static readonly ZoneId None = new ZoneId(0);
         public bool IsValid => value != 0;
 
-        public static bool operator ==(SiteId a, SiteId b) => a.value == b.value;
-        public static bool operator !=(SiteId a, SiteId b) => a.value != b.value;
-        public bool Equals(SiteId o) => value == o.value;
-        public override bool Equals(object obj) => obj is SiteId s && Equals(s);
+        public static bool operator ==(ZoneId a, ZoneId b) => a.value == b.value;
+        public static bool operator !=(ZoneId a, ZoneId b) => a.value != b.value;
+        public bool Equals(ZoneId o) => value == o.value;
+        public override bool Equals(object obj) => obj is ZoneId s && Equals(s);
         public override int GetHashCode() => value;
-        public override string ToString() => IsValid ? "Site" + value : "NoSite";
+        public override string ToString() => IsValid ? "Zone" + value : "NoZone";
     }
 }
