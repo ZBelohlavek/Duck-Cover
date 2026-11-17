@@ -34,6 +34,8 @@ namespace DuckAndCover.Core
         readonly IServerTransport transport;
         readonly List<Peer> peers = new List<Peer>();
         readonly List<Func<MatchCommand, CommandResult>> handlers = new List<Func<MatchCommand, CommandResult>>();
+        readonly List<Action<float>> tickHandlers = new List<Action<float>>();
+        readonly List<Action<MatchSnapshot>> snapshotFillers = new List<Action<MatchSnapshot>>();
         int nextPlayerId = 1;
         float accumulator;
 
@@ -62,6 +64,21 @@ namespace DuckAndCover.Core
         public void AddCommandHandler(Func<MatchCommand, CommandResult> handler)
         {
             if (handler != null) handlers.Add(handler);
+        }
+
+        /// <summary>
+        /// Other server systems that move on with the match (abilities, weapons): called every tick
+        /// right after MatchRules.Tick, with the same dt, before any state goes out.
+        /// </summary>
+        public void AddTickHandler(Action<float> handler)
+        {
+            if (handler != null) tickHandlers.Add(handler);
+        }
+
+        /// <summary>Other server systems that add their state to every snapshot (health, positions, ammo).</summary>
+        public void AddSnapshotFiller(Action<MatchSnapshot> filler)
+        {
+            if (filler != null) snapshotFillers.Add(filler);
         }
 
         public int HostPlayerId
@@ -269,6 +286,7 @@ namespace DuckAndCover.Core
         public void Tick()
         {
             Match.Tick(Settings.TickSeconds);
+            foreach (var h in tickHandlers) h(Settings.TickSeconds);
             if (Match.State.tick % Math.Max(1, Settings.snapshotEveryTicks) == 0) BroadcastSnapshot();
         }
 
@@ -277,6 +295,7 @@ namespace DuckAndCover.Core
         public MatchSnapshot MakeSnapshot()
         {
             var s = Match.TakeSnapshot();
+            foreach (var f in snapshotFillers) f(s);
             foreach (var p in peers)
             {
                 if (p.playerId <= 0) continue;

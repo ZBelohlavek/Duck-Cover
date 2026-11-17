@@ -52,10 +52,16 @@ namespace DuckAndCover.Core
 
     public static class ScriptedPlay
     {
-        /// <summary>Let a host accept the scripted commands, moving players in <paramref name="world"/>.</summary>
-        public static void Attach(SessionHost host, ScriptedWorld world, IGameEvents events)
+        /// <summary>
+        /// Let a host accept the scripted commands, moving players in <paramref name="world"/>, and
+        /// give it the combat rules (WP4) with that world as a map with no walls, so scripted players
+        /// fight with real shots. Returns the combat rules.
+        /// </summary>
+        public static CombatServer Attach(SessionHost host, ScriptedWorld world, IGameEvents events)
         {
             var match = host.Match;
+            var combat = new CombatServer(match, world, events, host.Settings.TickSeconds);
+            combat.Attach(host);
             host.AddCommandHandler(cmd =>
             {
                 var state = match.State;
@@ -83,6 +89,7 @@ namespace DuckAndCover.Core
                 if (e is PlayerEliminatedEvent down) world.Clear(down.playerId);
                 else if (e is PlayerLeftEvent left) world.Clear(left.playerId);
             });
+            return combat;
         }
 
         /// <summary>A stand-in objective layout until the first map (WP9): three points and four hills.</summary>
@@ -118,7 +125,8 @@ namespace DuckAndCover.Core
 
     /// <summary>
     /// Plays one client by script: picks a hero, starts the match if it is the host's player, then
-    /// walks between the live zones and takes an enemy down now and then. What it does depends only
+    /// walks between the live zones and now and then shoots an enemy down with real shots from its
+    /// spawn spot (WP4: moves, weapon switches, fire commands and lag-compensated hits all run). What it does depends only
     /// on its player id and the state it was sent, so a run can be repeated. Team A pushes harder
     /// than team B, so matches end with a clear result.
     /// </summary>
@@ -134,9 +142,12 @@ namespace DuckAndCover.Core
         int heroAttempt;
         bool startSent;
         int lastPlan = -1;
-        int lastFightPlan = -1;
         ZoneId standing;
         bool wasAlive;
+        int stepPlacement = -1;
+        int firesSent;
+        readonly WeaponLibrary weapons = StarterWeapons.Library();
+        readonly Ruleset rules = Ruleset.Default;
 
         public int CommandsSent { get; private set; }
         public int Rejections { get; private set; }
@@ -158,6 +169,7 @@ namespace DuckAndCover.Core
             LastRejection = r.command + ": " + r.reason;
             if (r.command == nameof(PickHeroCommand)) heroAttempt++;      // taken by a teammate: try the next
             if (r.command == nameof(StartMatchCommand)) startSent = false; // not enough players yet
+            if (r.command == nameof(FireCommand)) firesSent--;             // that shot never counted
         }
 
         /// <summary>Look at the latest state and send whatever the script calls for. Call after each snapshot.</summary>
@@ -203,6 +215,8 @@ namespace DuckAndCover.Core
                 wasAlive = false;
                 return;
             }
+            // The server refills and resets weapons on respawn; start counting shots again from its number.
+            if (!wasAlive && client.Snapshot != null && client.Snapshot.Weapons(client.PlayerId) is WeaponState mine) firesSent = mine.shotsFired;
             int plan = (int)(state.elapsed / PlanSeconds);
             if (!wasAlive)
             {
@@ -221,13 +235,55 @@ namespace DuckAndCover.Core
                     Send(new ScriptedStandCommand { zone = target });
                 }
             }
-            // Now and then, one player takes an enemy down, so respawns run too.
-            if (plan != lastFightPlan && plan % 3 == 2 && (plan / 3 + me.id) % 4 == 0)
+            StepAside();
+            // Now and then, one player shoots an enemy down, so damage, shields and respawns run too.
+            if (plan % 3 == 2 && (plan / 3 + me.id) % 4 == 0)
             {
-                lastFightPlan = plan;
                 int enemy = FirstLivingEnemy(state, me);
-                if (enemy > 0) Send(new ScriptedEliminateCommand { targetPlayerId = enemy });
+                if (enemy > 0) ShootAt(enemy);
             }
+        }
+
+        /// <summary>After each placement, take one small step, so moves go through the server's checks.</summary>
+        void StepAside()
+        {
+            var snap = client.Snapshot;
+            var m = snap == null ? null : snap.Motion(client.PlayerId);
+            if (m == null || m.placement == stepPlacement) return;
+            stepPlacement = m.placement;
+            Send(new MoveCommand { position = m.position + new Vec3(0.5f, 0f, 0f), yaw = m.yaw, placement = m.placement });
+        }
+
+        /// <summary>One shot at the enemy's chest, with a weapon that reaches, once the server has every earlier shot.</summary>
+        void ShootAt(int enemyId)
+        {
+            var snap = client.Snapshot;
+            var me = snap == null ? null : snap.Motion(client.PlayerId);
+            var them = snap == null ? null : snap.Motion(enemyId);
+            var arms = snap == null ? null : snap.Weapons(client.PlayerId);
+            if (me == null || them == null || arms == null || me.placement != stepPlacement) return;
+            if (arms.shotsFired != firesSent) return; // a shot still on its way
+            Vec3 eye = me.position + Vec3.Up * Hitboxes.EyeHeight(rules, me.crouched);
+            Vec3 chest = Hitboxes.Chest(rules, them.Pose(true));
+            float distance = Vec3.Distance(eye, chest);
+
+            var w = weapons.Weapon(arms.CurrentId);
+            if (w == null || w.kind != WeaponKind.Hitscan || w.range < distance + 1f)
+            {
+                for (int i = 0; i < arms.weapons.Length; i++)
+                {
+                    var other = weapons.Weapon(arms.weapons[i]);
+                    if (i != arms.current && other != null && other.kind == WeaponKind.Hitscan && other.range >= distance + 1f)
+                    {
+                        Send(new SwitchWeaponCommand { slot = i });
+                        return;
+                    }
+                }
+                return;
+            }
+            if (arms.Reloading || arms.switchLeft > 0f || arms.CurrentAmmo <= 0 || arms.fireCredit < 1f) return;
+            firesSent++;
+            Send(new FireCommand { weaponId = w.id, origin = eye, direction = (chest - eye).Normalized });
         }
 
         static ZoneId ChooseZone(MatchState state, PlayerState me, int plan)

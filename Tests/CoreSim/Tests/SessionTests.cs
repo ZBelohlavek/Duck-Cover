@@ -140,8 +140,8 @@ static class SessionTests
         h.Send(b, new StartMatchCommand());
         Check.Equal(1, bSaw.Count, "only the host starts the match");
         Check.Equal(MatchPhase.Lobby, h.Match.State.phase, "still in the lobby");
-        h.Send(b, new FireCommand { weaponId = "rifle" });
-        Check.True(bSaw.Last().reason.Contains("nothing handles FireCommand"), "commands with no module yet are refused, not dropped");
+        h.Send(b, new PingCommand());
+        Check.True(bSaw.Last().reason.Contains("nothing handles PingCommand"), "commands with no module yet are refused, not dropped");
         h.Send(a, new StartMatchCommand());
         Check.Equal(MatchPhase.HeroPick, h.Match.State.phase, "the host's player starts it");
     }
