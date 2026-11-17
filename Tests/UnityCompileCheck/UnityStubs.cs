@@ -153,6 +153,7 @@ namespace UnityEngine
 
     public class Material : Object
     {
+        public Material(Material source) { }
         public Color color { get; set; }
         public bool HasProperty(string name) => false;
         public void SetColor(string name, Color value) { }
