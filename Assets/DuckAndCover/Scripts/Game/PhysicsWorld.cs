@@ -7,8 +7,8 @@ namespace DuckAndCover.Game
     /// <summary>
     /// The map as the rules see it: Unity physics answers rays against walls, floors and props.
     /// Players are not in it (the rules add their hitboxes from the lag compensation history), so
-    /// every player body sits on the Ignore Raycast layer. Zones are answered by the control points
-    /// once they exist (WP6); until then nobody stands on any.
+    /// every player body sits on the Ignore Raycast layer. Zones are answered by the map's zone
+    /// cylinders against the server's player positions (SessionRunner sets <see cref="ZoneQuery"/>).
     /// </summary>
     public sealed class PhysicsWorld : IWorldQuery
     {
@@ -17,7 +17,7 @@ namespace DuckAndCover.Game
         /// <summary>Everything a shot or a foot can touch: all layers but the players' own.</summary>
         public const int GeometryMask = ~(1 << PlayerLayer);
 
-        /// <summary>WP6 sets this to say who stands in a zone.</summary>
+        /// <summary>Who stands in a zone. SessionRunner points it at the map once combat runs.</summary>
         public Func<ZoneId, int[]> ZoneQuery;
 
         public bool Raycast(Vec3 origin, Vec3 dir, float max, int tick, out HitInfo hit) => Cast(origin, dir, max, out hit);

@@ -1,3 +1,4 @@
+using DuckAndCover.Core;
 using DuckAndCover.Net;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -6,7 +7,7 @@ namespace DuckAndCover.Game
 {
     /// <summary>
     /// First thing that runs in the Boot scene. For now it checks the project is wired up (render
-    /// pipeline, network package), builds the greybox test arena, starts the player and combat view,
+    /// pipeline, network package), builds the first map's greybox, starts the player and combat view,
     /// and starts a screenshot run when one was requested. Later packages hang the menu, sessions
     /// and map loading off this.
     /// </summary>
@@ -23,7 +24,7 @@ namespace DuckAndCover.Game
             if (pipeline == null)
                 Debug.LogWarning("Duck and Cover: no render pipeline asset is assigned. Check Project Settings > Graphics (URP).");
 
-            if (GameObject.Find("Level") == null) BootRoom.Build();
+            if (GameObject.Find("Level") == null) MapScene.Build(MapCatalog.Default);
 
             SessionRunner.Ensure();
             if (NetSmoke.TryStart(gameObject)) return; // a scripted network run: no panel, no screenshots, no bodies
