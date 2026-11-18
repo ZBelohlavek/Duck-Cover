@@ -99,6 +99,10 @@ WP17 (Salvage and build pads) was dropped on Nov 18.
   launch pads in the movement check (`Core/Combat/LaunchPad.cs`, `MovementRules.Launch.cs`) and flown by `LocalPlayer`;
   markers for Bastions, camps and pads in `Game/MapScene`. Tests and the plan (`report breakwater out.svg`) in
   `BreakwaterTests.cs`. Choosing Breakwater for a match comes with WP19.
+- Breakwater widened (Nov 18, Zach: three heroes abreast in the lane with room to strafe, two in the jungle):
+  the plan is stretched 1.5x across (120 m by 210 m, `Breakwater.StretchX`), lane 16 m, jungle routes 6 m and
+  trails 5.5 m, bigger camp clearings, more lane cover and tall rocks that keep sight lines under a third
+  of the lane. `report breakwater` prints the real clear widths between walls.
 - WP19: the mode picks the map (`MapCatalog.MapIdForMode`, `SessionRunner.EnsureMap`); the Overrun host builds the
   `LaneServer` and `OverrunServer` after the hero server; `Game/UnitView` (minions, guards, Bastion bars), `MapView`
   (per-base side gates, fallen Bastions, crowns that show who may hurt a Bastion), the HUD's Bastion cards, the panel's

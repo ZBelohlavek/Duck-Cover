@@ -16,12 +16,21 @@ the team colours (saturated blue and orange) off anything big.
 - `PaintedTextures`: tileable painted textures made in code from the theme's colours (stone courses,
   rock slabs, dirt, ribbed metal, planks, concrete, deck plate, shutter slats, bark, leaves, paving).
 - `EnvMesh.ChamferBox`: blocks get chamfered edges and world-scale UVs, so neighbours share one
-  continuous texture and every edge catches a line of light.
-- `SkyPainter`: paints a 360° panorama (gradient, clouds, a ringed planet, a moon) for Unity's
-  `Skybox/Panoramic` shader. Without that shader the camera clears to the horizon colour.
+  continuous texture and every edge catches a line of light. `EnvMesh.LumpyBox` draws natural walls
+  (tree lines, rocks, cliffs): every corner of a face grid is pushed inward only, so the drawing never
+  leaves the collider, and faces pressed against a neighbouring block stay flat so there is never a
+  slit to see through between two blocks.
+- `SkyPainter`: paints a 2048 x 1024 panorama for Unity's `Skybox/Panoramic` shader, laid out the way
+  that shader reads it so the sun's glow sits where the sun light comes from: a graded sky with horizon
+  haze and a sun halo, a ringed planet with an atmosphere glow and a moon, a cloud deck in perspective
+  lit from the sun's side, high streaks, cloud heaps on the horizon, and two painted mountain ranges
+  (theme colours `haze`, `mountainFar`, `mountainNear`, `canopyFar`, `cloudCover`, `planetGlow`). Painted
+  once per theme (about a second) and cached. Without that shader the camera clears to the horizon colour.
 - `MapDresser`: puts it together by block kind (never by block name): materials and meshes on the
   blocks, trims (base and cap courses, glowing strips, stripes, container posts, crate bands), vines,
-  floor patches and zone paving, then cliffs, trees and gantries outside the play area, and the light.
+  floor patches, flowers and zone paving, then cliffs, trees and gantries outside the play area, a
+  backdrop of rolling jungle hills and far mesas fading into the fog, the sun with a soft fill light
+  from the other side, and the fog.
 
 ## Lanes and jungle
 

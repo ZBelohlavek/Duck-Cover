@@ -47,6 +47,14 @@ namespace DuckAndCover.Game
         public Color planet, planetBand, planetRing, moon;
         /// <summary>Planet direction as compass yaw and elevation in degrees, and its radius in degrees.</summary>
         public float planetYaw = 200f, planetElevation = 24f, planetSize = 16f;
+        /// <summary>The glow round the planet's limb and just outside it.</summary>
+        public Color planetGlow = new Color(1f, 0.9f, 0.95f);
+        /// <summary>The bright haze along the horizon; far mountains fade into it, and the fog matches it.</summary>
+        public Color haze = new Color(0.95f, 0.88f, 0.75f);
+        /// <summary>Painted ranges on the horizon: the far one (mostly lost in haze) and the near mesas, with jungle along their tops.</summary>
+        public Color mountainFar = new Color(0.55f, 0.5f, 0.68f), mountainNear = new Color(0.32f, 0.3f, 0.42f), canopyFar = new Color(0.35f, 0.55f, 0.3f);
+        /// <summary>How much of the sky the cloud deck covers, 0..1.</summary>
+        public float cloudCover = 0.42f;
         public Color sun;
         public Vector3 sunEuler = new Vector3(42f, -140f, 0f);
         public float sunIntensity = 1.35f;
@@ -110,12 +118,17 @@ namespace DuckAndCover.Game
             canopy = new[] { C(0x5CBF3A), C(0x2EA88A), C(0x8ACF3E) },
             leaf = C(0x3E9A30),
             bulb = C(0xFF6EB4),
-            skyZenith = C(0x2A9AA0), skyMid = C(0xB8D670), skyHorizon = C(0xFFC48A), skyBelow = C(0x8A6A70),
-            cloud = C(0xFFF1D8), cloudShade = C(0xE8B49A),
+            // Nov 18 sky pass: a deeper teal zenith over a mint middle and a peach horizon, rose-lit clouds,
+            // violet mesas topped with jungle on the horizon.
+            skyZenith = C(0x1B7E9E), skyMid = C(0x8FD3B0), skyHorizon = C(0xFFC890), skyBelow = C(0x7A6A7A),
+            haze = C(0xF4DDB4),
+            cloud = C(0xFFF6E6), cloudShade = C(0xC79AA8), cloudCover = 0.5f,
             planet = C(0xB48AE0), planetBand = C(0xF2A6C8), planetRing = C(0xF6DCC8), moon = C(0xF4F0DC),
-            sun = C(0xFFE2B8),
-            ambientSky = C(0x9AD6C8), ambientEquator = C(0xC8C49A), ambientGround = C(0x4A4A5A),
-            fog = C(0xD8DCA8),
+            planetGlow = C(0xFFD6EC), planetSize = 13f, planetElevation = 22f,
+            mountainFar = C(0x9A86C0), mountainNear = C(0x5A3E78), canopyFar = C(0x3E8A4A),
+            sun = C(0xFFE2B8), sunEuler = new Vector3(36f, -140f, 0f),
+            ambientSky = C(0x9AD6C8), ambientEquator = C(0xD2C49A), ambientGround = C(0x4A4A5A),
+            fog = C(0xE6DCB4), fogStart = 30f, fogEnd = 420f,
         };
 
         /// <summary>

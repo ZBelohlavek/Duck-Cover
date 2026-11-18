@@ -61,15 +61,15 @@ namespace DuckAndCover.Game
             new Shot("18-flag-carrier", DummyTakesTheFlag, 1.0f),
             new Shot("19-flag-mine", PlayerTakesTheFlag, 1.2f),
             // Breakwater (WP18), the Overrun map, built far off to the other side. No HUD over these.
-            new Shot("20-bw-above", () => BreakwaterShot(new Vector3(-72f, 92f, -2f), new Vector3(2f, 0f, 0f)), 1.2f),
-            new Shot("21-bw-base", () => BreakwaterShot(new Vector3(-30f, 40f, -112f), new Vector3(-8f, 0f, -70f)), 0.6f),
-            new Shot("22-bw-lane", () => BreakwaterShot(new Vector3(-13f, 2f, -50f), new Vector3(6f, 1.2f, -31.5f)), 0.6f),
-            new Shot("23-bw-ledge", () => BreakwaterShot(new Vector3(-25f, 4.7f, -57f), new Vector3(-6f, 0.5f, -42f)), 0.6f),
-            new Shot("24-bw-gap", () => BreakwaterShot(new Vector3(4f, 1.8f, -40f), new Vector3(-14f, 1.4f, -29f)), 0.6f),
-            new Shot("25-bw-shelf", () => BreakwaterShot(new Vector3(-22f, 5.7f, 5f), new Vector3(6f, 0.5f, -1f)), 0.6f),
-            new Shot("26-bw-mid", () => BreakwaterShot(new Vector3(16f, 1.8f, -24f), new Vector3(6f, 2.5f, 4f)), 0.6f),
-            new Shot("27-bw-jungle", () => BreakwaterShot(new Vector3(8f, 1.8f, -87f), new Vector3(26f, 1.2f, -78f)), 0.6f),
-            new Shot("28-bw-camps", () => BreakwaterShot(new Vector3(20f, 36f, -100f), new Vector3(24f, 0f, -78f)), 0.6f),
+            new Shot("20-bw-above", () => BreakwaterShot(new Vector3(-112f, 100f, -2f), new Vector3(4f, 0f, 0f)), 1.2f),
+            new Shot("21-bw-base", () => BreakwaterShot(new Vector3(-45f, 40f, -114f), new Vector3(-12f, 0f, -70f)), 0.6f),
+            new Shot("22-bw-lane", () => BreakwaterShot(new Vector3(-19.5f, 2f, -52f), new Vector3(9f, 1.2f, -31.5f)), 0.6f),
+            new Shot("23-bw-ledge", () => BreakwaterShot(new Vector3(-37.5f, 4.7f, -57f), new Vector3(-9f, 0.5f, -42f)), 0.6f),
+            new Shot("24-bw-gap", () => BreakwaterShot(new Vector3(6f, 1.8f, -40f), new Vector3(-21f, 1.4f, -29f)), 0.6f),
+            new Shot("25-bw-shelf", () => BreakwaterShot(new Vector3(-33f, 5.7f, 5f), new Vector3(9f, 0.5f, -1f)), 0.6f),
+            new Shot("26-bw-mid", () => BreakwaterShot(new Vector3(24f, 1.8f, -26f), new Vector3(9f, 2.5f, 4f)), 0.6f),
+            new Shot("27-bw-jungle", () => BreakwaterShot(new Vector3(12f, 1.8f, -87f), new Vector3(39f, 1.2f, -78f)), 0.6f),
+            new Shot("28-bw-camps", () => BreakwaterShot(new Vector3(30f, 38f, -104f), new Vector3(36f, 0f, -78f)), 0.6f),
             // Overrun on Breakwater (WP19): a real match, so the map is built in place of Gantry Yard. The
             // HUD with the Bastion cards, the first wave on its way, the waves meeting at mid-lane (match time
             // runs five times faster while it waits), the player behind their wave, and team B's Forward
@@ -264,7 +264,7 @@ namespace DuckAndCover.Game
             if (!OverrunRunning(out var runner)) return;
             HideHud = true;
             runner.Speed = 5f;
-            WatchFrom(new Vector3(13f, 10f, -22f), new Vector3(10f, 0f, 0f));
+            WatchFrom(new Vector3(19.5f, 10f, -24f), new Vector3(15f, 0f, 0f));
             CombatView.Instance.StartCoroutine(Expect(() => runner.Combat.Units.Living().Count >= 12, 5f, "both waves on the lane (12 or more units)"));
         }
 
@@ -296,7 +296,7 @@ namespace DuckAndCover.Game
             if (b == null || minion == null) { Debug.LogError("Duck and Cover: the capture could not find B's Forward Bastion and an A minion."); return; }
             for (int i = 0; i < 10 && runner.Combat.Units.IsAlive(b.unitId); i++)
                 runner.Combat.Damage.Damage(minion.id, b.unitId, 10000f, LaneRuleset.AttackId);
-            WatchFrom(new Vector3(-36f, 2.4f, 84f), new Vector3(-12f, 2f, 84f));
+            WatchFrom(new Vector3(-54f, 2.4f, 84f), new Vector3(-18f, 2f, 84f));
             CombatView.Instance.StartCoroutine(Expect(() => !b.alive && runner.Overrun.State.gateOpenB && runner.Match.State.scoreA == 1, 1f,
                 "B's Forward Bastion down, B's side gate open and team A on 1"));
         }
