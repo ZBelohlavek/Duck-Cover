@@ -110,11 +110,17 @@ static class LaneTests
         Check.Equal(1, h.L.State.wavesB, "and team B's");
         Check.Equal(4, h.Minions(TeamId.A).Count(), "three Scrappers and a Warden");
         Check.Equal(4, h.Minions(TeamId.B).Count(), "on both sides");
-        Check.True(h.Minions(TeamId.A).All(u => u.position.z < -LaneHarness.HalfLength + 0.5f), "team A's wave at its end");
-        Check.True(h.Minions(TeamId.B).All(u => u.position.z > LaneHarness.HalfLength - 0.5f), "team B's wave at its end");
+        Check.True(h.Minions(TeamId.A).All(u => u.position.z < -LaneHarness.HalfLength + 3f), "team A's wave at its end");
+        Check.True(h.Minions(TeamId.B).All(u => u.position.z > LaneHarness.HalfLength - 3f), "team B's wave at its end");
         Check.Equal(1, h.Minions(TeamId.A).Count(u => u.typeId == LaneRuleset.Warden), "one Warden");
-        var xs = h.Minions(TeamId.A).Select(u => u.position.x).OrderBy(x => x).ToList();
-        Check.True(xs.Zip(xs.Skip(1), (a, b) => b - a).All(d => d > 1f), "side by side, not stacked");
+        var xs = h.Minions(TeamId.A).Where(u => u.typeId == LaneRuleset.Scrapper).Select(u => u.position.x).OrderBy(x => x).ToList();
+        Check.True(xs.Zip(xs.Skip(1), (a, b) => b - a).All(d => d > 1f), "Scrappers side by side, not stacked");
+        Check.Near(0f, xs.Sum(), "spread evenly about the line", 0.01f);
+        var warden = h.Minions(TeamId.A).Single(u => u.typeId == LaneRuleset.Warden);
+        Check.True(Math.Abs(warden.position.x) < 0.01f && warden.position.z < h.Minions(TeamId.A).Where(u => u.typeId == LaneRuleset.Scrapper).Min(u => u.position.z), "the Warden on the line behind them");
+        var bx = h.Minions(TeamId.B).Select(u => u.position).OrderBy(p => p.x).ThenBy(p => p.z).ToList();
+        var ax = h.Minions(TeamId.A).Select(u => new Vec3(u.position.x, 0f, -u.position.z)).OrderBy(p => p.x).ThenBy(p => p.z).ToList();
+        Check.True(ax.Zip(bx, (a, b) => Vec3.Distance(a, b)).All(d => d < 0.01f), "team B's wave is team A's mirrored end to end");
         h.H.Forget();
         h.Run(29.7f);
         Check.Equal(0, h.H.Of<WaveSpawnedEvent>().Count, "nothing more before 30 s");
@@ -231,6 +237,37 @@ static class LaneTests
         Check.Equal(0, h.H.Of<DamagedEvent>().Count(d => d.attackerId == id), "the wall stops every shot");
         var u = h.H.Combat.Units.Unit(id);
         Check.True(u.position.x < 5.6f, "and the minion doesn't walk through it: " + u.position);
+    }
+
+    [Test]
+    static void MinionsSteerRoundCoverOnTheLane()
+    {
+        var h = new LaneHarness(waves: false);
+        // Waist-high cover 3 m wide right across the line, and a wider block further on.
+        h.H.Map.Wall(new Vec3(0f, 0.5f, -60f), new Vec3(3f, 1f, 0.5f));
+        h.H.Map.Wall(new Vec3(1f, 0.5f, -20f), new Vec3(5f, 1f, 2f));
+        var ids = new List<int>
+        {
+            h.L.Waves.SpawnMinion(LaneRuleset.Scrapper, TeamId.A, 0, 0f),
+            h.L.Waves.SpawnMinion(LaneRuleset.Scrapper, TeamId.A, 0, 1.4f),
+            h.L.Waves.SpawnMinion(LaneRuleset.Juggernaut, TeamId.A, 0, -1.4f),
+        };
+        bool inside = false;
+        h.Run(70f, () =>
+        {
+            foreach (int id in ids)
+            {
+                var p = h.H.Combat.Units.Unit(id).position;
+                if ((Math.Abs(p.x) < 1.5f && Math.Abs(p.z + 60f) < 0.25f) || (Math.Abs(p.x - 1f) < 2.5f && Math.Abs(p.z + 20f) < 1f)) inside = true;
+            }
+        });
+        Check.False(inside, "nobody walked through the cover, the big Juggernaut included");
+        foreach (int id in ids)
+        {
+            var u = h.H.Combat.Units.Unit(id);
+            Check.True(u.position.z > 30f, u.typeId + " got round both pieces of cover and walked on: " + u.position);
+            Check.True(Math.Abs(u.position.x) <= 8.01f, "within the leash");
+        }
     }
 
     [Test]

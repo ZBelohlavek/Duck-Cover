@@ -77,6 +77,10 @@ namespace DuckAndCover.Core
         public float lookAhead = 3f;
         /// <summary>Minions stop this far short of the far end of the lane (the enemy base).</summary>
         public float laneEndStop = 2f;
+        /// <summary>A minion checks this far past its step for cover in the way, and turns before it touches it.</summary>
+        public float steerProbe = 0.6f;
+        /// <summary>Turns, in degrees either side, a minion tries to get round cover, in order.</summary>
+        public float[] steerAngles = { 30f, 60f, 90f, 120f };
 
         // ---- Wardens ----
         public float wardenPulseSeconds = 4f;
@@ -126,6 +130,7 @@ namespace DuckAndCover.Core
         public LaneRuleset Clone()
         {
             var c = (LaneRuleset)MemberwiseClone();
+            c.steerAngles = (float[])(steerAngles ?? new float[0]).Clone();
             c.waveRows = Array.ConvertAll(waveRows ?? new WaveRow[0], r => new WaveRow(r.fromMinute, r.scrappers, r.wardens));
             c.units = Array.ConvertAll(units ?? new UnitDef[0], u => u.Clone());
             c.camps = Array.ConvertAll(camps ?? new CampKindDef[0], k => k.Clone());
@@ -141,6 +146,7 @@ namespace DuckAndCover.Core
             if (waveRows == null || waveRows.Length == 0) e.Add("waveRows needs at least one row");
             else foreach (var r in waveRows) if (r.scrappers < 0 || r.wardens < 0) { e.Add("a wave can't hold a negative count"); break; }
             if (maxMinionsPerTeam < 1) e.Add("maxMinionsPerTeam must be at least 1");
+            if (steerProbe < 0f || steerAngles == null) e.Add("steerProbe can't be negative and steerAngles needs a list");
             if (waveSpacing <= 0f || lookAhead <= 0f || laneEndStop < 0f) e.Add("waveSpacing and lookAhead must be positive, laneEndStop not negative");
             if (wardenPulseSeconds <= 0f || wardenShield < 0f || wardenShieldSeconds <= 0f || wardenRadius < 0f) e.Add("Warden numbers are wrong");
             if (guardLeash <= 0f || guardRing < 0f) e.Add("guard numbers are wrong");

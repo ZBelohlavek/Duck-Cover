@@ -51,6 +51,8 @@ namespace DuckAndCover.Core
         public float torsoBottom = 0.85f;
         public float torsoTop = 1.38f;
         public float torsoRadius = 0.32f;
+        /// <summary>Units walking the lane also check for cover this high above their feet (waist-high cover stops them).</summary>
+        public float unitKneeHeight = 0.4f;
         /// <summary>Leg capsule from the ankles to the hips.</summary>
         public float legsBottom = 0.15f;
         public float legsTop = 0.85f;

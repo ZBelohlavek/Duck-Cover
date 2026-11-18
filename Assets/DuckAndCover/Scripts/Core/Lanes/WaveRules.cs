@@ -58,21 +58,26 @@ namespace DuckAndCover.Core
                 int wave = team == TeamId.A ? ++state.wavesA : ++state.wavesB;
                 for (int l = 0; l < lanes.Count; l++)
                 {
-                    var kinds = new List<string>();
+                    // Scrappers walk in a front row spread evenly about the line; Wardens and the Juggernaut
+                    // walk on the line behind them. The formation is the same seen from either side, so a
+                    // map that is mirrored end to end and one that is turned around both get fair waves.
                     int room = Math.Max(0, Rules.maxMinionsPerTeam - state.Alive(team));
-                    for (int i = 0; i < row.scrappers + row.wardens && kinds.Count < room; i++)
-                    {
-                        // Wardens walk in the middle of the line, Scrappers on both sides of them.
-                        kinds.Add(i < row.scrappers ? LaneRuleset.Scrapper : LaneRuleset.Warden);
-                    }
-                    kinds = MiddleOut(kinds);
+                    int scrappers = Math.Min(row.scrappers, room);
+                    int wardens = Math.Min(row.wardens, room - scrappers);
+                    var column = new List<string>();
                     // The Juggernaut walks with the first lane's wave, whatever the cap.
-                    if (jugg && l == 0) kinds.Insert(kinds.Count / 2, LaneRuleset.Juggernaut);
+                    if (jugg && l == 0) column.Add(LaneRuleset.Juggernaut);
+                    for (int i = 0; i < wardens; i++) column.Add(LaneRuleset.Warden);
                     var ids = new List<int>();
-                    for (int i = 0; i < kinds.Count; i++)
+                    for (int i = 0; i < scrappers; i++)
                     {
-                        float offset = (i - (kinds.Count - 1) * 0.5f) * Rules.waveSpacing;
-                        int id = SpawnMinion(kinds[i], team, l, offset);
+                        float offset = (i - (scrappers - 1) * 0.5f) * Rules.waveSpacing;
+                        int id = SpawnMinion(LaneRuleset.Scrapper, team, l, offset, column.Count * Rules.waveSpacing);
+                        if (id >= 0) ids.Add(id);
+                    }
+                    for (int i = 0; i < column.Count; i++)
+                    {
+                        int id = SpawnMinion(column[i], team, l, 0f, (column.Count - 1 - i) * Rules.waveSpacing);
                         if (id >= 0) ids.Add(id);
                     }
                     Publish(new WaveSpawnedEvent { team = team, laneId = lanes[l].id, wave = wave, unitIds = ids.ToArray(), juggernaut = jugg && l == 0 });
@@ -80,23 +85,14 @@ namespace DuckAndCover.Core
             }
         }
 
-        static List<string> MiddleOut(List<string> kinds)
-        {
-            var scrappers = kinds.FindAll(k => k == LaneRuleset.Scrapper);
-            var others = kinds.FindAll(k => k != LaneRuleset.Scrapper);
-            var line = new List<string>();
-            int left = scrappers.Count / 2;
-            line.AddRange(scrappers.GetRange(0, left));
-            line.AddRange(others);
-            line.AddRange(scrappers.GetRange(left, scrappers.Count - left));
-            return line;
-        }
-
-        /// <summary>Put one minion at its team's end of a lane, <paramref name="offset"/> metres to the right of the line.</summary>
-        public int SpawnMinion(string typeId, TeamId team, int lane, float offset = 0f)
+        /// <summary>
+        /// Put one minion at its team's end of a lane, <paramref name="offset"/> metres to the right of
+        /// the line and <paramref name="ahead"/> metres along it.
+        /// </summary>
+        public int SpawnMinion(string typeId, TeamId team, int lane, float offset = 0f, float ahead = 0f)
         {
             var l = lanes[lane];
-            float start = team == TeamId.A ? 0f : l.Length;
+            float start = team == TeamId.A ? Math.Min(ahead, l.Length) : Math.Max(0f, l.Length - ahead);
             Vec3 walk = l.DirectionAt(start) * Dir(team);
             Vec3 pos = l.PointAt(start) + Right(walk) * offset;
             int id = Units.Spawn(typeId, team, pos, Yaw(walk));
@@ -299,7 +295,74 @@ namespace DuckAndCover.Core
         {
             var u = Units.Unit(unitId);
             if (u == null) return;
-            Units.Walk(unitId, to - u.position, yaw);
+            Vec3 step = LaneDef.Flat(to - u.position);
+            float len = step.Magnitude;
+            if (len < 1e-5f) return;
+            Vec3 dir = step / len;
+            var m = state.Minion(unitId);
+            if (Clear(unitId, dir, len))
+            {
+                if (m != null) m.steer = 0;
+            }
+            else
+            {
+                // Cover in the way: turn a little more until a way round is clear, keeping to the side
+                // it already chose so it follows the cover's face to its end instead of dithering.
+                int side = m != null && m.steer != 0 ? m.steer : FirstSide(m, u, dir, len);
+                bool found = false;
+                foreach (int s in new[] { side, -side })
+                {
+                    foreach (float a in Rules.steerAngles)
+                    {
+                        Vec3 turned = Turn(dir, a * s);
+                        if (!Clear(unitId, turned, len)) continue;
+                        dir = turned;
+                        found = true;
+                        if (m != null) m.steer = s;
+                        break;
+                    }
+                    if (found) break;
+                }
+            }
+            Vec3 walked = dir * len;
+            walked.y = to.y - u.position.y;
+            Units.Walk(unitId, walked, Yaw(dir));
+        }
+
+        /// <summary>
+        /// Which way to start round cover: the side with the smaller clear turn; when both are as good,
+        /// the side toward the lane line, then the side toward +x. Nothing here depends on which team
+        /// it is or which way it walks, so mirrored or turned-around maps steer both teams alike.
+        /// </summary>
+        int FirstSide(MinionState m, UnitState u, Vec3 dir, float len)
+        {
+            foreach (float a in Rules.steerAngles)
+            {
+                Vec3 right = Turn(dir, a), left = Turn(dir, -a);
+                bool r = Clear(u.id, right, len), l = Clear(u.id, left, len);
+                if (r != l) return r ? 1 : -1;
+                if (!r) continue;
+                if (m != null)
+                {
+                    var lane = lanes[m.lane];
+                    Vec3 toLine = LaneDef.Flat(lane.PointAt(m.progress) - u.position);
+                    float dr = Vec3.Dot(right, toLine), dl = Vec3.Dot(left, toLine);
+                    if (Math.Abs(dr - dl) > 1e-3f) return dr > dl ? 1 : -1;
+                }
+                return right.x >= left.x ? 1 : -1;
+            }
+            return 1;
+        }
+
+        bool Clear(int unitId, Vec3 dir, float len) =>
+            Units.Clearance(unitId, dir * (len + Rules.steerProbe)) >= len + Rules.steerProbe - 1e-3f;
+
+        static Vec3 Turn(Vec3 d, float degrees)
+        {
+            double r = degrees * Math.PI / 180.0;
+            float c = (float)Math.Cos(r), s = (float)Math.Sin(r);
+            // Positive turns to the right (clockwise seen from above, as yaw grows).
+            return new Vec3(d.x * c + d.z * s, 0f, -d.x * s + d.z * c);
         }
 
         // ---- Bodies ----

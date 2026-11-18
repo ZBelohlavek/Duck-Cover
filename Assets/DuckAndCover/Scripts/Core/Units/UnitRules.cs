@@ -132,6 +132,17 @@ namespace DuckAndCover.Core
         }
 
         /// <summary>
+        /// How far a unit could walk along <paramref name="step"/> before map geometry or a blocking
+        /// object stops it, without moving it (the lane walker probes ways round cover with this).
+        /// </summary>
+        public float Clearance(int unitId, Vec3 step)
+        {
+            var u = Roster.Get(unitId);
+            if (u == null || !u.alive) return 0f;
+            return Vec3.Distance(u.position, Slide(u, step));
+        }
+
+        /// <summary>
         /// Whether a unit's shot at a target would reach it now: a ray from the unit's chest to the
         /// target's chest that no map geometry and no enemy barrier or gate stops. The unit's own
         /// team's barriers let its shots through, as they do for heroes; other bodies don't block.
@@ -184,6 +195,10 @@ namespace DuckAndCover.Core
             float reach = len + radius;
             if (geometry.Raycast(chest, dir, reach, State.tick, out var hit) && hit.kind != HitKind.Nothing && hit.kind != HitKind.Player)
                 reach = hit.distance;
+            // Knee height too, so a big unit whose chest clears waist-high cover doesn't walk through it.
+            Vec3 knee = u.position + Vec3.Up * Rules.unitKneeHeight;
+            if (geometry.Raycast(knee, dir, reach, State.tick, out var low) && low.kind != HitKind.Nothing && low.kind != HitKind.Player)
+                reach = low.distance;
             if (world != null && SolidObjects.Raycast(world.Objects, chest, dir, reach, o => !o.def.blocksMovement, out var solid))
                 reach = solid.distance;
             len = Math.Min(len, Math.Max(0f, reach - radius));
