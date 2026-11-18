@@ -55,12 +55,18 @@ namespace DuckAndCover.Game
         public bool mushroomTrees = true;
         public bool overheadGantries = true;
         public bool vines = true;
+        /// <summary>Lay flagstones over the whole floor of a region in this theme (a temple courtyard).</summary>
+        public bool courtyard;
+        /// <summary>A carved glyph band near the top of building walls, in <see cref="glyph"/> on the stone.</summary>
+        public bool glyphs;
+        public Color glyph;
 
         static readonly Dictionary<string, EnvTheme> all = new Dictionary<string, EnvTheme>();
 
         static EnvTheme()
         {
             Add(JungleMoon());
+            Add(JungleTemple());
             Add(SunforgeQuarry());
             Add(CoralReactor());
         }
@@ -75,26 +81,26 @@ namespace DuckAndCover.Game
         static Color C(int hex) => new Color(((hex >> 16) & 255) / 255f, ((hex >> 8) & 255) / 255f, (hex & 255) / 255f);
 
         /// <summary>
-        /// A freight yard on a jungle moon: sun-baked sandstone and ochre dirt, painted containers in
-        /// magenta, teal, mustard and violet, giant capped trees with glowing pink fruit, lime trim
-        /// lights, under a teal-to-gold sky with a ringed lilac planet.
+        /// A freight yard overgrown by a jungle moon: mossy violet stone, green earth thick with moss,
+        /// magenta, teal, lime and violet containers, deep purple cliffs, giant capped trees with glowing
+        /// pink fruit, lime trim lights, under a teal-to-gold sky with a ringed lilac planet.
         /// </summary>
         static EnvTheme JungleMoon() => new EnvTheme
         {
             id = "jungle_moon",
             displayName = "Jungle moon",
             seed = 7,
-            groundA = C(0xA87A4A), groundB = C(0x8A5E38), groundSpeck = C(0x5E3E28),
-            patch = C(0x7C9A2E),
-            paving = C(0xC9A57A), pavingMortar = C(0x6E5248),
-            stone = C(0xD6A26C), stoneMortar = C(0x6B4A44),
-            trimBase = C(0x5A2E58),
+            groundA = C(0x6E7A34), groundB = C(0x4A4A26), groundSpeck = C(0x34301E),
+            patch = C(0x7AAE34),
+            paving = C(0x8A86A0), pavingMortar = C(0x3A3450),
+            stone = C(0x7E6E9E), stoneMortar = C(0x34284A),
+            trimBase = C(0x2E2448),
             glow = C(0x7CFF8C),
-            rock = C(0x6E4C82), rockCrack = C(0x3A2448),
-            containers = new[] { C(0xB4235F), C(0x14857C), C(0xD9A21C), C(0x6A44A8) },
-            wood = C(0x9A5E34), woodDark = C(0x5E3420),
-            cover = C(0xD8CDB4), coverStripe = C(0xE8418C),
-            deck = C(0x4A3C70), deckDark = C(0x2A2244),
+            rock = C(0x5E3E78), rockCrack = C(0x2A1A3A),
+            containers = new[] { C(0xB4235F), C(0x14857C), C(0x8AB82A), C(0x6A44A8) },
+            wood = C(0x8A5434), woodDark = C(0x4E2C1E),
+            cover = C(0xC4D4B4), coverStripe = C(0xE8418C),
+            deck = C(0x3A3C68), deckDark = C(0x20203E),
             shutter = C(0xB81E3E), shutterBand = C(0xF2C230),
             steel = C(0xD9A824),
             trunk = C(0x7A3A6E), trunkDark = C(0x45203E),
@@ -105,9 +111,33 @@ namespace DuckAndCover.Game
             cloud = C(0xFFF1D8), cloudShade = C(0xE8B49A),
             planet = C(0xB48AE0), planetBand = C(0xF2A6C8), planetRing = C(0xF6DCC8), moon = C(0xF4F0DC),
             sun = C(0xFFE2B8),
-            ambientSky = C(0x9AD6C8), ambientEquator = C(0xE8C49A), ambientGround = C(0x6A4A5A),
-            fog = C(0xF0D2A8),
+            ambientSky = C(0x9AD6C8), ambientEquator = C(0xC8C49A), ambientGround = C(0x4A4A5A),
+            fog = C(0xD8DCA8),
         };
+
+        /// <summary>
+        /// The temple quarter inside the jungle: warm sandstone courses with plum base and cap courses,
+        /// carved glyph bands, lime trim lights and a flagstone courtyard floor. Used as an art region
+        /// (see MapDef.artRegions); sky and light come from the map's own theme.
+        /// </summary>
+        static EnvTheme JungleTemple()
+        {
+            var t = JungleMoon();
+            t.id = "jungle_temple";
+            t.displayName = "Jungle temple";
+            t.seed = 9;
+            t.paving = C(0xB8A898); t.pavingMortar = C(0x5A4858);
+            t.stone = C(0xE4C6A4); t.stoneMortar = C(0x6B4A54);
+            t.trimBase = C(0x5A2E58);
+            t.glyph = C(0x8A5A44);
+            t.containers = new[] { C(0xB4235F), C(0x14857C), C(0xD9A21C), C(0x6A44A8) };
+            t.cover = C(0xD8CDB4);
+            t.wood = C(0x9A5E34); t.woodDark = C(0x5E3420);
+            t.deck = C(0x4A3C70); t.deckDark = C(0x2A2244);
+            t.courtyard = true;
+            t.glyphs = true;
+            return t;
+        }
 
         /// <summary>
         /// Proposed second theme: a cliffside quarry of carved red sandstone at golden hour, brass
@@ -170,7 +200,7 @@ namespace DuckAndCover.Game
             shutter = C(0xD84A5A), shutterBand = C(0xFFFFFF),
             steel = C(0xE8E0D0),
             trunk = C(0xE07A7A), trunkDark = C(0x8A3A4A),
-            canopy = new[] { C(0xFF8A9A), C(0xF0A050), C(0xD060A0) },
+            canopy = new[] { C(0xFF8A9A), C(0xD84A7A), C(0xB060C0) },
             leaf = C(0x40A080),
             bulb = C(0xFFE070),
             skyZenith = C(0x3AB0D8), skyMid = C(0x9AE0E0), skyHorizon = C(0xF8F0D8), skyBelow = C(0x6A9AA0),

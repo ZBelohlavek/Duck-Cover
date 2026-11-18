@@ -1,7 +1,8 @@
 # Environments
 
 Maps are layouts (`Core/Maps`) and environments are themes laid over them (`Game/Env`). A layout picks
-its theme with `MapDef.theme`; any layout can wear any theme, so new layouts for new modes get art for
+its theme with `MapDef.theme`, and can dress parts of itself in another theme with `MapDef.artRegions`
+(footprints in x and z; the floor and outer walls always keep the map's theme); any layout can wear any theme, so new layouts for new modes get art for
 free. `MapScene.Greybox = true` shows the bare layout again.
 
 The look we aim for: bold, saturated palettes, chunky shapes with soft worn edges, painted (matte, not
@@ -49,9 +50,10 @@ Concept renders (Blender, made in code too) are in the project files under `art/
 
 | Id | Name | Status | Mood |
 |---|---|---|---|
-| `jungle_moon` | Jungle moon | On Gantry Yard | A freight yard on a jungle moon: sandstone walls with lime trim lights, ochre dirt with moss, magenta, teal, mustard and violet containers, yellow overhead gantries, purple cliffs, giant capped trees with glowing pink fruit, a teal-to-gold sky with a ringed lilac planet. |
+| `jungle_moon` | Jungle moon | Gantry Yard's main look | A freight yard overgrown by a jungle moon: mossy violet stone with lime trim lights, green earth thick with moss, magenta, teal, lime and violet containers, yellow overhead gantries, purple cliffs, giant capped trees with glowing pink fruit, a teal-to-gold sky with a ringed lilac planet. |
+| `jungle_temple` | Jungle temple | Gantry Yard's heart (both halls and the middle) | A temple quarter in the jungle: pale rose sandstone with plum courses, carved glyph bands, lime trim lights and a flagstone courtyard. Kept pale so orange-team heroes stand out against it. |
 | `sunforge_quarry` | Sunforge quarry | Proposed (data only) | Carved red sandstone at golden hour, brass machinery, turquoise glow, a dusky violet sky with a small ringed moon. No giant trees. |
-| `coral_reactor` | Coral reactor | Proposed (data only) | A reactor station on a tidal world grown over by dry coral: bone-white concrete, coral pinks and reds, sea-green trims, coral-fan trees, a bright aqua sky with a huge pale planet. |
+| `coral_reactor` | Coral reactor | Proposed (data only) | A reactor station on a tidal world grown over by dry coral: bone-white concrete, coral pinks, reds and magentas (no orange, it's a team colour), sea-green trims, coral-fan trees, a bright aqua sky with a huge pale planet. |
 
 More ideas for later layouts, each needing a few new prop builders:
 

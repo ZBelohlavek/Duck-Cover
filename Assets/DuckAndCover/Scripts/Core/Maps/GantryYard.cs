@@ -47,6 +47,9 @@ namespace DuckAndCover.Core
                 theme = "jungle_moon",
             };
 
+            // ---- Art: a jungle yard around a sandstone temple quarter (both halls and the middle compound) ----
+            m.artRegions.Add(new ArtRegion("jungle_temple", -36.5f, -22.5f, 36.5f, 22.5f));
+
             // ---- Floor and outer walls ----
             Self(m, "Ground", BlockKind.Ground, 0f, 0f, 72f, 1f, 128f, -1f);
             Pair(m, "OuterWallSouth", BlockKind.Wall, 0f, -64.25f, 73f, WallHeight, 0.5f);
