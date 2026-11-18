@@ -456,7 +456,7 @@ namespace DuckAndCover.Game
             if (wantedSlot == state.current) wantedSlot = -1;
 
             WeaponName = def.displayName;
-            Magazine = def.magazine;
+            Magazine = state.CurrentMagazine > 0 ? state.CurrentMagazine : def.magazine;
             Reloading = state.Reloading;
             Ammo = Reloading ? 0 : Mathf.Max(0, state.CurrentAmmo - unacknowledged);
             if (!focused || scripted || stunned) return;
@@ -469,7 +469,7 @@ namespace DuckAndCover.Game
                 client.Send(new SwitchWeaponCommand { slot = slot });
                 return;
             }
-            if (keyboard != null && keyboard.rKey.wasPressedThisFrame && !Reloading && Ammo < def.magazine)
+            if (keyboard != null && keyboard.rKey.wasPressedThisFrame && !Reloading && Ammo < Magazine)
             {
                 client.Send(new ReloadCommand());
                 return;

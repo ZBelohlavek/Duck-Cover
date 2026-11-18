@@ -100,6 +100,14 @@ namespace DuckAndCover.Core
         public const string FireRate = "fireRate";
         public const string ReloadSpeed = "reloadSpeed";
         public const string WeaponDamage = "weaponDamage";
+        /// <summary>Multiplier on magazine size (1.25 = a quarter more rounds).</summary>
+        public const string MagazineSize = "magazineSize";
+        /// <summary>Share of weapon damage dealt to enemies that heals the shooter (0.1 = 10%).</summary>
+        public const string LifeSteal = "lifeSteal";
+        /// <summary>Metres each weapon hit pushes an enemy along the shot (0 = none).</summary>
+        public const string WeaponPush = "weaponPush";
+        /// <summary>How much each weapon hit slows an enemy, as a share of speed (0.15 = 15% slower; 0 = none).</summary>
+        public const string WeaponSlow = "weaponSlow";
         /// <summary>Capture speed multiplier on points, for the zone rules to read.</summary>
         public const string CaptureSpeed = "captureSpeed";
 
@@ -124,6 +132,7 @@ namespace DuckAndCover.Core
                 case FireRate:
                 case ReloadSpeed:
                 case WeaponDamage:
+                case MagazineSize:
                 case CaptureSpeed:
                     return 1f;
                 default:

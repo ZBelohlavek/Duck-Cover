@@ -141,6 +141,91 @@ static class WeaponTests
     }
 
     [Test]
+    static void MagazineSizeStat()
+    {
+        var rifle = Def("rifle");
+        var h = Bare();
+        h.Arm(A1, "rifle", "pistol");
+        Check.Equal(rifle.magazine, h.W(A1).CurrentMagazine, "the weapon's own magazine by default");
+        h.Combat.Damage.AddModifiers(A1, "test_mag", new[] { new StatModifier(StatIds.MagazineSize, ModOp.Percent, 0.25f) });
+        h.Tick();
+        int bigger = (int)Math.Round(rifle.magazine * 1.25f);
+        Check.Equal(bigger, h.W(A1).CurrentMagazine, "a quarter bigger, shown to clients at once");
+        Check.Equal(rifle.magazine, h.W(A1).CurrentAmmo, "rounds in hand stay until a reload");
+        Check.Equal((int)Math.Round(Def("pistol").magazine * 1.25f), h.W(A1).magazines[1], "every weapon gets it");
+        Check.True(h.Combat.Apply(new ReloadCommand { playerId = A1 }).IsAccepted, "a reload is allowed: not full any more");
+        h.Run(rifle.reloadSeconds + 0.05f);
+        Check.Equal(bigger, h.W(A1).CurrentAmmo, "the reload fills the bigger magazine");
+        h.Combat.Damage.RemoveModifiers(A1, "test_mag");
+        h.Combat.Damage.AddModifiers(A1, "test_mag", new[] { new StatModifier(StatIds.MagazineSize, ModOp.Multiply, 0f) });
+        Check.Equal(1, h.Combat.Weapons.Magazine(A1, rifle), "never below one round");
+    }
+
+    [Test]
+    static void LifeStealHealsTheShooter()
+    {
+        var rifle = Def("rifle");
+        var h = Bare();
+        h.Arm(A1, "rifle");
+        h.Unit(A1).health = 100f;
+        h.FireAt(A1, h.ChestOf(B1));
+        Check.Near(100f, h.Health(A1), "no life steal by default");
+        h.Combat.Damage.AddModifiers(A1, "test_steal", new[] { new StatModifier(StatIds.LifeSteal, ModOp.Add, 0.1f) });
+        h.Run(1f);
+        h.Forget();
+        h.FireAt(A1, h.ChestOf(B1));
+        Check.Near(100f + rifle.damage * 0.1f, h.Health(A1), "heals 10% of the damage dealt");
+        var heal = h.Last<HealedEvent>();
+        Check.True(heal != null && heal.healerId == A1 && heal.targetId == A1, "a heal on the shooter, which earns no support xp");
+
+        // Nothing stolen from a teammate (no damage without friendly fire) or past full health.
+        h.Place(A2, 0f, 5f);
+        h.Place(B1, 0f, 100f);
+        h.Run(1f);
+        float before = h.Health(A1);
+        h.FireAt(A1, h.ChestOf(A2));
+        Check.Near(before, h.Health(A1), "shooting through a teammate heals nothing");
+        h.Unit(A1).health = h.Combat.Damage.MaxHealth(A1);
+        h.Place(B1, 0f, 10f);
+        h.Run(1f);
+        h.FireAt(A1, h.ChestOf(B1));
+        Check.Near(h.Combat.Damage.MaxHealth(A1), h.Health(A1), "not past full");
+    }
+
+    [Test]
+    static void WeaponPushAndSlow()
+    {
+        var h = Bare();
+        h.Arm(A1, "rifle");
+        h.FireAt(A1, h.ChestOf(B1));
+        Check.True(h.Last<PushedEvent>() == null, "no push by default");
+        Check.Near(1f, h.Combat.Abilities.MoveSpeed(B1), "no slow by default");
+
+        h.Combat.Damage.AddModifiers(A1, "test_push", new[]
+        {
+            new StatModifier(StatIds.WeaponPush, ModOp.Add, 0.15f),
+            new StatModifier(StatIds.WeaponSlow, ModOp.Add, 0.15f),
+        });
+        h.Run(1f);
+        h.FireAt(A1, h.ChestOf(B1));
+        var push = h.Last<PushedEvent>();
+        Check.True(push != null && push.targetId == B1 && push.sourceId == A1, "the hit pushes the target");
+        Check.Near(0.15f, push.distance, "by the stat's metres");
+        Check.Near(1f, push.direction.z, "along the shot, level with the ground", 1e-3f);
+        Check.Near(0f, push.direction.y, "never up or down");
+        Check.Near(h.R.weaponPushSeconds, push.seconds, "over the ruleset's time");
+        Check.Near(0.85f, h.Combat.Abilities.MoveSpeed(B1), "and slows them 15%");
+        h.Run(h.R.weaponSlowSeconds + 0.1f);
+        Check.Near(1f, h.Combat.Abilities.MoveSpeed(B1), "for the ruleset's seconds");
+
+        // A miss pushes nobody.
+        h.Forget();
+        h.Place(B1, 0f, 200f);
+        h.FireAt(A1, h.M(A1).position + new Vec3(0f, 1.6f, 50f));
+        Check.True(h.Last<PushedEvent>() == null, "a miss pushes nothing");
+    }
+
+    [Test]
     static void SwitchingWeapons()
     {
         var h = Bare();

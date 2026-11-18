@@ -56,6 +56,8 @@ namespace DuckAndCover.Core
                 return p != null && p.team == o.team && !Rules.friendlyFire;
             };
             Weapons.DamageObject = (objectId, amount, attackerId) => Abilities.DamageObject(objectId, amount, attackerId);
+            Weapons.Slow = (targetId, sourceId, share, seconds) =>
+                Abilities.ApplyStatus(targetId, AbilityLibrary.SlowStatus, sourceId, share, seconds, 0f, StatIds.WeaponSlow);
             events.Subscribe(OnEvent);
         }
 
