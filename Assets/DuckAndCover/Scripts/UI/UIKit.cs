@@ -62,6 +62,8 @@ namespace DuckAndCover.UI
             canvas.worldCamera = Camera.main;
             canvas.planeDistance = 0.3f;
             canvas.sortingOrder = order;
+            // Snap text to whole screen pixels so it stays sharp.
+            canvas.pixelPerfect = true;
             var scaler = go.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
@@ -164,16 +166,21 @@ namespace DuckAndCover.UI
         /// Text centred on <paramref name="centre"/> in a <see cref="Layer"/>'s pixels, with a soft dark
         /// edge so it reads over a bright sky without a box behind it.
         /// </summary>
+        /// <summary>Text smaller than this is never bold, so small labels stay sharp.</summary>
+        const int BoldFromSize = 24;
+
         public static Text Readout(Transform layer, string name, Vector2 centre, Vector2 size, string text, int fontSize, Color color, TextAnchor align, bool bold = false)
         {
             var label = Label(layer, name, Vector2.zero, Vector2.zero, size, text, fontSize, color, align);
             var rect = label.rectTransform;
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.anchoredPosition = centre;
-            if (bold) label.fontStyle = FontStyle.Bold;
-            var edge = label.gameObject.AddComponent<Outline>();
-            edge.effectColor = new Color(0f, 0.02f, 0.04f, 0.7f);
-            edge.effectDistance = new Vector2(1.5f, -1.5f);
+            // Bold is drawn by thickening the glyphs, which runs small letters together; keep it for big text.
+            if (bold && fontSize >= BoldFromSize) label.fontStyle = FontStyle.Bold;
+            // One crisp drop shadow, not an outline: four smeared copies made small text look blurry.
+            var edge = label.gameObject.AddComponent<Shadow>();
+            edge.effectColor = new Color(0f, 0.02f, 0.04f, 0.85f);
+            edge.effectDistance = new Vector2(1f, -1f);
             return label;
         }
     }

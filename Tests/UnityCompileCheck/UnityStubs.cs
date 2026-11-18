@@ -167,6 +167,7 @@ namespace UnityEngine
         public Camera worldCamera { get; set; }
         public float planeDistance { get; set; }
         public int sortingOrder { get; set; }
+        public bool pixelPerfect { get; set; }
         public static void ForceUpdateCanvases() { }
     }
 
