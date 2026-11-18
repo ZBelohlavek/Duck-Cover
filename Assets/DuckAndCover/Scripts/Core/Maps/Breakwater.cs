@@ -29,6 +29,8 @@ namespace DuckAndCover.Core
     {
         public const string Id = "breakwater";
         public const float HalfX = 40f, HalfZ = 105f;
+        /// <summary>Flag Rush capture zones: the one in team A's base (team B scores there) and B's.</summary>
+        public const int BaseA = 21, BaseB = 22;
         public const float LaneWidth = 10f;
         /// <summary>Jungle walls: too tall to see over from the ledges, the shelf or a jump.</summary>
         public const float FillHeight = 6.5f;
@@ -217,6 +219,15 @@ namespace DuckAndCover.Core
             Pair(m, "DamageRock", BlockKind.Wall, 9f, -97f, 2f, 2.4f, 3f, 0f, ShiftRole.None, 0, "rocks");
             Pair(m, "ExperienceLow", BlockKind.LowCover, 30f, -83f, 2.5f, 1f, 1.5f, 0f, ShiftRole.None, 0, "rocks");
             Self(m, "JuggernautRock", BlockKind.Wall, -34f, 0f, 2f, 2.2f, 3f, ShelfHeight, "rocks");
+
+            // ---- Flag Rush: a capture zone in each base's plaza, in front of the spawn room (its startOwner is
+            // the team whose base it is), and flag spots on the middle line, where both bases are the same walk away ----
+            m.zones.Add(new MapZone { id = new ZoneId(BaseA), set = "bases", label = "Base A", center = new Vec3(-12f, 0f, -91f), radius = 4.5f, startOwner = TeamId.A });
+            m.zones.Add(new MapZone { id = new ZoneId(BaseB), set = "bases", label = "Base B", center = new Vec3(-12f, 0f, 91f), radius = 4.5f, startOwner = TeamId.B });
+            m.flagSpots.Add(new Vec3(8f, 0f, 0f));            // mid-lane, under the shelf
+            m.flagSpots.Add(new Vec3(25f, 0f, 0f));           // the cut-through from the long jungle
+            m.flagSpots.Add(new Vec3(-8f, 0f, 0f));           // the drop pocket
+            m.flagSpots.Add(new Vec3(-20f, ShelfHeight, 0f)); // on the Juggernaut shelf
 
             // Team B's Bastions mirror team A's.
             foreach (var bastion in m.bastions.ToArray())

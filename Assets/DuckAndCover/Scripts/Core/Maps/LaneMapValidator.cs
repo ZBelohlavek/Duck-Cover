@@ -27,6 +27,9 @@ namespace DuckAndCover.Core
         public float launchMidShare = 0.2f;
         /// <summary>Bastions must stand within this far (metres) of the lane's centre line.</summary>
         public float bastionOffLane = 2f;
+        /// <summary>Flag Rush: each flag spot's walks from the two bases may differ by this share of the longer one.</summary>
+        public float flagFairness = 0.05f;
+        public int minFlagSpots = 2;
     }
 
     /// <summary>The walks the lane-map report lists.</summary>
@@ -42,6 +45,8 @@ namespace DuckAndCover.Core
         /// <summary>Each drop: seconds down, seconds back up (infinity when there is no way).</summary>
         public readonly List<(string name, float down, float up)> drops = new List<(string, float, float)>();
         public readonly List<(string name, float seconds, float lineSeconds)> routes = new List<(string, float, float)>();
+        /// <summary>Flag Rush: each flag spot's walk from team A's base and team B's, before the shift and after it.</summary>
+        public readonly List<FlagSpotRow> flagSpots = new List<FlagSpotRow>();
 
         public string Table()
         {
@@ -54,6 +59,12 @@ namespace DuckAndCover.Core
             foreach (var d in drops) sb.AppendLine("  " + d.name.PadRight(24) + Fmt(d.down) + " / " + Fmt(d.up));
             sb.AppendLine("Routes (seconds to walk / along the centre line)");
             foreach (var r in routes) sb.AppendLine("  " + r.name.PadRight(24) + Fmt(r.seconds) + " / " + Fmt(r.lineSeconds));
+            if (flagSpots.Count > 0)
+            {
+                sb.AppendLine("Flag spots: walk from each base's capture zone (after the shift in brackets)");
+                foreach (var f in flagSpots)
+                    sb.AppendLine("  " + f.spot.ToString().PadRight(24) + Fmt(f.a) + " (" + Fmt(f.aShifted) + ") / " + Fmt(f.b) + " (" + Fmt(f.bShifted) + ")  gap " + (f.Skew * 100f).ToString("0.0") + "%");
+            }
             return sb.ToString();
         }
 
@@ -95,6 +106,7 @@ namespace DuckAndCover.Core
             CheckLaunchPads(map, rules, settings, e);
             CheckEntrances(map, rules, e);
             CheckWalks(map, nav, settings, report);
+            CheckFlagRush(map, nav, navShifted, settings, report);
             return report;
         }
 
@@ -516,6 +528,48 @@ namespace DuckAndCover.Core
             var c = map.ShallowCopy();
             c.blocks = new List<MapBlock>(map.blocks);
             return c;
+        }
+
+        /// <summary>Flag Rush: a capture zone in each base, mirror twins, and flag spots the same walk from both bases.</summary>
+        static void CheckFlagRush(MapDef map, MapNav nav, MapNav navShifted, LaneMapCheckSettings s, LaneMapReport report)
+        {
+            var e = report.errors;
+            var match = map.ToMatchMap();
+            var bases = match.ZoneSet("bases");
+            if (bases == null || bases.zones.Count != 2) { e.Add("Flag Rush needs a 'bases' set of two capture zones, one in each base"); return; }
+            foreach (var problem in ModeDef.FlagRush().Validate(match)) e.Add("flag_rush: " + problem);
+            foreach (var z in map.zones)
+            {
+                bool found = false;
+                foreach (var o in map.zones)
+                    if (o.set == z.set && Near(o.center, MapDef.Mirror(z.center), s.symmetryTolerance) && Math.Abs(o.radius - z.radius) <= s.symmetryTolerance &&
+                        o.startOwner == z.startOwner.Other() && o.forwardSpawnFor == z.forwardSpawnFor.Other())
+                        found = true;
+                if (!found) e.Add("zone " + z.label + " has no mirror twin (with the teams swapped)");
+            }
+            MapZone baseA = null;
+            foreach (var z in map.zones) if (z.set == "bases" && z.startOwner == TeamId.A) baseA = z;
+            if (baseA == null) { e.Add("Flag Rush: team A's base has no capture zone"); return; }
+            if (map.flagSpots.Count < s.minFlagSpots) e.Add("Flag Rush needs at least " + s.minFlagSpots + " flag spots");
+            // One field from A's base per state; mirrored, B's walk to a spot is A's walk to the spot's twin.
+            var fromA = new[] { nav.TravelFrom(baseA.center), navShifted.TravelFrom(baseA.center) };
+            var navs = new[] { nav, navShifted };
+            foreach (var spot in map.flagSpots)
+            {
+                bool twin = false;
+                foreach (var o in map.flagSpots) if (Near(o, MapDef.Mirror(spot), s.symmetryTolerance)) twin = true;
+                if (!twin) e.Add("flag spot " + spot + " has no mirror twin");
+                OnFloor(map, "flag spot", spot, e);
+                var row = new FlagSpotRow { spot = spot };
+                var m = MapDef.Mirror(spot);
+                row.a = CellTime(navs[0], fromA[0], spot); row.b = CellTime(navs[0], fromA[0], m);
+                row.aShifted = CellTime(navs[1], fromA[1], spot); row.bShifted = CellTime(navs[1], fromA[1], m);
+                report.flagSpots.Add(row);
+                if (float.IsInfinity(row.a) || float.IsInfinity(row.b) || float.IsInfinity(row.aShifted) || float.IsInfinity(row.bShifted))
+                    e.Add("flag spot " + spot + " can't be walked to from both bases, before and after the shift");
+                else if (row.Skew > s.flagFairness)
+                    e.Add("flag spot " + spot + " is " + (row.Skew * 100f).ToString("0.0") + "% closer to one base (at most " + (s.flagFairness * 100f).ToString("0") + "%)");
+            }
         }
 
         static void CheckWalks(MapDef map, MapNav nav, LaneMapCheckSettings s, LaneMapReport report)

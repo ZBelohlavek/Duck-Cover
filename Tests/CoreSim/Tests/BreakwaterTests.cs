@@ -55,6 +55,21 @@ static class BreakwaterTests
     }
 
     [Test]
+    static void FlagRushFitsBreakwater()
+    {
+        var map = Breakwater.Build();
+        var match = map.ToMatchMap();
+        Check.Equal(0, ModeDef.FlagRush().Validate(match).Count, "Flag Rush fits the map");
+        Check.Equal(4, match.flagSpots.Count, "four flag spots reach the rules");
+        var report = LaneMapValidator.Check(map);
+        Check.Equal(4, report.flagSpots.Count, "every spot walked");
+        foreach (var f in report.flagSpots) Check.True(f.Skew <= 0.05f, "spot " + f.spot + " is fair (" + (f.Skew * 100f).ToString("0.0") + "%)");
+        var baseA = map.Zone(new ZoneId(Breakwater.BaseA));
+        Check.True(baseA != null && baseA.startOwner == TeamId.A && baseA.center.z < -80f, "team A's capture zone is in A's base");
+        Check.True(map.entrances.Count(x => x.team == TeamId.A) >= 2, "two ways into the base for a carrier");
+    }
+
+    [Test]
     static void LedgesAndTheShelfAreOneWay()
     {
         var report = LaneMapValidator.Check(Breakwater.Build());
@@ -138,6 +153,8 @@ static class BreakwaterTests
         Rejects(m => { m.launchPads[0].apexHeight = 2f; m.launchPads[1].apexHeight = 2f; }, "arc hits", "a launch arc too low to clear the walls");
         Rejects(m => { m.launchPads[0].landing = new Vec3(-12f, 0f, -70f); m.launchPads[1].landing = new Vec3(-12f, 0f, 70f); }, "middle of the lane", "a pad that lands by its own base");
         Rejects(m => m.camps.RemoveAll(c => c.kind == CampKind.Speed), "Speed camp", "no speed camps");
+        Rejects(m => { m.flagSpots.Clear(); m.flagSpots.Add(new Vec3(8f, 0f, -30f)); m.flagSpots.Add(new Vec3(8f, 0f, 30f)); }, "closer to one base", "flag spots nearer one base");
+        Rejects(m => m.zones.RemoveAll(z => z.set == "bases"), "'bases'", "no Flag Rush capture zones");
         Rejects(m => { foreach (var r in m.routes.Where(r => r.kind == RouteKind.Branch)) r.points.RemoveAt(2); }, "must end at a camp", "a branch that stops short of its camp");
     }
 
@@ -309,6 +326,11 @@ static class BreakwaterTests
         }
         foreach (var p in map.spawnsA) sb.Append("<circle cx='").Append(X(p.position.x)).Append("' cy='").Append(Y(p.position.z)).Append("' r='4' fill='#3d99f2' stroke='#fff'/>");
         foreach (var p in map.spawnsB) sb.Append("<circle cx='").Append(X(p.position.x)).Append("' cy='").Append(Y(p.position.z)).Append("' r='4' fill='#f28c33' stroke='#fff'/>");
+        foreach (var z in map.zones)
+            sb.Append("<circle cx='").Append(X(z.center.x)).Append("' cy='").Append(Y(z.center.z)).Append("' r='").Append(N(z.radius))
+              .Append("' fill='none' stroke='").Append(z.startOwner == TeamId.A ? "#3d99f2" : "#f28c33").Append("' stroke-width='2' stroke-dasharray='6 4'/>");
+        foreach (var f in map.flagSpots)
+            sb.Append("<circle cx='").Append(X(f.x)).Append("' cy='").Append(Y(f.z)).Append("' r='6' fill='#ffe14d' stroke='#000' stroke-width='2'/>");
         foreach (var x in map.entrances) sb.Append("<circle cx='").Append(X(x.position.x)).Append("' cy='").Append(Y(x.position.z)).Append("' r='5' fill='none' stroke='#fff' stroke-dasharray='3 2'/>");
 
         // Legend and table.
@@ -326,6 +348,7 @@ static class BreakwaterTests
         Line("Camps: JUG, DMG, XP, SPD", "#ffffff");
         Line("Launch pad and arc", "#ffe14d"); Line("One-way drops (dot: landing)", "#ff6b5b");
         Line("Base entrances: dashed rings", "#ffffff");
+        Line("Flag Rush: flag spots, base zones", "#ffe14d");
         ly += 10;
         Line("Lane " + report.laneLength.ToString("0") + " m; longest sight " + report.longestSight.ToString("0") + " m", "#ffffff", 14);
         Line("Walk seconds from spawn (A / B)", "#ffffff", 14);
