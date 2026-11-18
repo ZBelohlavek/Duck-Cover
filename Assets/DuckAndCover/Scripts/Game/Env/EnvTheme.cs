@@ -31,6 +31,9 @@ namespace DuckAndCover.Game
         public Color deck, deckDark;        // raised platforms and ramps
         public Color shutter, shutterBand;  // doors that open with the map shift
         public Color steel;                 // overhead gantries
+        public Color laneA = new Color(0.63f, 0.55f, 0.49f), laneB = new Color(0.49f, 0.42f, 0.38f); // packed dirt of a lane
+        public Color verge = new Color(0.30f, 0.35f, 0.16f);   // the darker strip along a lane's edges
+        public Color trail = new Color(0.42f, 0.48f, 0.22f);   // mossy trails into the jungle
 
         // ---- Plants ----
         public Color trunk, trunkDark;
@@ -127,7 +130,7 @@ namespace DuckAndCover.Game
             t.displayName = "Jungle temple";
             t.seed = 9;
             t.paving = C(0xB8A898); t.pavingMortar = C(0x5A4858);
-            t.stone = C(0xE4C6A4); t.stoneMortar = C(0x6B4A54);
+            t.stone = C(0xE2C2B4); t.stoneMortar = C(0x6B4A5E);
             t.trimBase = C(0x5A2E58);
             t.glyph = C(0x8A5A44);
             t.containers = new[] { C(0xB4235F), C(0x14857C), C(0xD9A21C), C(0x6A44A8) };

@@ -39,7 +39,8 @@ namespace DuckAndCover.Core
         /// </summary>
         public Func<int, string, string> UseCheck;
 
-        public AbilityRunner(MatchRules match, AbilityLibrary library, IWorldQuery world, IGameEvents events)
+        /// <param name="units">The units that are not players, when the match has any (CombatServer shares its roster).</param>
+        public AbilityRunner(MatchRules match, AbilityLibrary library, IWorldQuery world, IGameEvents events, UnitRoster units = null)
         {
             this.match = match ?? throw new ArgumentNullException(nameof(match));
             Library = library ?? throw new ArgumentNullException(nameof(library));
@@ -51,7 +52,7 @@ namespace DuckAndCover.Core
             if (problems.Count > 0) throw new ArgumentException("Can't run abilities: " + string.Join("; ", problems));
 
             State.nextObjectId = Rules.firstObjectId;
-            Combat = new DamageRules(match, world, events, State);
+            Combat = new DamageRules(match, world, events, State, units);
 
             effects[EffectKinds.Damage] = new DamageEffect();
             effects[EffectKinds.Heal] = new HealEffect();
@@ -170,7 +171,8 @@ namespace DuckAndCover.Core
         // ---- Queries (HUD, Game layer, scripts) ----
 
         public HeroUnit Unit(int playerId) => Combat.Unit(playerId);
-        public bool IsAlive(int playerId) => Match.IsAlive(playerId);
+        /// <summary>A living player or unit (any unit id).</summary>
+        public bool IsAlive(int playerId) => Combat.IsAlive(playerId);
         public float Stat(int playerId, string stat) => Combat.Stat(playerId, stat);
 
         /// <summary>The ability in a hero's slot as they have it now (talents applied), or null.</summary>
@@ -239,7 +241,16 @@ namespace DuckAndCover.Core
             return CommandResult.Accepted;
         }
 
-        public void FillSnapshot(MatchSnapshot snapshot) => snapshot.abilities = State.Clone();
+        /// <summary>
+        /// Heroes' fighting state, objects and pending effects. Units that are not players are left out:
+        /// they travel in the compact <see cref="MatchSnapshot.units"/> list instead.
+        /// </summary>
+        public void FillSnapshot(MatchSnapshot snapshot)
+        {
+            var copy = State.Clone();
+            copy.units.RemoveAll(u => UnitIds.IsUnit(u.playerId));
+            snapshot.abilities = copy;
+        }
 
         // ---- Commands ----
 
@@ -372,7 +383,7 @@ namespace DuckAndCover.Core
             foreach (var unit in State.units.ToArray())
             {
                 TickSlots(unit, dt);
-                if (!Match.IsAlive(unit.playerId)) continue;
+                if (!Combat.IsAlive(unit.playerId)) continue;
                 TickUltimate(unit, dt);
                 TickStatuses(unit, dt);
             }
@@ -457,6 +468,18 @@ namespace DuckAndCover.Core
                     Combat.OnEliminated(down.playerId);
                     foreach (var s in unit.slots) s.activeLeft = 0f;
                     if (down.disconnected) RemoveObjectsOf(down.playerId, "ownerLeft");
+                    break;
+                }
+                case UnitDestroyedEvent gone:
+                {
+                    // Combat drops the unit's state after this event; end its statuses first.
+                    var unit = State.Unit(gone.unitId);
+                    if (unit == null) return;
+                    // Statuses end the way a hero's do when it goes down ("eliminated"), or "removed".
+                    string reason = gone.reason == "killed" ? "eliminated" : gone.reason;
+                    CancelCasts(unit, reason);
+                    ClearStatuses(unit, reason);
+                    Forget(unit);
                     break;
                 }
                 case DamagedEvent hit:

@@ -50,12 +50,27 @@ namespace DuckAndCover.Game
             new Shot("10-abilities", DummiesUseAbilities, 1.6f),
             new Shot("11-gate", DummyRaisesGate, 1.0f),
             new Shot("12-hero-hud", LevelUpAndLook, 1.2f),
+            // Environment kit: the lane mock-up, built far off to one side of the real map.
+            new Shot("13-lane", () => LaneShot(new Vector3(0f, 1.8f, -50f), new Vector3(0f, 1.2f, -38f)), 1.0f),
+            new Shot("14-lane-gap", () => LaneShot(new Vector3(1.5f, 1.8f, -41f), new Vector3(-16f, 1.2f, -50f)), 0.6f),
+            new Shot("15-lane-above", () => LaneShot(new Vector3(0f, 55f, -62f), new Vector3(0f, 0f, -10f)), 0.6f),
             // Flag Rush (WP21): a new match against two dummies; the flag, a dummy carrying it, then the player.
-            new Shot("13-flag-spawn", StartFlagMatch, 6f),
-            new Shot("14-flag-up", WatchTheFlag, 0.6f),
-            new Shot("15-flag-carrier", DummyTakesTheFlag, 1.0f),
-            new Shot("16-flag-mine", PlayerTakesTheFlag, 1.2f),
+            new Shot("16-flag-spawn", StartFlagMatch, 6f),
+            new Shot("17-flag-up", WatchTheFlag, 0.6f),
+            new Shot("18-flag-carrier", DummyTakesTheFlag, 1.0f),
+            new Shot("19-flag-mine", PlayerTakesTheFlag, 1.2f),
         };
+
+        /// <summary>Where the lane mock-up is built: far enough that neither map shows in the other's shots.</summary>
+        static readonly Vector3 LaneOffset = new Vector3(0f, 0f, 1500f);
+        static GameObject lanePreview;
+
+        static void LaneShot(Vector3 position, Vector3 target)
+        {
+            if (lanePreview == null) lanePreview = MapScene.BuildPreview(LaneStudy.Build(), LaneOffset);
+            LookAt(position + LaneOffset, target + LaneOffset);
+            WatchFrom(position + LaneOffset, target + LaneOffset);
+        }
 
         /// <summary>Host Flag Rush alone against two practice dummies, with the first flag up a second into play.</summary>
         static void StartFlagMatch()

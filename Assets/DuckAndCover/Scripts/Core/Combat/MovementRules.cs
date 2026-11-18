@@ -118,6 +118,7 @@ namespace DuckAndCover.Core
                     Place(spawned.playerId, spawned.team, spawned.zone);
                     break;
                 case PushedEvent pushed:
+                    if (UnitIds.IsUnit(pushed.targetId)) break; // units are moved by the server (UnitRules)
                     AllowanceOf(pushed.targetId).metres += Math.Max(0f, pushed.distance);
                     break;
                 case PlayerLeftEvent left:
