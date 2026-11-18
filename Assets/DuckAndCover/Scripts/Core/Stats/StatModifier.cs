@@ -152,9 +152,9 @@ namespace DuckAndCover.Core
     public static class StatConditions
     {
         public const string Always = "";
-        /// <summary>Standing on a live point the hero's team holds.</summary>
+        /// <summary>Standing on a live point the hero's team holds, or (in lane modes) beside their own minions (Ruleset.escortRadius).</summary>
         public const string OnHeldPoint = "onHeldPoint";
-        /// <summary>Standing on any live point.</summary>
+        /// <summary>Standing on any live point, or (in lane modes) beside their own minions (Ruleset.escortRadius).</summary>
         public const string OnPoint = "onPoint";
         /// <summary>Health at or below half.</summary>
         public const string LowHealth = "lowHealth";

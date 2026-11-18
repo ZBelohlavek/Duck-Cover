@@ -102,7 +102,7 @@
         {
             "id": "bulwark_anchor",
             "displayName": "Anchor",
-            "description": "Take 8% less damage on a point your team holds.",
+            "description": "Take 8% less damage on a point your team holds, or beside your own minions.",
             "kind": "trait",
             "stats": [
                 {
@@ -241,7 +241,7 @@
         {
             "id": "bulwark_braced",
             "displayName": "Braced",
-            "description": "Passive. Take 15% less damage while standing on a point.",
+            "description": "Passive. Take 15% less damage while standing on a point, or beside your own minions.",
             "kind": "passive",
             "stats": [
                 {
@@ -307,7 +307,7 @@
         {
             "id": "bulwark_point_warden",
             "displayName": "Point Warden",
-            "description": "Your weapons deal 12% more damage while on a point.",
+            "description": "Your weapons deal 12% more damage while on a point, or beside your own minions.",
             "kind": "trait",
             "stats": [
                 {

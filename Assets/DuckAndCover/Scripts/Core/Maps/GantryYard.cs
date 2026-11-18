@@ -25,6 +25,8 @@ namespace DuckAndCover.Core
 
         public const int PointA = 1, PointMid = 2, PointB = 3;
         public const int Hill1 = 11, Hill2 = 12, Hill3 = 13, Hill4 = 14;
+        /// <summary>Flag Rush capture zones: the one in team A's spawn room (team B scores there) and B's.</summary>
+        public const int BaseA = 21, BaseB = 22;
 
         const float WallHeight = 6f;
         const float RoomHeight = 4f;
@@ -129,6 +131,18 @@ namespace DuckAndCover.Core
             Zone(m, Hill2, "hills", "Hill 2", MapDef.Turn(new Vec3(-11f, 0f, -6.5f)), 4f, TeamId.None, TeamId.None);
             Zone(m, Hill3, "hills", "Hill 3", new Vec3(16f, 0f, -18f), 4f, TeamId.None, TeamId.None);
             Zone(m, Hill4, "hills", "Hill 4", MapDef.Turn(new Vec3(16f, 0f, -18f)), 4f, TeamId.None, TeamId.None);
+            // Flag Rush: the capture zone fills the front of each spawn room, between its two side
+            // doors, so a carrier always has two ways in. Its startOwner is the team whose base it is.
+            Zone(m, BaseA, "bases", "Base A", new Vec3(0f, 0f, -55.5f), 4.5f, TeamId.A, TeamId.None);
+            Zone(m, BaseB, "bases", "Base B", MapDef.Turn(new Vec3(0f, 0f, -55.5f)), 4.5f, TeamId.B, TeamId.None);
+
+            // ---- Flag Rush: flag spots on the line where both bases are the same walk away (within 2%,
+            // before and after the shift): beside the middle pillar, and out in the outer lane and the yard.
+            foreach (var spot in new[] { new Vec3(1.25f, 0f, -1.25f), new Vec3(-26.25f, 0f, -0.25f) })
+            {
+                m.flagSpots.Add(spot);
+                m.flagSpots.Add(MapDef.Turn(spot));
+            }
 
             // ---- Spawn spots ----
             for (int i = 0; i < 5; i++)

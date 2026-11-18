@@ -16,6 +16,21 @@ namespace DuckAndCover.Core
         /// <summary>The first hill of king of the hill may favour one team by at most this much (seconds).</summary>
         public float firstHillSkew = 2.5f;
         public int spawnsPerTeam = 5;
+        /// <summary>Flag Rush: each flag spot's walks from the two bases may differ by this share of the longer one.</summary>
+        public float flagFairness = 0.05f;
+        /// <summary>Flag Rush: at least this many spots, so the flag never appears at the same one twice running.</summary>
+        public int minFlagSpots = 2;
+    }
+
+    /// <summary>A flag spot's walk from each base's capture zone, before and after the shift.</summary>
+    public struct FlagSpotRow
+    {
+        public Vec3 spot;
+        public float a, b, aShifted, bShifted;
+
+        /// <summary>The larger gap, as a share of the longer walk, before or after the shift.</summary>
+        public float Skew => Math.Max(Gap(a, b), Gap(aShifted, bShifted));
+        static float Gap(float x, float y) => Math.Abs(x - y) / Math.Max(1e-3f, Math.Max(x, y));
     }
 
     /// <summary>A team's walking time to each zone, before and after the shift.</summary>
@@ -30,6 +45,8 @@ namespace DuckAndCover.Core
     {
         public readonly List<string> errors = new List<string>();
         public readonly List<TravelRow> fromSpawns = new List<TravelRow>();
+        /// <summary>Flag Rush: every flag spot's walk from team A's base and team B's.</summary>
+        public readonly List<FlagSpotRow> flagSpots = new List<FlagSpotRow>();
         /// <summary>Seconds from each team's own point to the middle point, before and after the shift.</summary>
         public float pointToMidA, pointToMidB, pointToMidAShifted, pointToMidBShifted;
         public bool Ok => errors.Count == 0;
@@ -42,6 +59,13 @@ namespace DuckAndCover.Core
             foreach (var r in fromSpawns)
                 sb.AppendLine("  " + r.label.PadRight(10) + Pair(r.a, r.aShifted).PadRight(16) + Pair(r.b, r.bShifted));
             sb.AppendLine("Own point to the middle: A " + Pair(pointToMidA, pointToMidAShifted) + ", B " + Pair(pointToMidB, pointToMidBShifted));
+            if (flagSpots.Count > 0)
+            {
+                sb.AppendLine("Flag spots: walk from each base's capture zone (after the shift in brackets)");
+                sb.AppendLine("  spot                 from A          from B          gap");
+                foreach (var f in flagSpots)
+                    sb.AppendLine("  " + f.spot.ToString().PadRight(21) + Pair(f.a, f.aShifted).PadRight(16) + Pair(f.b, f.bShifted).PadRight(16) + (f.Skew * 100f).ToString("0.0") + "%");
+            }
             return sb.ToString();
         }
 
@@ -50,9 +74,10 @@ namespace DuckAndCover.Core
     }
 
     /// <summary>
-    /// Checks a map is complete and fair: everything has its turned twin, the zone sets suit both
-    /// modes, the spawns are safe from each other, every zone can be walked to from both spawn
-    /// rooms before and after the shift, and both teams walk the same time to matching zones.
+    /// Checks a map is complete and fair: everything has its turned twin, the zone sets suit every
+    /// mode, the spawns are safe from each other, every zone can be walked to from both spawn
+    /// rooms before and after the shift, both teams walk the same time to matching zones, and every
+    /// Flag Rush flag spot is the same walk from both bases.
     /// </summary>
     public static class MapValidator
     {
@@ -65,7 +90,7 @@ namespace DuckAndCover.Core
             if (map == null) { e.Add("no map"); return report; }
 
             CheckBasics(map, e);
-            CheckZoneSets(map, e);
+            CheckZoneSets(map, settings, e);
             CheckSymmetry(map, settings, e);
             CheckSpawns(map, settings, e);
             CheckSightlines(map, rules, e);
@@ -94,7 +119,7 @@ namespace DuckAndCover.Core
             if (string.IsNullOrEmpty(map.shiftDescription)) e.Add("the map shift needs a description");
         }
 
-        static void CheckZoneSets(MapDef map, List<string> e)
+        static void CheckZoneSets(MapDef map, MapCheckSettings s, List<string> e)
         {
             var ids = new HashSet<int>();
             foreach (var z in map.zones)
@@ -117,7 +142,10 @@ namespace DuckAndCover.Core
             }
             var hills = match.ZoneSet("hills");
             if (hills == null || hills.zones.Count != 4) e.Add("king of the hill needs a 'hills' set of four zones");
-            foreach (var mode in new[] { ModeDef.CaptureAndHold(), ModeDef.KingOfTheHill() })
+            var bases = match.ZoneSet("bases");
+            if (bases == null || bases.zones.Count != 2) e.Add("Flag Rush needs a 'bases' set of two capture zones, one in each base");
+            if (map.flagSpots.Count < s.minFlagSpots) e.Add("Flag Rush needs at least " + s.minFlagSpots + " flag spots");
+            foreach (var mode in new[] { ModeDef.CaptureAndHold(), ModeDef.KingOfTheHill(), ModeDef.FlagRush() })
                 foreach (var problem in mode.Validate(match)) e.Add(mode.id + ": " + problem);
         }
 
@@ -146,6 +174,12 @@ namespace DuckAndCover.Core
                         o.startOwner == z.startOwner.Other() && o.forwardSpawnFor == z.forwardSpawnFor.Other())
                     { found = true; break; }
                 if (!found) e.Add("zone " + z.label + " has no twin turned about the centre (with the teams swapped)");
+            }
+            foreach (var f in map.flagSpots)
+            {
+                bool found = false;
+                foreach (var o in map.flagSpots) if (Near(o, MapDef.Turn(f), tol)) { found = true; break; }
+                if (!found) e.Add("flag spot " + f + " has no twin turned about the centre");
             }
             if (map.spawnsA.Count != map.spawnsB.Count) e.Add("the teams have different numbers of spawn spots");
             foreach (var a in map.spawnsA)
@@ -186,6 +220,15 @@ namespace DuckAndCover.Core
                     foreach (var f in map.forward) if (f.zone == z.id) n++;
                     if (n == 0) e.Add("zone " + z.label + " is a forward spawn with no spawn spots");
                 }
+            for (int i = 0; i < map.flagSpots.Count; i++)
+            {
+                var f = map.flagSpots[i];
+                foreach (bool shifted in new[] { false, true })
+                    if (Math.Abs(SurfaceAt(map, f.x, f.z, shifted) - f.y) > 0.05f)
+                    { e.Add("flag spot " + f + " is not on open floor" + (shifted ? " after the shift" : "")); break; }
+                for (int j = 0; j < i; j++)
+                    if (Vec3.Distance(f, map.flagSpots[j]) < 0.5f) e.Add("flag spot " + f + " is listed twice");
+            }
             var all = new List<SpawnPoint>();
             all.AddRange(map.spawnsA); all.AddRange(map.spawnsB); all.AddRange(map.forward); all.AddRange(map.dummies);
             foreach (var p in all)
@@ -314,6 +357,30 @@ namespace DuckAndCover.Core
                 for (int n = 0; n < 2; n++)
                     if (Math.Abs(t[n * 2] - u[n * 2 + 1]) > s.travelTolerance)
                         e.Add("team A walks " + t[n * 2].ToString("0.0") + " s to " + z.label + " but team B walks " + u[n * 2 + 1].ToString("0.0") + " s to " + twin.label + (n == 1 ? " after the shift" : ""));
+            }
+
+            // Flag Rush: a random spot must never favour a side.
+            MapZone baseOf(TeamId team) { foreach (var z in map.zones) if (z.set == "bases" && z.startOwner == team) return z; return null; }
+            var baseA = baseOf(TeamId.A);
+            var baseB = baseOf(TeamId.B);
+            if (baseA != null && baseB != null)
+            {
+                // One field per state, from A's base. The map is turn symmetric (checked above), so B's
+                // walk to a spot is A's walk to the spot's twin; reading it that way keeps the walk
+                // grid's rounding of the two start points out of the comparison.
+                var fromA = new[] { navs[0].TravelFrom(baseA.center), navs[1].TravelFrom(baseA.center) };
+                float At(int n, Vec3 p) => fromA[n].seconds[navs[n].J(p.z) * navs[n].width + navs[n].I(p.x)];
+                foreach (var spot in map.flagSpots)
+                {
+                    var row = new FlagSpotRow { spot = spot };
+                    var twin = MapDef.Turn(spot);
+                    row.a = At(0, spot); row.b = At(0, twin); row.aShifted = At(1, spot); row.bShifted = At(1, twin);
+                    report.flagSpots.Add(row);
+                    if (float.IsInfinity(row.a) || float.IsInfinity(row.b) || float.IsInfinity(row.aShifted) || float.IsInfinity(row.bShifted))
+                        e.Add("flag spot " + spot + " can't be walked to from both bases, before and after the shift");
+                    else if (row.Skew > s.flagFairness)
+                        e.Add("flag spot " + spot + " is " + (row.Skew * 100f).ToString("0.0") + "% closer to one base (at most " + (s.flagFairness * 100f).ToString("0") + "%)");
+                }
             }
 
             // The first hill should not hand one team the opening.

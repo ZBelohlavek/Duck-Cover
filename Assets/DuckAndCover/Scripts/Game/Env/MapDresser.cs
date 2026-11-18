@@ -312,6 +312,7 @@ namespace DuckAndCover.Game
             }
             foreach (var zone in map.zones)
             {
+                if (zone.set == "bases") continue; // Flag Rush's capture zones sit in the spawn rooms, shown only in that mode
                 c.active = ThemeAt(c, zone.center.x, zone.center.z);
                 var paving = Mat(c, PaintedTextures.Kind.Paving, c.active.paving, c.active.pavingMortar);
                 float r = zone.radius + 1.5f;

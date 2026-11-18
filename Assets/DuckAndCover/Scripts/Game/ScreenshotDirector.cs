@@ -54,6 +54,11 @@ namespace DuckAndCover.Game
             new Shot("13-lane", () => LaneShot(new Vector3(0f, 1.8f, -50f), new Vector3(0f, 1.2f, -38f)), 1.0f),
             new Shot("14-lane-gap", () => LaneShot(new Vector3(1.5f, 1.8f, -41f), new Vector3(-16f, 1.2f, -50f)), 0.6f),
             new Shot("15-lane-above", () => LaneShot(new Vector3(0f, 55f, -62f), new Vector3(0f, 0f, -10f)), 0.6f),
+            // Flag Rush (WP21): a new match against two dummies; the flag, a dummy carrying it, then the player.
+            new Shot("16-flag-spawn", StartFlagMatch, 6f),
+            new Shot("17-flag-up", WatchTheFlag, 0.6f),
+            new Shot("18-flag-carrier", DummyTakesTheFlag, 1.0f),
+            new Shot("19-flag-mine", PlayerTakesTheFlag, 1.2f),
             // Breakwater (WP18), the Overrun map, built far off to the other side. No HUD over these.
             new Shot("20-bw-above", () => BreakwaterShot(new Vector3(-95f, 120f, -5f), new Vector3(0f, 0f, 0f)), 1.2f),
             new Shot("21-bw-base", () => BreakwaterShot(new Vector3(-30f, 40f, -112f), new Vector3(-8f, 0f, -70f)), 0.6f),
@@ -91,6 +96,93 @@ namespace DuckAndCover.Game
             HideHud = true;
             LookAt(position + LaneOffset, target + LaneOffset);
             WatchFrom(position + LaneOffset, target + LaneOffset);
+        }
+
+        /// <summary>Host Flag Rush alone against two practice dummies, with the first flag up a second into play.</summary>
+        static void StartFlagMatch()
+        {
+            var rules = Ruleset.Default;
+            rules.heroPickSeconds = 1.5f;
+            rules.deploySeconds = 1.5f;
+            rules.flagFirstSpawnSeconds = 1f;
+            rules.flagDropResetSeconds = 60f; // the dropped flag stays put for the last shot
+            var runner = SessionRunner.Ensure();
+            // The practice match from shot 06 still holds its port: Netcode shuts its transport down on a
+            // later frame and the old NetworkManager is destroyed at the end of this one. Leave first, give
+            // both a moment, and host on the next port, so the new host never meets the old socket.
+            runner.Leave();
+            runner.StartCoroutine(HostFlagMatchSoon(runner, rules));
+        }
+
+        static IEnumerator HostFlagMatchSoon(SessionRunner runner, Ruleset rules)
+        {
+            yield return null;
+            yield return null;
+            yield return new WaitForSecondsRealtime(0.25f);
+            runner.Host("flag_rush", "Capture", false, runner.Settings.defaultPort + 1, false, rules);
+            var session = runner.Session;
+            if (session == null || session.Client == null) { Debug.LogError("Duck and Cover: the capture could not host Flag Rush."); yield break; }
+            var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
+            if (local != null) { local.scripted = true; local.freeCamera = false; }
+            session.Client.Welcomed += welcome =>
+            {
+                for (int i = 0; i < 2; i++) session.Client.Send(new AddDummyCommand { team = TeamId.B });
+                session.Client.Send(new PickHeroCommand { heroId = "lancer" });
+                session.Client.Send(new StartMatchCommand());
+            };
+        }
+
+        static FlagState ServerFlag()
+        {
+            var runner = SessionRunner.Instance;
+            if (runner == null || runner.Flag == null) { Debug.LogError("Duck and Cover: the capture has no Flag Rush match."); return null; }
+            return runner.Flag.State;
+        }
+
+        /// <summary>From above and behind team A's half, looking at the flag where it appeared.</summary>
+        static void WatchTheFlag()
+        {
+            var f = ServerFlag();
+            if (f == null) return;
+            if (f.status != FlagStatus.AtSpot) Debug.LogError("Duck and Cover: the capture expected the flag at its spot, it is " + f.status + ".");
+            var at = f.position.ToVector3();
+            WatchFrom(at + new Vector3(-9f, 9f, -14f), at + Vector3.up);
+        }
+
+        /// <summary>The first dummy steps onto the flag (a server teleport) and carries it.</summary>
+        static void DummyTakesTheFlag()
+        {
+            var runner = SessionRunner.Instance;
+            var f = ServerFlag();
+            if (f == null) return;
+            int dummy = CombatServer.FirstDummyId;
+            var at = f.position;
+            runner.Combat.Movement.Teleport(dummy, at, 200f);
+            WatchFrom(at.ToVector3() + new Vector3(-6f, 4f, -7f), at.ToVector3() + Vector3.up * 1.5f);
+            CombatView.Instance.StartCoroutine(Expect(() => f.IsCarrier(dummy), 0.5f, "a practice dummy to carry the flag"));
+        }
+
+        /// <summary>The carrier goes down, and the player picks the dropped flag up: back to first person, facing the enemy base.</summary>
+        static void PlayerTakesTheFlag()
+        {
+            var runner = SessionRunner.Instance;
+            var f = ServerFlag();
+            var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
+            if (f == null || local == null) return;
+            int me = runner.Client.PlayerId;
+            runner.Match.EliminatePlayer(CombatServer.FirstDummyId, me);
+            var at = f.position;
+            runner.Combat.Movement.Teleport(me, at, 0f);
+            local.freeCamera = false;
+            local.LookAt(0f, 4f);
+            CombatView.Instance.StartCoroutine(Expect(() => f.IsCarrier(me), 0.6f, "the player to carry the flag"));
+        }
+
+        /// <summary>Log an error if <paramref name="ok"/> doesn't hold after <paramref name="seconds"/>.</summary>
+        static IEnumerator Expect(Func<bool> ok, float seconds, string what)
+        {
+            yield return new WaitForSecondsRealtime(seconds);
+            if (!ok()) Debug.LogError("Duck and Cover: the capture expected " + what + ".");
         }
 
         static readonly string[] DummyHeroes = { "bulwark", "rigger", "mender" };

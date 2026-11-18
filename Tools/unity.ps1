@@ -7,13 +7,15 @@
   ./Tools/unity.ps1 capture    # play the Boot scene and save screenshots + log.txt to Screenshots/
   ./Tools/unity.ps1 scenes     # rebuild the generated scenes in Assets/DuckAndCover/Scenes
   ./Tools/unity.ps1 netsmoke   # build a player, run it twice (host + client, no graphics), compare the results
+  ./Tools/unity.ps1 netsmoke flag_rush   # the same with another mode (king_of_the_hill, capture_hold, flag_rush)
 
 .NOTES
   Close the Unity editor first: Unity can't open a project that's already open.
   Set UNITY_PATH to Unity.exe if it isn't installed in the default Unity Hub folder.
 #>
 param(
-    [Parameter(Mandatory = $true)][ValidateSet("check", "capture", "scenes", "netsmoke")][string]$Command
+    [Parameter(Mandatory = $true)][ValidateSet("check", "capture", "scenes", "netsmoke")][string]$Command,
+    [ValidateSet("king_of_the_hill", "capture_hold", "flag_rush")][string]$Mode = "king_of_the_hill"
 )
 
 $ErrorActionPreference = "Stop"
@@ -94,9 +96,9 @@ if ($Command -eq "netsmoke" -and $code -eq 0) {
     $joinOut = Join-Path $logs "netsmoke-client.txt"
     Remove-Item $hostOut, $joinOut -ErrorAction SilentlyContinue
     $common = "-batchmode -nographics -duckPort $port"
-    Write-Host "`nStarting host and client..."
+    Write-Host "`nStarting host and client ($Mode)..."
     $hostProc = Start-Process -FilePath $player -PassThru -NoNewWindow -ArgumentList `
-        "$common -duckSmoke host -duckPlayers 2 -duckSmokeOut `"$hostOut`" -logFile `"$(Join-Path $logs 'netsmoke-host.log')`""
+        "$common -duckSmoke host -duckMode $Mode -duckPlayers 2 -duckSmokeOut `"$hostOut`" -logFile `"$(Join-Path $logs 'netsmoke-host.log')`""
     Start-Sleep -Seconds 4
     $joinProc = Start-Process -FilePath $player -PassThru -NoNewWindow -ArgumentList `
         "$common -duckSmoke join -duckAddress 127.0.0.1 -duckSmokeOut `"$joinOut`" -logFile `"$(Join-Path $logs 'netsmoke-client.log')`""

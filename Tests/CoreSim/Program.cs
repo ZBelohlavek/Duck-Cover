@@ -23,7 +23,9 @@ static class Program
         { "progression", ProgressionSim.Report },
         { "scorerate", ProgressionSim.RateReport },
         { "map", MapTests.Report },
+        { "kitwaves", WaveHarness.Report },
         { "lanestudy", LaneStudyTests.Report },
+        { "waves", LaneTests.Report },
         { "breakwater", BreakwaterTests.Report },
     };
 

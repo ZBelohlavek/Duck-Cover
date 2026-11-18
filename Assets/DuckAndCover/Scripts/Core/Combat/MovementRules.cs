@@ -53,8 +53,14 @@ namespace DuckAndCover.Core
         /// <summary>Practice dummies come back at the layout's dummy spots instead of a spawn room.</summary>
         public void MarkDummy(int playerId) => dummies.Add(playerId);
 
-        /// <summary>Top speed for the checks right now: sprint speed times the hero's move speed stat (slows).</summary>
-        public float TopSpeed(int playerId) => Rules.TopSpeed * combat.MoveSpeed(playerId);
+        /// <summary>
+        /// Players who may not sprint right now (the Flag Rush carrier): their checks use walk speed,
+        /// and their moves are never marked sprinting. Null = everyone may sprint.
+        /// </summary>
+        public Func<int, bool> NoSprint;
+
+        /// <summary>Top speed for the checks right now: sprint speed (walk speed if <see cref="NoSprint"/>) times the hero's move speed stat (slows).</summary>
+        public float TopSpeed(int playerId) => (NoSprint != null && NoSprint(playerId) ? Rules.walkSpeed : Rules.TopSpeed) * combat.MoveSpeed(playerId);
 
         public bool CanMove(int playerId)
         {
@@ -89,7 +95,7 @@ namespace DuckAndCover.Core
             m.pitch = Math.Max(-89f, Math.Min(89f, cmd.pitch));
             m.crouched = cmd.crouched;
             m.grounded = cmd.grounded;
-            m.sprinting = cmd.sprinting && !cmd.crouched;
+            m.sprinting = cmd.sprinting && !cmd.crouched && !(NoSprint != null && NoSprint(cmd.playerId));
             m.vaulting = cmd.vaulting;
             LaunchIfOnPad(m);
             return CommandResult.Accepted;

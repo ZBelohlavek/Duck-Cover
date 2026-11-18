@@ -31,6 +31,8 @@ namespace DuckAndCover.Game
 
         // ---- What the HUD reads ----
         public bool Active { get; private set; }
+        /// <summary>Flag Rush: this player has the flag, so they can't sprint (the server holds them to walk speed).</summary>
+        public bool CarryingFlag => client != null && client.Snapshot != null && client.Snapshot.flag != null && client.Snapshot.flag.IsCarrier(client.PlayerId);
         public bool Crouched { get; private set; }
         public bool Sprinting { get; private set; }
         public bool Vaulting => vaultTime >= 0f;
@@ -316,7 +318,7 @@ namespace DuckAndCover.Game
             {
                 input.forward = (keyboard.wKey.isPressed ? 1f : 0f) - (keyboard.sKey.isPressed ? 1f : 0f);
                 input.right = (keyboard.dKey.isPressed ? 1f : 0f) - (keyboard.aKey.isPressed ? 1f : 0f);
-                input.sprint = keyboard.leftShiftKey.isPressed;
+                input.sprint = keyboard.leftShiftKey.isPressed && !CarryingFlag;
                 input.crouch = keyboard.leftCtrlKey.isPressed || keyboard.cKey.isPressed;
                 input.jump = keyboard.spaceKey.wasPressedThisFrame;
             }

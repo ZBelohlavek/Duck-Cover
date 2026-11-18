@@ -33,11 +33,11 @@ https://claude.ai/artifact/7qbJG2ukrZDQ6ZTfX3nXGs
 | WP11 Hero kits | Scripts and data | WP4, WP7, WP8 | Tests per hero, netsmoke | Done (Lancer reworked; other three paths to come) |
 | WP12 Progression and hero UI | Scripts | WP6, WP8 | Screenshots, netsmoke | Waiting |
 | WP13 Balance pass and playtest build | Scripts | All above | Simulation report, a played match | Waiting |
-| WP14 Units (combat contract moves to unit ids) | Core | Merged combat and abilities | Weapons, abilities and statuses hit a test unit as they hit a hero; hero kit tests pass | In review |
-| WP21 Flag Rush | Core, map data, Unity | Merged match rules, Gantry Yard | Flag rules tested; fair flag spots pass the validator; netsmoke flag match; capture | Ready, start first |
-| WP15 Lanes, waves and camps | Core | WP14 | Cloud wave report; all four camp kinds tested | Waiting |
+| WP14 Units (combat contract moves to unit ids) | Core | Merged combat and abilities | Weapons, abilities and statuses hit a test unit as they hit a hero; hero kit tests pass | Done |
+| WP21 Flag Rush | Core, map data, Unity | Merged match rules, Gantry Yard | Flag rules tested; fair flag spots pass the validator; netsmoke flag match; capture | Done |
+| WP15 Lanes, waves and camps | Core | WP14 | Cloud wave report; all four camp kinds tested | Done |
 | WP18 Breakwater greybox, launch pads and ledges | Layout and Core | WP14's lane fields | Validator (mirror symmetry, lane, one-way ledges and drop, jungle joins the lane at both ends); map plan | In review |
-| WP20 Hero kits against waves | Data and tests | WP14 | Each hero has a tested way to clear or protect a wave | Waiting |
+| WP20 Hero kits against waves | Data and tests | WP14 | Each hero has a tested way to clear or protect a wave | Done |
 | WP16 Overrun rules | Core | WP15 | Overrun from data; bot matches end inside 15 minutes | Waiting |
 | WP19 Overrun in Unity | Scripts | WP16, WP18 | Two players over the network; netsmoke with 40 units; capture | Waiting |
 
@@ -70,6 +70,13 @@ WP17 (Salvage and build pads) was dropped on Nov 18.
   remove them, the compact `MatchSnapshot.units` list); `CombatServer.Units`. Units ride the hit history under
   their ids, so shots, areas, splash and objects find them; `DamageRules` answers who is alive and on which team.
   Tests in `UnitTests.cs`, including every starter kit and both upgrade paths compared on a hero and on a unit.
+- WP15: `Core/Lanes`. `LaneDef` and `CampDef` are map data (`MapDef.lanes`, `MapDef.camps`, in `MapDef.Lanes.cs`);
+  numbers in `Ruleset.lanes` (`LaneRuleset`: minion and guard kinds, wave rows by minute, camp kinds); `LaneServer`
+  holds `WaveRules` (waves every 30 s, minions walk the lane within its leash, fight the closest enemy-team hero or unit,
+  all of a tick's moves and shots land together so mirrored waves stay even; Wardens shield Scrappers) and `CampRules`
+  (neutral guards, then a pad held like a point; Juggernaut, damage, experience and speed rewards). `UnitDef` gained
+  attack fields. Tests in `LaneTests.cs`; `dotnet run --project Tests/CoreSim -- report waves` runs waves on a test
+  lane with no heroes and ends with whether they stalled in the middle. Bastions (the far end of the lane) are WP16.
 - WP18: Breakwater as data in `Core/Maps/Breakwater.cs` (lane and camps in WP15's `LaneDef`/`CampDef`; Bastions,
   launch pads, one-way drops, jungle routes and base entrances in `MapDef.Overrun.cs`), checked by `LaneMapValidator`;
   launch pads in the movement check (`Core/Combat/LaunchPad.cs`, `MovementRules.Launch.cs`) and flown by `LocalPlayer`;

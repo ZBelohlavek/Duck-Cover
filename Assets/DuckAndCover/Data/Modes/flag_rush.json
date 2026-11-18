@@ -1,0 +1,14 @@
+{
+    "id": "flag_rush",
+    "objective": "flag",
+    "displayName": "Flag Rush",
+    "zoneSet": "bases",
+    "activeZoneCount": 0,
+    "rotationSeconds": 0,
+    "rotationWarningSeconds": 0,
+    "scoreToWin": 5,
+    "scorePerSecond": 1,
+    "allHeldMultiplier": 1,
+    "timeCapSeconds": 900,
+    "mapShiftScore": 3
+}

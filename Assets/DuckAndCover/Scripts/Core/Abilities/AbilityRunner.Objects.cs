@@ -161,7 +161,15 @@ namespace DuckAndCover.Core
                 ids.RemoveAll(id => !caster.HasLineOfSightFor(obj.ownerId, obj.position, id, Match.tick));
             else if (obj.def.needsLineOfSight && world is ILineOfSightQuery los)
                 ids.RemoveAll(id => !los.HasLineOfSight(obj.position, id, Match.tick));
-            if (obj.def.maxTargets > 0 && ids.Count > obj.def.maxTargets) ids.RemoveRange(obj.def.maxTargets, ids.Count - obj.def.maxTargets);
+            if (obj.def.maxTargets > 0 && ids.Count > obj.def.maxTargets)
+            {
+                // A turret with a target limit takes the nearest ("shoots the nearest enemy it can see"),
+                // so a minion in its face comes before a hero at the edge of its reach. Ties go to the lower id.
+                var dist = new Dictionary<int, float>();
+                foreach (int id in ids) dist[id] = world is IPositionQuery where && where.TryGetPosition(id, Match.tick, out var at) ? Vec3.Distance(at, obj.position) : float.MaxValue;
+                ids.Sort((a, b) => { int c = dist[a].CompareTo(dist[b]); return c != 0 ? c : a.CompareTo(b); });
+                ids.RemoveRange(obj.def.maxTargets, ids.Count - obj.def.maxTargets);
+            }
             area.targets = ids.ToArray();
             area.objects = new int[0];
             return area;
