@@ -97,8 +97,8 @@ namespace DuckAndCover.Core
                     if ((kind == UpgradeKind.Trait || kind == UpgradeKind.Passive) && changes > 0)
                         errors.Add(what + " is a " + u.kind + ": traits change stats (passives too), talents change abilities");
                 }
-                if (kind == UpgradeKind.Talent && changes == 0 && string.IsNullOrEmpty(u.scriptId))
-                    errors.Add(what + " is a talent but changes no ability");
+                // Talents usually change an ability, but a path's talent may be a bigger stat change instead
+                // (life steal, cleansing heals): the "does nothing" check above covers empty ones.
             }
 
             // Levels: exactly the choice levels, each with the right number of distinct options of the right kind.

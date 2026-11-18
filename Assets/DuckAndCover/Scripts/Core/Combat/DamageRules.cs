@@ -187,7 +187,12 @@ namespace DuckAndCover.Core
             if (amount <= 0f || !match.State.IsPlaying || !match.State.IsAlive(targetId)) return 0f;
             var target = Unit(targetId);
             float scaled = amount * Math.Max(0f, Stat(targetId, StatIds.HealingTaken));
-            if (match.State.Player(healerId) != null) scaled *= Math.Max(0f, Stat(healerId, StatIds.HealingDone));
+            if (match.State.Player(healerId) != null)
+            {
+                scaled *= Math.Max(0f, Stat(healerId, StatIds.HealingDone));
+                if (target.health <= Rules.lowHealthShare * MaxHealth(targetId))
+                    scaled *= 1f + Math.Max(0f, Stat(healerId, StatIds.HealingToLowHealth));
+            }
             float restored = Math.Min(scaled, MaxHealth(targetId) - target.health);
             if (restored <= 0f) return 0f;
             target.health += restored;

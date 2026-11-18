@@ -16,20 +16,20 @@ Health 300. Weapons: Shotgun and pistol.
 - **F: Breach Rush.** Charge 7 m along your aim. Enemies where you land take damage and are knocked back. Cooldown 9 s.
 - **X (ultimate): Hold the Line.** Lock down the ground around you for 6 seconds: enemies inside are slowed and worn down, and you gain a 100 shield.
 
-Not reworked yet: its old passive is now one of the level 10 choices, and level 18 is a placeholder pair.
+Left (Z) is the **Juggernaut** path: shotgun, Breach Rush and staying alive up front. Right (V) is the **Warden** path: Bastion Panel and holding ground for the team.
 
 | Level | Left (hold Z) | Right (hold V) |
 |---|---|---|
-| 2 trait | **Thick Hide**: +50 max health. | **Anchor**: Take 10% less damage on a point your team holds. |
-| 4 talent | **Reinforced Panel**: The panel has 50% more health. | **Double Rush**: Breach Rush holds two charges. |
-| 6 trait | **Close Quarters**: Your weapons deal 10% more damage. | **Quick Load**: Reload 20% faster. |
-| 8 ultimate | **Iron Ring**: Hold the Line covers 3 m more ground. | **Lockdown**: Enemies caught when Hold the Line goes up are rooted for 1.5 seconds. |
-| 10 passive | **Braced**: Take 15% less damage while standing on a point. | **Second Wind**: Regain 8 health a second when you haven't been hit for a while. |
-| 12 talent | **Shockwave**: Breach Rush stuns the enemies you hit for 0.6 seconds. | **Rapid Panel**: Bastion Panel recovers 30% sooner. |
-| 14 trait | **Relentless**: Abilities recover 15% faster. | **Point Warden**: Your weapons deal 15% more damage while on a point. |
-| 16 talent | **Long Rush**: Breach Rush goes 3 m further and knocks enemies 3 m further. | **Rallying Rush**: Breach Rush gives you a 60 shield for 3 seconds. |
-| 18 talent | **Quick Panel**: Bastion Panel recovers 20% sooner. | **Quick Rush**: Breach Rush recovers 20% sooner. |
-| 20 capstone | **Unbreakable**: +75 max health and 5 more health regained a second. | **Siege Breaker**: Your weapons deal 15% more damage and Breach Rush recovers 25% sooner. |
+| 2 trait | **Thick Hide**: +25 max health. | **Anchor**: Take 8% less damage on a point your team holds. |
+| 4 talent | **Long Rush**: Breach Rush goes 2 m further and knocks enemies 2 m further. | **Reinforced Panel**: Bastion Panel has 30% more health. |
+| 6 trait | **Close Quarters**: Your weapons deal 6% more damage. | **Steady Guard**: Abilities recover 10% faster. |
+| 8 ultimate | **Crushing Line**: Hold the Line wears enemies down twice as fast. | **Lockdown**: Enemies caught when Hold the Line goes up are rooted for 1.5 seconds. |
+| 10 passive | **Second Wind**: Regain 8 health a second when you haven't been hit for a while. | **Braced**: Take 15% less damage while standing on a point. |
+| 12 talent | **Shockwave**: Breach Rush stuns the enemies you hit for 0.6 seconds. | **Bastion Aura**: Teammates within 4 m of where you plant Bastion Panel gain 15 shield a second while it stands. |
+| 14 trait | **Last Stand**: Take 15% less damage while at half health or less. | **Point Warden**: Your weapons deal 12% more damage while on a point. |
+| 16 talent | **Double Rush**: Breach Rush holds two charges. | **Wide Panel**: Bastion Panel is 1.5 m wider. |
+| 18 talent | **Rallying Rush**: Breach Rush gives you a 60 shield for 3 seconds. | **Twin Panels**: Bastion Panel holds two charges, and two can stand at once. |
+| 20 capstone | **Unbreakable**: +75 max health and 5 more health regained a second. | **Fortress**: Hold the Line also gives teammates inside it 20 shield a second. |
 
 ## Lancer (striker)
 
@@ -62,20 +62,20 @@ Health 200. Weapons: Mending sidearm (heals teammates it hits, 14 a shot).
 - **F: Purge.** Clear slows, stuns and marks from you and teammates within 6 m, and heal them 30. Cooldown 10 s.
 - **X (ultimate): Aegis Pulse.** Shield yourself and every teammate within 12 m for 100 for 5 seconds.
 
-Not reworked yet: its old passive is now one of the level 10 choices, and level 18 is a placeholder pair.
+Left (Z) is the **Combat Medic** path: the healing sidearm and keeping herself alive. Right (V) is the **Field Healer** path: Mending Field and Purge for the whole team.
 
 | Level | Left (hold Z) | Right (hold V) |
 |---|---|---|
-| 2 trait | **Bedside Manner**: Your healing is 10% stronger. | **Nimble**: Move 6% faster. |
-| 4 talent | **Wide Field**: Mending Field reaches 1.5 m further. | **Lasting Field**: Mending Field lasts 3 seconds longer. |
-| 6 trait | **Fast Reload**: Reload 20% faster. | **Sturdy**: +25 max health. |
+| 2 trait | **Steady Dose**: Your sidearm hits 10% harder: more healing and more damage. | **Wide Reach**: Mending Field and Purge reach 10% further. |
+| 4 talent | **Spare Vials**: Your magazine holds 20% more rounds. | **Lasting Field**: Mending Field lasts 2 seconds longer. |
+| 6 trait | **Fast Reload**: Reload 20% faster. | **Efficient**: Abilities recover 10% faster. |
 | 8 ultimate | **Long Aegis**: Aegis Pulse shields last 4 seconds longer. | **Broad Aegis**: Aegis Pulse reaches 6 m further. |
 | 10 passive | **Field Kit**: Regain 6 health a second when you haven't been hit for a while. | **Charged**: Your ultimate charges 20% faster. |
-| 12 talent | **Quickening Purge**: Purge also speeds everyone it reaches up by 25% for 3 seconds. | **Deep Purge**: Purge heals 40 more. |
-| 14 trait | **Steadfast**: Take 15% less damage while on a point. | **Survivor**: Regain 8 more health a second when you haven't been hit for a while. |
-| 16 talent | **Rich Field**: Mending Field heals 10 more each second. | **Rapid Purge**: Purge recovers 30% sooner. |
-| 18 talent | **Quick Field**: Mending Field recovers 20% sooner. | **Quick Purge**: Purge recovers 20% sooner. |
-| 20 capstone | **Lifeline**: Your healing and shields are 20% stronger. | **Battle Medic**: Your weapons deal 15% more damage and you take 10% less. |
+| 12 talent | **Triage**: Healing teammates at half health or less is 30% stronger. | **Quickening Purge**: Purge also speeds everyone it reaches up by 25% for 3 seconds. |
+| 14 trait | **Battle Medic**: Your sidearm hits 15% harder: more healing and more damage. | **Healing Hands**: Your healing is 10% stronger. |
+| 16 talent | **Second Opinion**: Your sidearm's heals also clear slows, stuns and marks. | **Rich Field**: Mending Field heals 10 more each second. |
+| 18 talent | **Steady Hands**: Heal yourself for 10% of the damage your sidearm deals. | **Twin Fields**: Mending Field holds two charges. |
+| 20 capstone | **Lifeline**: Your healing and shields are 20% stronger. | **Sanctuary**: Mending Field also gives everyone inside it 15 shield a second. |
 
 ## Rigger (controller)
 
@@ -85,17 +85,17 @@ Health 200. Weapons: SMG and pistol.
 - **F: Sentry.** Set down a small sentry gun that shoots the nearest enemy it can see within 14 m for 25 seconds. Cooldown 18 s.
 - **X (ultimate): Lockout Gate.** Raise an 8 m wide, 4 m high gate where you aim that closes the route for 6 seconds. Your team can shoot through it.
 
-Not reworked yet: its old passive is now one of the level 10 choices, and level 18 is a placeholder pair.
+Left (Z) is the **Engineer** path: Sentry and the SMG. Right (V) is the **Trapper** path: Snare Mines and slows.
 
 | Level | Left (hold Z) | Right (hold V) |
 |---|---|---|
-| 2 trait | **Steady Spray**: Your weapons deal 8% more damage. | **Light Feet**: Move 6% faster. |
-| 4 talent | **Spare Mines**: Snare Mine holds three charges, and three can be out at once. | **Shock Mine**: Snare Mine also stuns for 0.75 seconds. |
-| 6 trait | **Quick Reload**: Reload 25% faster. | **Padded Vest**: +25 max health. |
+| 2 trait | **Steady Spray**: Your weapons deal 5% more damage. | **Long Fuse**: Your slows and stuns last 15% longer. |
+| 4 talent | **Long Service**: Sentries last 10 seconds longer. | **Hair Trigger**: Snare Mines arm half a second sooner. |
+| 6 trait | **Drum Mag**: Your magazines hold 25% more rounds. | **Handy**: Abilities recover 10% faster. |
 | 8 ultimate | **Long Lockout**: Lockout Gate stands 4 seconds longer. | **Snaring Gate**: Enemies within 4 m of the gate when it rises are slowed by 60% for 3 seconds. |
-| 10 passive | **Tinkerer**: Abilities recover 10% faster. | **Wide Reach**: Your mines, sentries and areas reach 15% further. |
-| 12 talent | **Twin Sentry**: Two sentries can be out at once. | **Hardened Sentry**: Sentries have 75% more health. |
-| 14 trait | **Dug In**: Take 15% less damage on a point your team holds. | **Charged**: Your ultimate charges 20% faster. |
-| 16 talent | **Heavy Rounds**: Sentry shots deal 4 more damage. | **Wide Mines**: Snare Mines go off for enemies 1.5 m further away. |
-| 18 talent | **Quick Mine**: Snare Mine recovers 20% sooner. | **Quick Sentry**: Sentry recovers 20% sooner. |
-| 20 capstone | **Overclock**: Abilities recover 20% faster and sentries fire 20% faster. | **Fortifier**: Your mines, sentries and areas reach 20% further, and +25 max health. |
+| 10 passive | **Tinkerer**: Abilities recover 10% faster. | **Light Feet**: Move 6% faster. |
+| 12 talent | **Hardened Sentry**: Sentries have 75% more health. | **Shock Mine**: Snare Mines also stun for 0.75 seconds. |
+| 14 trait | **Padded Vest**: +25 max health. | **Wide Reach**: Your mines, sentries and areas reach 15% further. |
+| 16 talent | **Overclock**: Sentries fire 20% faster and their shots deal 2 more damage. | **Spare Mines**: Snare Mine holds three charges, and three can be out at once. |
+| 18 talent | **Twin Sentry**: Two sentries can be out at once, and Sentry holds two charges. | **Sticky Mines**: Enemies who set off a Snare Mine show through walls to your team for 5 seconds. |
+| 20 capstone | **Fortified Sentry**: Sentries reach 30% further and have 50% more health. | **Minefield**: Snare Mines go off for enemies 1.5 m further away, and their slow lasts 3 seconds longer. |

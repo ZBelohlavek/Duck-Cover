@@ -144,6 +144,6 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
   hero's abilities, X the ultimate, hold Z or V to take the left or right upgrade, Esc frees the mouse.
 - Heroes (WP11): Bulwark (vanguard), Lancer (striker), Mender (support), Rigger (controller), as data in
   Data/Resources. `HeroServer` (Core/Heroes) gives a pick its kit, runs leveling beside the match and
-  applies upgrades; `HeroKitTests` checks every ability and all 72 upgrades.
+  applies upgrades; `HeroKitTests` checks every ability and all 80 upgrades. Levels run 1 to 20 (picks on even levels); each hero has two upgrade paths, left and right (`docs/HEROES.md`).
 - F1 in the Boot scene shows a developer panel to host, join, pick a team and hero and start a match.
   Two copies on one PC: host in one, join `127.0.0.1` in the other.

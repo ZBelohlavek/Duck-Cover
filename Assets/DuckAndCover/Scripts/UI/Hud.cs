@@ -221,7 +221,7 @@ namespace DuckAndCover.UI
 
         void ShowChoice(MatchSnapshot snapshot, PlayerState me, LocalPlayer local)
         {
-            int level = LocalPlayer.PendingLevel(snapshot, me.id);
+            int level = LocalPlayer.PendingLevel(snapshot, me.id, SessionRunner.Instance.ClientRules.progression);
             var hero = level > 0 ? HeroData.Catalog.Resolve(me.heroId) : null;
             var offer = hero == null ? null : hero.Level(level);
             bool show = offer != null && offer.options != null && offer.options.Length >= 2;
