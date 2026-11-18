@@ -61,15 +61,16 @@ namespace DuckAndCover.Game
             new Shot("18-flag-carrier", DummyTakesTheFlag, 1.0f),
             new Shot("19-flag-mine", PlayerTakesTheFlag, 1.2f),
             // Breakwater (WP18), the Overrun map, built far off to the other side. No HUD over these.
-            new Shot("20-bw-above", () => BreakwaterShot(new Vector3(-72f, 92f, -2f), new Vector3(2f, 0f, 0f)), 1.2f),
-            new Shot("21-bw-base", () => BreakwaterShot(new Vector3(-30f, 40f, -112f), new Vector3(-8f, 0f, -70f)), 0.6f),
-            new Shot("22-bw-lane", () => BreakwaterShot(new Vector3(-13f, 2f, -50f), new Vector3(6f, 1.2f, -31.5f)), 0.6f),
-            new Shot("23-bw-ledge", () => BreakwaterShot(new Vector3(-25f, 4.7f, -57f), new Vector3(-6f, 0.5f, -42f)), 0.6f),
-            new Shot("24-bw-gap", () => BreakwaterShot(new Vector3(4f, 1.8f, -40f), new Vector3(-14f, 1.4f, -29f)), 0.6f),
-            new Shot("25-bw-shelf", () => BreakwaterShot(new Vector3(-22f, 5.7f, 5f), new Vector3(6f, 0.5f, -1f)), 0.6f),
-            new Shot("26-bw-mid", () => BreakwaterShot(new Vector3(16f, 1.8f, -24f), new Vector3(6f, 2.5f, 4f)), 0.6f),
-            new Shot("27-bw-jungle", () => BreakwaterShot(new Vector3(8f, 1.8f, -87f), new Vector3(26f, 1.2f, -78f)), 0.6f),
-            new Shot("28-bw-camps", () => BreakwaterShot(new Vector3(20f, 36f, -100f), new Vector3(24f, 0f, -78f)), 0.6f),
+            new Shot("20-bw-above", () => BreakwaterShot(new Vector3(-112f, 100f, -2f), new Vector3(4f, 0f, 0f)), 1.2f),
+            new Shot("21-bw-base", () => BreakwaterShot(new Vector3(-45f, 40f, -114f), new Vector3(-12f, 0f, -70f)), 0.6f),
+            new Shot("22-bw-lane", () => BreakwaterShot(new Vector3(-19.5f, 2f, -52f), new Vector3(9f, 1.2f, -31.5f)), 0.6f),
+            new Shot("23-bw-ledge", () => BreakwaterShot(new Vector3(-37.5f, 4.7f, -57f), new Vector3(-9f, 0.5f, -42f)), 0.6f),
+            new Shot("24-bw-gap", () => BreakwaterShot(new Vector3(6f, 1.8f, -40f), new Vector3(-21f, 1.4f, -29f)), 0.6f),
+            new Shot("25-bw-shelf", () => BreakwaterShot(new Vector3(-33f, 5.7f, 5f), new Vector3(9f, 0.5f, -1f)), 0.6f),
+            new Shot("26-bw-mid", () => BreakwaterShot(new Vector3(24f, 1.8f, -26f), new Vector3(9f, 2.5f, 4f)), 0.6f),
+            new Shot("27-bw-jungle", () => { BreakwaterShot(new Vector3(12f, 1.8f, -87f), new Vector3(39f, 1.2f, -78f)); JungleScaleFigures(); }, 0.6f),
+            new Shot("27b-bw-cover", () => { BreakwaterShot(new Vector3(-21f, 1.7f, -64f), new Vector3(-20.5f, 0.9f, -76f)); CoverScaleFigures(); }, 0.6f),
+            new Shot("28-bw-camps", () => BreakwaterShot(new Vector3(30f, 38f, -104f), new Vector3(36f, 0f, -78f)), 0.6f),
             // Overrun on Breakwater (WP19): a real match, so the map is built in place of Gantry Yard. The
             // HUD with the Bastion cards, the first wave on its way, the waves meeting at mid-lane (match time
             // runs five times faster while it waits), the player behind their wave, and team B's Forward
@@ -96,6 +97,57 @@ namespace DuckAndCover.Game
             HideHud = true;
             LookAt(position + BreakwaterOffset, target + BreakwaterOffset);
             WatchFrom(position + BreakwaterOffset, target + BreakwaterOffset);
+        }
+
+        /// <summary>
+        /// Two stand-ins on the long jungle trail in shot 27, side by side across it, so the trail's width can be
+        /// judged: one as wide as Bulwark's model (2.4 m at the shoulders, red) and one hero-sized (1 m, navy).
+        /// Art only, no colliders.
+        /// </summary>
+        static bool scaleFigures;
+
+        static void JungleScaleFigures()
+        {
+            if (breakwaterPreview == null || scaleFigures) return;
+            scaleFigures = true;
+            // On the trail from (21, -86) to (39, -76): its midpoint, the direction along it and across it.
+            var mid = new Vector3(30f, 0f, -81f);
+            var along = new Vector3(18f, 0f, 10f).normalized;
+            var across = new Vector3(-along.z, 0f, along.x);
+            float yaw = Mathf.Atan2(along.x, along.z) * Mathf.Rad2Deg;
+            var tank = Paint.Block(breakwaterPreview.transform, "ScaleTank", mid - across * 1.6f + Vector3.up * 1.1f, new Vector3(2.4f, 2.2f, 1.2f), new Color(0.6f, 0.08f, 0.08f), false);
+            tank.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            var hero = Paint.Block(breakwaterPreview.transform, "ScaleHero", mid + across * 1.2f + Vector3.up * 0.925f, new Vector3(1f, 1.85f, 0.6f), new Color(0.12f, 0.18f, 0.35f), false);
+            hero.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+        }
+
+        /// <summary>
+        /// Shot 27b, what an attacker coming down the lane sees at standing eye height: hero stand-ins at the rules'
+        /// body sizes (Ruleset: 1.8 m standing, 1.2 m crouched, eyes 1.62 / 1.05 m as yellow marks) taking cover
+        /// near the Core. Behind the low wall LaneLowCoreWest (1.25 m) one crouches (hidden) and one stands (head
+        /// and eyes over the wall, ready to shoot); behind the crate stack LaneStackMiddle (2.6 m) one stands (hidden);
+        /// one stands in the open for comparison. Art only, no colliders.
+        /// </summary>
+        static bool coverFigures;
+
+        static void CoverScaleFigures()
+        {
+            if (breakwaterPreview == null || coverFigures) return;
+            coverFigures = true;
+            var r = Ruleset.Default;
+            var navy = new Color(0.12f, 0.18f, 0.35f);
+            var teal = new Color(0.1f, 0.45f, 0.5f);
+            var eye = new Color(1f, 0.85f, 0.1f);
+            void Figure(string name, Vector3 feet, float height, float eyeHeight, Color c)
+            {
+                Paint.Block(breakwaterPreview.transform, name, feet + Vector3.up * (height * 0.5f), new Vector3(0.7f, height, 0.5f), c, false);
+                // The eye mark faces the camera (toward +z, up the lane).
+                Paint.Block(breakwaterPreview.transform, name + "Eye", feet + new Vector3(0f, eyeHeight, 0.25f), new Vector3(0.4f, 0.1f, 0.12f), eye, false);
+            }
+            Figure("CoverCrouched", new Vector3(-24.7f, 0f, -79.75f), r.crouchHeight, r.crouchEyeHeight, teal);
+            Figure("CoverStanding", new Vector3(-23.3f, 0f, -79.75f), r.standHeight, r.eyeHeight, navy);
+            Figure("CoverStandingCrate", new Vector3(-18f, 0f, -71.4f), r.standHeight, r.eyeHeight, navy);
+            Figure("OpenStanding", new Vector3(-19.5f, 0f, -78f), r.standHeight, r.eyeHeight, navy);
         }
 
         /// <summary>Where the lane mock-up is built: far enough that neither map shows in the other's shots.</summary>
@@ -264,7 +316,7 @@ namespace DuckAndCover.Game
             if (!OverrunRunning(out var runner)) return;
             HideHud = true;
             runner.Speed = 5f;
-            WatchFrom(new Vector3(13f, 10f, -22f), new Vector3(10f, 0f, 0f));
+            WatchFrom(new Vector3(19.5f, 10f, -24f), new Vector3(15f, 0f, 0f));
             CombatView.Instance.StartCoroutine(Expect(() => runner.Combat.Units.Living().Count >= 12, 5f, "both waves on the lane (12 or more units)"));
         }
 
@@ -296,7 +348,7 @@ namespace DuckAndCover.Game
             if (b == null || minion == null) { Debug.LogError("Duck and Cover: the capture could not find B's Forward Bastion and an A minion."); return; }
             for (int i = 0; i < 10 && runner.Combat.Units.IsAlive(b.unitId); i++)
                 runner.Combat.Damage.Damage(minion.id, b.unitId, 10000f, LaneRuleset.AttackId);
-            WatchFrom(new Vector3(-36f, 2.4f, 84f), new Vector3(-12f, 2f, 84f));
+            WatchFrom(new Vector3(-54f, 2.4f, 84f), new Vector3(-18f, 2f, 84f));
             CombatView.Instance.StartCoroutine(Expect(() => !b.alive && runner.Overrun.State.gateOpenB && runner.Match.State.scoreA == 1, 1f,
                 "B's Forward Bastion down, B's side gate open and team A on 1"));
         }

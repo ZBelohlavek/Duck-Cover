@@ -468,6 +468,7 @@ namespace UnityEngine
         public static int FloorToInt(float f) => (int)Math.Floor(f);
         public static float Floor(float f) => (float)Math.Floor(f);
         public static float Abs(float f) => Math.Abs(f);
+        public static float Exp(float power) => 0f;
         public static float Pow(float f, float p) => 0f;
         public static float Tan(float f) => 0f;
         public static float Acos(float f) => 0f;

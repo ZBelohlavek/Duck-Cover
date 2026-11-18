@@ -25,9 +25,9 @@ static class BreakwaterTests
         var map = MapCatalog.ById(Breakwater.Id);
         Check.True(map != null && map.IsLaneMap, "found by id, with a lane");
         Check.Equal(MapSymmetry.MirrorZ, map.symmetry, "mirrored end to end");
-        Check.True(map.halfX * 2f == 80f && map.halfZ * 2f == 210f, "80 m by 210 m");
+        Check.True(map.halfX * 2f == 120f && map.halfZ * 2f == 210f, "120 m by 210 m (widened Nov 18)");
         var report = LaneMapValidator.Check(map);
-        Check.True(report.laneLength > 195f && report.laneLength < 230f, "lane about 210 m base to base (" + report.laneLength.ToString("0") + ")");
+        Check.True(report.laneLength > 230f && report.laneLength < 260f, "lane about 245 m base to base (" + report.laneLength.ToString("0") + ")");
         Check.True(report.longestSight <= report.laneLength / 3f, "no sight line down more than a third of it");
         Check.Equal(1, map.lanes.Count, "one lane");
         Check.Equal(7, map.camps.Count, "seven camps");
@@ -42,16 +42,37 @@ static class BreakwaterTests
         Check.True(map.camps.First(c => c.kind == CampKind.Juggernaut).pad.y >= 3.5f, "the Juggernaut camp is raised");
         // The short jungle is west of the lane, the long one east, as in the sketch.
         Check.True(map.routes.Any(r => r.kind == RouteKind.Jungle && r.points.All(p => p.x < 0f)), "short jungle on the west");
-        Check.True(map.routes.Any(r => r.kind == RouteKind.Jungle && r.points.Skip(1).All(p => p.x > 0f)), "long jungle on the east");
+        Check.True(map.routes.Any(r => r.kind == RouteKind.Jungle && r.points.Skip(1).Take(r.points.Count - 2).All(p => p.x > 0f)), "long jungle on the east");
         var walk = report.walks.ToDictionary(w => w.label, w => w.a);
         Check.True(walk["own Core Bastion"] < walk["own Forward Bastion"] && walk["own Forward Bastion"] < walk["mid-lane"], "Core, then Forward, then the middle");
-        // Walking pace 5.2 m/s; a sprint is faster. The plan: about 28 s base to base at a sprint.
+        // Walking pace 5.2 m/s; a sprint is faster. The plan: about 28 s base to base at a sprint, about 32 s since
+        // the Nov 18 widening stretched the zigzag.
         float sprintBaseToBase = report.laneLength / Ruleset.Default.sprintSpeed;
-        Check.True(sprintBaseToBase > 24f && sprintBaseToBase < 32f, "base to base at a sprint: " + sprintBaseToBase.ToString("0") + " s");
+        Check.True(sprintBaseToBase > 26f && sprintBaseToBase < 35f, "base to base at a sprint: " + sprintBaseToBase.ToString("0") + " s");
         // The walls along the lane are tree lines and rocks (the lane look), and solid.
         Check.True(map.blocks.Count(b => b.style == "treeline" && b.Solid) > 50, "tree line walls");
         Check.True(map.blocks.Count(b => b.style == "rocks" && b.Solid) > 20, "rock walls");
         Check.True(map.paths.Any(p => p.style == "lane") && map.paths.Count(p => p.style == "trail") >= map.routes.Count, "the lane and every route are painted");
+    }
+
+    [Test]
+    static void CoverIsTallEnoughForHeroes()
+    {
+        // Zach, Nov 18: cover pieces must be the right height to cover our heroes.
+        var r = Ruleset.Default;
+        float crouchedHeadTop = r.headHeight * r.crouchHeight / r.standHeight + r.headRadius;
+        foreach (var b in Breakwater.Build().blocks)
+        {
+            float h = b.size.y;
+            if (b.kind == BlockKind.LowCover)
+            {
+                Check.True(h >= r.crouchHeight && h >= crouchedHeadTop - 0.05f, b.name + ": hides a crouched hero (" + h + " m)");
+                Check.True(h < r.eyeHeight - 0.25f, b.name + ": a standing hero can shoot over it");
+                Check.True(MoveMath.CanVault(r, h), b.name + ": can be vaulted");
+            }
+            else if (b.kind == BlockKind.Crate || (b.kind == BlockKind.Wall && b.name.StartsWith("Lane")))
+                Check.True(h >= r.crouchHeight, b.name + ": hides at least a crouched hero (" + h + " m)");
+        }
     }
 
     [Test]
@@ -114,8 +135,8 @@ static class BreakwaterTests
         // A wall across the lane: minions can't get through, and the base can't be reached along it.
         Rejects(m =>
         {
-            m.blocks.Add(new MapBlock("PlugA", BlockKind.Wall, new Vec3(-12f, 3f, -75f), new Vec3(12f, 6f, 1f)));
-            m.blocks.Add(new MapBlock("PlugB", BlockKind.Wall, new Vec3(-12f, 3f, 75f), new Vec3(12f, 6f, 1f)));
+            m.blocks.Add(new MapBlock("PlugA", BlockKind.Wall, new Vec3(-18f, 3f, -75f), new Vec3(18f, 6f, 1f)));
+            m.blocks.Add(new MapBlock("PlugB", BlockKind.Wall, new Vec3(-18f, 3f, 75f), new Vec3(18f, 6f, 1f)));
         }, "minions can't", "a blocked lane");
         // Straighten the lane's middle: a long view straight down it.
         Rejects(m =>
@@ -125,35 +146,36 @@ static class BreakwaterTests
         // Rails gone and the shelf walls lowered: the lane sees the Juggernaut camp.
         Rejects(m =>
         {
-            m.blocks.RemoveAll(b => b.name.StartsWith("ShelfRail") || b.name.StartsWith("ShelfRock") || b.name.StartsWith("PocketCover"));
-            foreach (var b in m.blocks.Where(b => b.name.StartsWith("Jungle") && b.center.x < 0f && b.center.x > -15f && Math.Abs(b.center.z) < 16f)) { b.size = new Vec3(b.size.x, 1f, b.size.z); b.center = new Vec3(b.center.x, 0.5f, b.center.z); }
-            m.blocks.First(b => b.name == "Shelf").size = new Vec3(24f, 1f, 24f);
-            m.blocks.First(b => b.name == "Shelf").center = new Vec3(-24f, 0.5f, 0f);
+            m.blocks.RemoveAll(b => b.name.StartsWith("ShelfRail") || b.name.StartsWith("ShelfRock") || b.name.StartsWith("ShelfScreen") || b.name.StartsWith("PocketCover"));
+            foreach (var b in m.blocks.Where(b => b.name.StartsWith("Jungle") && b.center.x < 0f && b.center.x > -15f * Breakwater.StretchX && Math.Abs(b.center.z) < 16f)) { b.size = new Vec3(b.size.x, 1f, b.size.z); b.center = new Vec3(b.center.x, 0.5f, b.center.z); }
+            var shelf = m.blocks.First(b => b.name == "Shelf");
+            shelf.size = new Vec3(shelf.size.x, 1f, shelf.size.z);
+            shelf.center = new Vec3(shelf.center.x, 0.5f, shelf.center.z);
             foreach (var c in m.camps.Where(c => c.kind == CampKind.Juggernaut)) { c.pad = new Vec3(c.pad.x, 1f, c.pad.z); for (int i = 0; i < c.guardSpots.Count; i++) c.guardSpots[i] = new Vec3(c.guardSpots[i].x, 1f, c.guardSpots[i].z); }
         }, "Juggernaut camp can be seen", "an open shelf");
         // Stairs from the lane straight up the ledge: it can be climbed back.
         Rejects(m =>
         {
-            m.blocks.Add(new MapBlock("CheatStairsA", BlockKind.Ramp, new Vec3(-16f, 1.5f, -52f), new Vec3(3f, 3f, 4f), ShiftRole.None, 270));
-            m.blocks.Add(new MapBlock("CheatStairsB", BlockKind.Ramp, new Vec3(-16f, 1.5f, 52f), new Vec3(3f, 3f, 4f), ShiftRole.None, 270));
+            m.blocks.Add(new MapBlock("CheatStairsA", BlockKind.Ramp, new Vec3(-24.75f, 1.5f, -52f), new Vec3(3f, 3f, 4f), ShiftRole.None, 270));
+            m.blocks.Add(new MapBlock("CheatStairsB", BlockKind.Ramp, new Vec3(-24.75f, 1.5f, 52f), new Vec3(3f, 3f, 4f), ShiftRole.None, 270));
         }, "can be climbed back up", "stairs up a ledge from the lane");
         // The side gate never shut: the side route is open from the start.
         Rejects(m => m.blocks.RemoveAll(b => b.kind == BlockKind.Shutter), "no shift", "no side gate");
         Rejects(m =>
         {
-            m.blocks.Add(new MapBlock("BehindGateA", BlockKind.Wall, new Vec3(-31f, 3f, -84f), new Vec3(2f, 6f, 8f)));
-            m.blocks.Add(new MapBlock("BehindGateB", BlockKind.Wall, new Vec3(-31f, 3f, 84f), new Vec3(2f, 6f, 8f)));
+            m.blocks.Add(new MapBlock("BehindGateA", BlockKind.Wall, new Vec3(-44.75f, 3f, -84f), new Vec3(2f, 6f, 12f)));
+            m.blocks.Add(new MapBlock("BehindGateB", BlockKind.Wall, new Vec3(-44.75f, 3f, 84f), new Vec3(2f, 6f, 12f)));
         }, "something is in the way", "a side route walled off behind its gate");
         // The jungle door walled up: one way into the base.
         Rejects(m =>
         {
-            foreach (var z in new[] { -86f, 86f }) m.blocks.Add(new MapBlock("Door" + z, BlockKind.Wall, new Vec3(6f, 3f, z), new Vec3(2f, 6f, 8f)));
+            foreach (var z in new[] { -86f, 86f }) m.blocks.Add(new MapBlock("Door" + z, BlockKind.Wall, new Vec3(7.5f, 3f, z), new Vec3(2f, 6f, 12f)));
         }, "has no way out", "a base with one way in");
         // A launch pad aimed into the jungle wall.
         Rejects(m => { m.launchPads[0].apexHeight = 2f; m.launchPads[1].apexHeight = 2f; }, "arc hits", "a launch arc too low to clear the walls");
-        Rejects(m => { m.launchPads[0].landing = new Vec3(-12f, 0f, -70f); m.launchPads[1].landing = new Vec3(-12f, 0f, 70f); }, "middle of the lane", "a pad that lands by its own base");
+        Rejects(m => { m.launchPads[0].landing = new Vec3(-22f, 0f, -66f); m.launchPads[1].landing = new Vec3(-22f, 0f, 66f); }, "middle of the lane", "a pad that lands by its own base");
         Rejects(m => m.camps.RemoveAll(c => c.kind == CampKind.Speed), "Speed camp", "no speed camps");
-        Rejects(m => { m.flagSpots.Clear(); m.flagSpots.Add(new Vec3(8f, 0f, -30f)); m.flagSpots.Add(new Vec3(8f, 0f, 30f)); }, "closer to one base", "flag spots nearer one base");
+        Rejects(m => { m.flagSpots.Clear(); m.flagSpots.Add(new Vec3(12f, 0f, -30f)); m.flagSpots.Add(new Vec3(12f, 0f, 30f)); }, "closer to one base", "flag spots nearer one base");
         Rejects(m => m.zones.RemoveAll(z => z.set == "bases"), "'bases'", "no Flag Rush capture zones");
         Rejects(m => { foreach (var r in m.routes.Where(r => r.kind == RouteKind.Branch)) r.points.RemoveAt(2); }, "must end at a camp", "a branch that stops short of its camp");
     }
@@ -246,12 +268,58 @@ static class BreakwaterTests
         Console.WriteLine(map.displayName + " (" + map.id + "): " + (report.Ok ? "valid" : report.errors.Count + " problems") + ", " + map.blocks.Count + " blocks");
         foreach (var e in report.errors) Console.WriteLine("  " + e);
         Console.WriteLine(report.Table());
+        Console.WriteLine(ClearWidths(map));
         if (args.Length > 0)
         {
             File.WriteAllText(args[0], Svg(map, report));
             Console.WriteLine("Wrote " + args[0]);
         }
         return report.Ok ? 0 : 1;
+    }
+
+    /// <summary>
+    /// How wide the lane and the jungle trails really are between walls (Nov 18 widening): every 2 m along each
+    /// centre line, the free width at chest height across it (cover a hero can't see over counts as wall).
+    /// Prints the narrowest tenth and the median per path.
+    /// </summary>
+    public static string ClearWidths(MapDef map)
+    {
+        var sb = new StringBuilder("Clear width between walls, chest height (10th percentile / median, metres)\n");
+        void Measure(string label, List<Vec3> pts)
+        {
+            var art = new ArtPath("measure", 1f) { points = pts };
+            var widths = new List<float>();
+            float len = 0f;
+            for (int i = 1; i < pts.Count; i++) len += Vec3.Distance(pts[i - 1], pts[i]);
+            for (float d = 1f; d < len - 1f; d += 2f)
+            {
+                // Walk the polyline to d.
+                float left = d; Vec3 at = pts[0], dir = Vec3.Forward;
+                for (int i = 1; i < pts.Count; i++)
+                {
+                    float seg = Vec3.Distance(pts[i - 1], pts[i]);
+                    if (left <= seg) { dir = (pts[i] - pts[i - 1]) * (1f / seg); at = pts[i - 1] + dir * left; break; }
+                    left -= seg;
+                }
+                var side = new Vec3(dir.z, 0f, -dir.x);
+                var chest = new Vec3(at.x, MapValidator.SurfaceAt(map, at.x, at.z, false) + 1.3f, at.z);
+                float Reach(Vec3 s1)
+                {
+                    float lo = 0f, hi = 40f;
+                    if (MapValidator.Clear(map, chest, chest + s1 * hi, false)) return hi;
+                    for (int k = 0; k < 14; k++) { float mid = (lo + hi) * 0.5f; if (MapValidator.Clear(map, chest, chest + s1 * mid, false)) lo = mid; else hi = mid; }
+                    return lo;
+                }
+                float w = Reach(side) + Reach(side * -1f);
+                if (w > 0.5f) widths.Add(w); // 0: the sample sits inside a ramp or rail, not on the trail
+            }
+            widths.Sort();
+            if (widths.Count == 0) return;
+            sb.Append("  ").Append(label.PadRight(22)).Append(widths[widths.Count / 10].ToString("0.0")).Append(" / ").Append(widths[widths.Count / 2].ToString("0.0")).Append('\n');
+        }
+        foreach (var lane in map.lanes) Measure("lane", lane.points);
+        foreach (var r in map.routes) Measure(r.name, r.points);
+        return sb.ToString();
     }
 
     /// <summary>A top-down plan: blocks by kind and height, the lane, routes, Bastions, camps, launch arcs and drops.</summary>

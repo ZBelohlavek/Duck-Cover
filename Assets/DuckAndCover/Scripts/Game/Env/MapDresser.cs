@@ -42,6 +42,8 @@ namespace DuckAndCover.Game
             /// <summary>False for a second, preview map in the same scene: keep the sky and light already set.</summary>
             public bool lighting = true;
             public readonly Dictionary<string, Material> materials = new Dictionary<string, Material>();
+            /// <summary>The map's solid blocks, gathered on first use (for finding neighbours).</summary>
+            public List<MapBlock> solids;
         }
 
         public static Context Begin(MapDef map, Transform root, EnvTheme theme)
@@ -140,35 +142,30 @@ namespace DuckAndCover.Game
                 {
                     var hedge = Mat(c, PaintedTextures.Kind.Leaf, Shade(Pick(t.canopy, b), 0.72f), Shade(Pick(t.canopy, b), 0.72f));
                     if (renderer != null) renderer.sharedMaterial = hedge;
-                    if (filter != null) filter.sharedMesh = EnvMesh.ChamferBox(size, Math.Min(0.7f, Math.Min(size.x, size.z) * 0.3f), centre, 2.5f);
-                    // Leafy lumps on the hedge, inside its box, so it reads as bushes rather than a block.
-                    var leaf = Mat(c, PaintedTextures.Kind.Leaf, Pick(t.canopy, b), Pick(t.canopy, b));
-                    int lumps = 2 + c.rng.Next(2);
-                    for (int i = 0; i < lumps; i++)
-                    {
-                        float sx = size.x * Range(c, 0.6f, 0.95f), sz = size.z * Range(c, 0.6f, 0.95f), sy = size.y * Range(c, 0.35f, 0.5f);
-                        float px = b.center.x + Range(c, -1f, 1f) * (size.x - sx) * 0.5f;
-                        float pz = b.center.z + Range(c, -1f, 1f) * (size.z - sz) * 0.5f;
-                        float py = b.Min.y + Range(c, sy * 0.5f, size.y - sy * 0.5f);
-                        Shape(c, PrimitiveType.Sphere, "Bush", new Vector3(px, py, pz), new Vector3(sx, sy, sz), leaf);
-                    }
+                    // A lumpy hedge that rounds off at the top and edges, always inside the block's box.
+                    if (filter != null) filter.sharedMesh = EnvMesh.LumpyBox(size, centre, 2.5f, 0.75f, 0.9f, t.seed + 31, SealedFaces(c, b));
                     // Now and then a tree grows out of the hedge: trunk through the top, canopy well overhead.
-                    if (c.rng.NextDouble() < 0.45) Tree(c, new Vector3(b.center.x, b.Max.y - 1f, b.center.z), Range(c, 3.5f, 6f), Range(c, 2.4f, 3.6f));
+                    if (c.rng.NextDouble() < 0.55) Tree(c, new Vector3(b.center.x, b.Max.y - 1f, b.center.z), Range(c, 3.5f, 6f), Range(c, 2.4f, 3.6f));
                     return true;
                 }
                 case "rocks":
                 {
                     var rock = Mat(c, PaintedTextures.Kind.Rock, t.rock, t.rockCrack);
                     if (renderer != null) renderer.sharedMaterial = rock;
-                    if (filter != null) filter.sharedMesh = EnvMesh.ChamferBox(size, Math.Min(0.6f, Math.Min(size.x, Math.Min(size.y, size.z)) * 0.3f), centre, 6f);
-                    // A boulder on top of the outcrop, turned a little, kept inside the footprint and below the top.
-                    float bs = Math.Min(size.x, size.z) * Range(c, 0.5f, 0.65f), bh = size.y * Range(c, 0.3f, 0.45f);
-                    float yaw = Range(c, -20f, 20f);
-                    var boulder = Box(c, "Boulder", new Vector3(b.center.x, b.Max.y - bh * 0.5f + 0.02f, b.center.z), new Vector3(bs, bh, bs), rock, bs * 0.25f, 6f);
-                    boulder.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
-                    // Moss on top.
-                    var moss = Mat(c, PaintedTextures.Kind.Patch, t.patch, t.patch);
-                    Shape(c, PrimitiveType.Sphere, "Moss", new Vector3(b.center.x, b.Max.y - 0.05f, b.center.z), new Vector3(size.x * 0.8f, 0.12f, size.z * 0.8f), moss);
+                    // A faceted outcrop: coarse lumps pushed in from the box, never out of it. Thin and low pieces
+                    // (rock-style low walls) get shallow lumps so they still look as tall as the cover they give.
+                    float lump = Math.Min(0.45f, Math.Min(Math.Min(size.x, size.z) * 0.25f, size.y * 0.08f));
+                    if (filter != null) filter.sharedMesh = EnvMesh.LumpyBox(size, centre, 6f, lump, 1.1f, t.seed + 57, SealedFaces(c, b));
+                    // A boulder on top of wider outcrops, turned a little, kept inside the footprint and just below
+                    // the top. Its base sits deeper than the lumpy dents, so it never floats. Thin walls get none, and
+                    // there is no flat moss disc: on a dented top it showed as a floating blade.
+                    if (Math.Min(size.x, size.z) >= 1.8f)
+                    {
+                        float bs = Math.Min(size.x, size.z) * Range(c, 0.5f, 0.65f), bh = size.y * Range(c, 0.3f, 0.45f);
+                        float yaw = Range(c, -20f, 20f);
+                        var boulder = Box(c, "Boulder", new Vector3(b.center.x, b.Max.y - bh * 0.5f - 0.02f, b.center.z), new Vector3(bs, bh, bs), rock, bs * 0.25f, 6f);
+                        boulder.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+                    }
                     return true;
                 }
             }
@@ -278,7 +275,8 @@ namespace DuckAndCover.Game
 
             // Ground beyond the walls, just under the map's own floor.
             var groundMat = Mat(c, PaintedTextures.Kind.Ground, t.groundA, t.groundB);
-            var outerSize = new Vector3(hx * 2f + 260f, 1f, hz * 2f + 260f);
+            // Wide enough that its edge is lost in the fog from any camera over the map.
+            var outerSize = new Vector3(hx * 2f + 900f, 1f, hz * 2f + 900f);
             var outerGround = Shape(c, PrimitiveType.Cube, "OuterGround", new Vector3(0f, -0.53f, 0f), outerSize, groundMat);
             var f = outerGround.GetComponent<MeshFilter>();
             if (f != null) f.sharedMesh = EnvMesh.ChamferBox(outerSize, 0f, new Vector3(0f, -0.53f, 0f), 9f);
@@ -323,6 +321,8 @@ namespace DuckAndCover.Game
             Paths(c);
             Cliffs(c, hx, hz);
             if (t.mushroomTrees) Trees(c, hx, hz);
+            Backdrop(c, hx, hz);
+            Flowers(c, hx, hz);
             // Freight gantries suit a yard, not a jungle lane: lane maps leave the sky over the lane open.
             if (t.overheadGantries && !c.map.IsLaneMap) Gantries(c, hx, hz);
         }
@@ -343,6 +343,18 @@ namespace DuckAndCover.Game
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.Linear;
             RenderSettings.fogColor = t.fog;
+            // A soft fill from the side away from the sun, so the shadow sides of walls and heroes keep their shape.
+            if (sun != null)
+            {
+                var fillGo = new GameObject("FillLight");
+                fillGo.transform.SetParent(c.root, false);
+                fillGo.transform.rotation = Quaternion.Euler(25f, t.sunEuler.y + 180f, 0f);
+                var fill = fillGo.AddComponent<Light>();
+                fill.type = LightType.Directional;
+                fill.color = Color.Lerp(t.ambientSky, t.skyZenith, 0.3f);
+                fill.intensity = 0.28f;
+                fill.shadows = LightShadows.None;
+            }
             RenderSettings.fogStartDistance = t.fogStart;
             RenderSettings.fogEndDistance = t.fogEnd;
 
@@ -464,12 +476,81 @@ namespace DuckAndCover.Game
             }
         }
 
+        /// <summary>
+        /// The land beyond the cliffs, so the map sits in a world instead of on a flat plain: a ring of rolling
+        /// jungle hills, then tall mesas with jungle on their tops further out, fading into the fog and the
+        /// painted ranges on the sky. All far outside the outer walls.
+        /// </summary>
+        static void Backdrop(Context c, float hx, float hz)
+        {
+            var t = c.theme;
+            var rock = Mat(c, PaintedTextures.Kind.Rock, t.rock, t.rockCrack);
+            var hill = Mat(c, PaintedTextures.Kind.Leaf, Shade(t.canopy != null && t.canopy.Length > 0 ? t.canopy[0] : t.leaf, 0.8f), Shade(t.leaf, 0.8f));
+            float rx = hx + 75f, rz = hz + 75f;
+            // Rolling hills: flattened domes on an oval ring 40 to 110 m out.
+            for (int ring = 0; ring < 2; ring++)
+            {
+                float grow = ring * 45f;
+                int n = 26 + ring * 6;
+                for (int i = 0; i < n; i++)
+                {
+                    float a = (i + Range(c, -0.3f, 0.3f)) / n * Mathf.PI * 2f;
+                    var p = new Vector3(Mathf.Sin(a) * (rx + grow + Range(c, 0f, 25f)), 0f, Mathf.Cos(a) * (rz + grow + Range(c, 0f, 25f)));
+                    float w = Range(c, 40f, 70f) * (1f + ring * 0.4f), h = Range(c, 14f, 26f) * (1f + ring * 0.5f);
+                    var dome = Shape(c, PrimitiveType.Sphere, "Hill", p + new Vector3(0f, -h * 0.25f, 0f), new Vector3(w, h, w * Range(c, 0.7f, 1.1f)), Mat(c, PaintedTextures.Kind.Leaf, Pick(t.canopy, c), Shade(t.leaf, 0.85f)));
+                    dome.transform.rotation = Quaternion.Euler(0f, Range(c, 0f, 360f), 0f);
+                    // Giant trees on the outer ring of hills only, so cameras over the map aren't buried in canopy.
+                    if (t.mushroomTrees && ring == 1)
+                        for (int k = 0; k < 1; k++)
+                            Tree(c, p + new Vector3(Range(c, -w, w) * 0.25f, h * 0.15f, Range(c, -w, w) * 0.25f), Range(c, 18f, 30f), Range(c, 8f, 13f));
+                }
+            }
+            // Mesas: tall flat-topped rocks 170 to 260 m out, with a jungle cap.
+            int mesas = 14;
+            for (int i = 0; i < mesas; i++)
+            {
+                float a = (i + Range(c, -0.35f, 0.35f)) / mesas * Mathf.PI * 2f;
+                float dist = Range(c, 150f, 230f);
+                var p = new Vector3(Mathf.Sin(a) * (hx + dist), 0f, Mathf.Cos(a) * (hz + dist));
+                float w = Range(c, 35f, 70f), h = Range(c, 45f, 90f);
+                Lumpy(c, "Mesa", p + new Vector3(0f, h * 0.5f - 2f, 0f), new Vector3(w, h, w * Range(c, 0.7f, 1.2f)), rock, 6f, 8f, 18f);
+                Shape(c, PrimitiveType.Sphere, "MesaJungle", p + new Vector3(0f, h - 2f, 0f), new Vector3(w * 0.95f, Range(c, 6f, 10f), w * 0.95f), hill);
+            }
+        }
+
+        /// <summary>Flowers and fallen petals scattered flat on the jungle floor (2 mm high, like the moss patches).</summary>
+        static void Flowers(Context c, float hx, float hz)
+        {
+            var t = c.theme;
+            var colours = new[] { Plain(c, t.bulb), Plain(c, new Color(1f, 0.95f, 0.85f)), Plain(c, Color.Lerp(t.glow, Color.white, 0.4f)) };
+            int clusters = (int)(hx * hz / 40f);
+            for (int i = 0; i < clusters; i++)
+            {
+                float x = Range(c, -hx + 1f, hx - 1f), z = Range(c, -hz + 1f, hz - 1f);
+                if (ThemeAt(c, x, z).courtyard) continue;
+                var m = colours[c.rng.Next(colours.Length)];
+                int n = 3 + c.rng.Next(5);
+                for (int k = 0; k < n; k++)
+                {
+                    float r = Range(c, 0.12f, 0.28f);
+                    float th = 0.0016f + (k % 4) * 0.0002f;
+                    Shape(c, PrimitiveType.Cylinder, "Petals", new Vector3(x + Range(c, -1.2f, 1.2f), th, z + Range(c, -1.2f, 1.2f)), new Vector3(r, th, r), m);
+                }
+            }
+        }
+
         static void Outcrop(Context c, Vector3 centre, Vector3 size, Material rock)
         {
             // A main mass and a smaller ledge on top, both chunky.
-            Box(c, "Cliff", centre, size, rock, 0.9f, 9f);
+            Lumpy(c, "Cliff", centre, size, rock, 1.6f, 2.2f, 9f);
             var top = new Vector3(centre.x + Range(c, -0.2f, 0.2f) * size.x, centre.y + size.y * 0.5f + size.y * 0.12f, centre.z + Range(c, -0.2f, 0.2f) * size.z);
-            Box(c, "CliffTop", top, new Vector3(size.x * 0.6f, size.y * 0.24f, size.z * 0.6f), rock, 0.7f, 9f);
+            Lumpy(c, "CliffTop", top, new Vector3(size.x * 0.6f, size.y * 0.24f, size.z * 0.6f), rock, 1.0f, 1.8f, 9f);
+            // Jungle spilling over the top of the outcrop.
+            if (c.theme.mushroomTrees && c.rng.NextDouble() < 0.6)
+            {
+                var leaf = Mat(c, PaintedTextures.Kind.Leaf, Pick(c.theme.canopy, c), Pick(c.theme.canopy, c));
+                Shape(c, PrimitiveType.Sphere, "CliffBush", top + new Vector3(0f, size.y * 0.12f, 0f), new Vector3(size.x * 0.75f, size.y * 0.18f, size.z * 0.75f), leaf);
+            }
         }
 
         /// <summary>Giant capped trees behind the cliffs: crooked trunks, lumpy caps, glowing fruit underneath.</summary>
@@ -579,6 +660,44 @@ namespace DuckAndCover.Game
             var f = go.GetComponent<MeshFilter>();
             if (f != null) f.sharedMesh = EnvMesh.ChamferBox(size, bevel, centre, tile);
             return go;
+        }
+
+        /// <summary>A lumpy decoration box (no collider): natural rock and hill masses outside the play area.</summary>
+        static GameObject Lumpy(Context c, string name, Vector3 centre, Vector3 size, Material m, float depth, float cell, float tile)
+        {
+            var go = Shape(c, PrimitiveType.Cube, name, centre, size, m);
+            var f = go.GetComponent<MeshFilter>();
+            if (f != null) f.sharedMesh = EnvMesh.LumpyBox(size, centre, tile, depth, cell, c.theme.seed + c.rng.Next(1000));
+            return go;
+        }
+
+        /// <summary>
+        /// Which faces of a block press against another solid block (EnvMesh face bits). Those faces must stay
+        /// flat when the block is drawn lumpy, or the gap between two neighbours would be a slit to see through.
+        /// </summary>
+        static int SealedFaces(Context c, MapBlock b)
+        {
+            if (c.solids == null)
+            {
+                c.solids = new List<MapBlock>();
+                foreach (var o in c.map.blocks)
+                    if (o.kind != BlockKind.Ground && o.kind != BlockKind.Decal && o.Solid) c.solids.Add(o);
+            }
+            const float touch = 0.05f, overlap = 0.05f;
+            int mask = 0;
+            foreach (var o in c.solids)
+            {
+                if (o == b) continue;
+                bool ySpan = o.Max.y > b.Min.y + overlap && o.Min.y < b.Max.y - overlap;
+                bool xSpan = o.Max.x > b.Min.x + overlap && o.Min.x < b.Max.x - overlap;
+                bool zSpan = o.Max.z > b.Min.z + overlap && o.Min.z < b.Max.z - overlap;
+                if (ySpan && zSpan && Math.Abs(o.Min.x - b.Max.x) < touch) mask |= EnvMesh.PlusX;
+                if (ySpan && zSpan && Math.Abs(o.Max.x - b.Min.x) < touch) mask |= EnvMesh.MinusX;
+                if (ySpan && xSpan && Math.Abs(o.Min.z - b.Max.z) < touch) mask |= EnvMesh.PlusZ;
+                if (ySpan && xSpan && Math.Abs(o.Max.z - b.Min.z) < touch) mask |= EnvMesh.MinusZ;
+                if (xSpan && zSpan && Math.Abs(o.Min.y - b.Max.y) < touch) mask |= EnvMesh.PlusY;
+            }
+            return mask;
         }
 
         /// <summary>Is the block part of the outer wall (touching the map's edge)?</summary>
