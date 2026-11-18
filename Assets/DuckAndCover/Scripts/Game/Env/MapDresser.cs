@@ -154,14 +154,16 @@ namespace DuckAndCover.Game
                     if (renderer != null) renderer.sharedMaterial = rock;
                     // A faceted outcrop: coarse lumps pushed in from the box, never out of it.
                     if (filter != null) filter.sharedMesh = EnvMesh.LumpyBox(size, centre, 6f, 0.45f, 1.1f, t.seed + 57, SealedFaces(c, b));
-                    // A boulder on top of the outcrop, turned a little, kept inside the footprint and below the top.
-                    float bs = Math.Min(size.x, size.z) * Range(c, 0.5f, 0.65f), bh = size.y * Range(c, 0.3f, 0.45f);
-                    float yaw = Range(c, -20f, 20f);
-                    var boulder = Box(c, "Boulder", new Vector3(b.center.x, b.Max.y - bh * 0.5f + 0.02f, b.center.z), new Vector3(bs, bh, bs), rock, bs * 0.25f, 6f);
-                    boulder.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
-                    // Moss on top.
-                    var moss = Mat(c, PaintedTextures.Kind.Patch, t.patch, t.patch);
-                    Shape(c, PrimitiveType.Sphere, "Moss", new Vector3(b.center.x, b.Max.y - 0.05f, b.center.z), new Vector3(size.x * 0.8f, 0.12f, size.z * 0.8f), moss);
+                    // A boulder on top of wider outcrops, turned a little, kept inside the footprint and just below
+                    // the top. Its base sits deeper than the lumpy dents, so it never floats. Thin walls get none, and
+                    // there is no flat moss disc: on a dented top it showed as a floating blade.
+                    if (Math.Min(size.x, size.z) >= 1.8f)
+                    {
+                        float bs = Math.Min(size.x, size.z) * Range(c, 0.5f, 0.65f), bh = size.y * Range(c, 0.3f, 0.45f);
+                        float yaw = Range(c, -20f, 20f);
+                        var boulder = Box(c, "Boulder", new Vector3(b.center.x, b.Max.y - bh * 0.5f - 0.02f, b.center.z), new Vector3(bs, bh, bs), rock, bs * 0.25f, 6f);
+                        boulder.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+                    }
                     return true;
                 }
             }
