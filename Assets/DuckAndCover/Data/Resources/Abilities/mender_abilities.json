@@ -1,0 +1,118 @@
+{
+  "abilities": [
+    {
+      "id": "mender_field",
+      "displayName": "Mending Field",
+      "description": "Throw down a field where you aim. For 6 seconds it heals you and teammates within 4 m by 20 every second.",
+      "cooldown": 12,
+      "targeting": {
+        "shape": "sphere",
+        "origin": "aimPoint",
+        "range": 15,
+        "radius": 0.5,
+        "affects": "alliesAndSelf"
+      },
+      "effects": [
+        {
+          "kind": "spawn",
+          "objectId": "mender_field"
+        }
+      ]
+    },
+    {
+      "id": "mender_purge",
+      "displayName": "Purge",
+      "description": "Clear slows, stuns and marks from you and teammates within 6 m, and heal them 30.",
+      "cooldown": 10,
+      "targeting": {
+        "shape": "sphere",
+        "origin": "caster",
+        "radius": 6,
+        "affects": "alliesAndSelf"
+      },
+      "effects": [
+        {
+          "kind": "cleanse"
+        },
+        {
+          "kind": "heal",
+          "amount": 30
+        },
+        {
+          "kind": "status",
+          "status": "mender_quicken",
+          "duration": 3,
+          "tag": "purgeHaste"
+        }
+      ]
+    },
+    {
+      "id": "mender_aegis",
+      "displayName": "Aegis Pulse",
+      "description": "Ultimate. Shield yourself and every teammate within 12 m for 100 for 5 seconds.",
+      "ultimate": true,
+      "ultimateCost": 100,
+      "targeting": {
+        "shape": "sphere",
+        "origin": "caster",
+        "radius": 12,
+        "affects": "alliesAndSelf"
+      },
+      "effects": [
+        {
+          "kind": "shield",
+          "amount": 100,
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "id": "mender_fieldkit",
+      "displayName": "Field Kit",
+      "description": "Passive. Regain 6 health a second when you haven't been hit for a while.",
+      "passive": true,
+      "stats": [
+        {
+          "stat": "healthRegen",
+          "op": "add",
+          "value": 6,
+          "when": ""
+        }
+      ]
+    }
+  ],
+  "statuses": [
+    {
+      "id": "mender_quicken",
+      "displayName": "Quickened",
+      "negative": false,
+      "duration": 3,
+      "stacking": "refresh",
+      "stats": [
+        {
+          "stat": "moveSpeed",
+          "op": "percent",
+          "value": 0.25,
+          "when": ""
+        }
+      ]
+    }
+  ],
+  "objects": [
+    {
+      "id": "mender_field",
+      "displayName": "Mending Field",
+      "lifetime": 6,
+      "radius": 4,
+      "trigger": "pulse",
+      "interval": 1,
+      "affects": "alliesAndSelf",
+      "effects": [
+        {
+          "kind": "heal",
+          "amount": 20
+        }
+      ]
+    }
+  ]
+}

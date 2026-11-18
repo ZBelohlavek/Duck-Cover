@@ -3,7 +3,7 @@ using System;
 namespace DuckAndCover.Core
 {
     /// <summary>
-    /// A hero as data (Data/Heroes/*.json): role, weapon, two abilities, ultimate, passive, and the two
+    /// A hero as data (Data/Resources/Heroes/*.json): role, weapon, two abilities, ultimate, passive, and the two
     /// upgrades offered at each choice level. A fifth hero costs a data file and art, not engine code.
     /// Loaded with JsonUtility in Unity, so only plain public fields and arrays.
     /// </summary>
@@ -15,6 +15,8 @@ namespace DuckAndCover.Core
         /// <summary>vanguard, striker, support or controller.</summary>
         public string role = "";
         public string weaponId = "";
+        /// <summary>Health when full, before upgrades. 0 = Ruleset.defaultMaxHealth.</summary>
+        public float maxHealth;
         /// <summary>The two ability ids (AbilityDef ids from the Abilities module).</summary>
         public string[] abilities = new string[0];
         /// <summary>Unlocks at the ultimate level; its form is chosen there.</summary>

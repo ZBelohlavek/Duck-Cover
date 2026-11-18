@@ -103,11 +103,16 @@ namespace DuckAndCover.Core
         public TeamId team;
         public string abilityId;
         public Vec3 position;
+        /// <summary>Level direction it faces; a wall stands across it.</summary>
+        public Vec3 facing;
         public float radius;
         public float lifetime;
         public float health;
         public bool blocksMovement;
         public bool blocksShots;
+        /// <summary>Wall size for barriers and gates (ObjectDef.width and height), 0 for the rest.</summary>
+        public float width;
+        public float height;
     }
 
     /// <summary>A mine went off or a field pulsed and reached someone.</summary>

@@ -55,13 +55,16 @@ namespace DuckAndCover.Core
         /// <summary>
         /// Let a host accept the scripted commands, moving players in <paramref name="world"/>, and
         /// give it the combat rules (WP4) with that world as a map with no walls, so scripted players
-        /// fight with real shots. Returns the combat rules.
+        /// fight with real shots. With hero data (WP11) the heroes' abilities, leveling and upgrades
+        /// run too. Returns the combat rules.
         /// </summary>
-        public static CombatServer Attach(SessionHost host, ScriptedWorld world, IGameEvents events)
+        public static CombatServer Attach(SessionHost host, ScriptedWorld world, IGameEvents events,
+            HeroCatalog heroes = null, AbilityLibrary abilities = null)
         {
             var match = host.Match;
-            var combat = new CombatServer(match, world, events, host.Settings.TickSeconds);
+            var combat = new CombatServer(match, world, events, host.Settings.TickSeconds, abilities: abilities);
             combat.Attach(host);
+            if (heroes != null) new HeroServer(combat, heroes, world, events).Attach(host);
             host.AddCommandHandler(cmd =>
             {
                 var state = match.State;
@@ -111,7 +114,7 @@ namespace DuckAndCover.Core
             },
         };
 
-        /// <summary>The usual ruleset with a short hero pick and deploy and a capped overtime, so a scripted run starts and ends.</summary>
+        /// <summary>The usual ruleset with a short hero pick and deploy, a capped overtime and quick ultimates, so a scripted run starts, uses everything and ends.</summary>
         public static Ruleset SmokeRuleset()
         {
             var r = Ruleset.Default;
@@ -119,6 +122,7 @@ namespace DuckAndCover.Core
             r.deploySeconds = 2f;
             r.matchEndSeconds = 5f;
             r.overtimeMaxSeconds = 30f; // scripted players never give a point up, so overtime needs an end
+            r.ultimateChargePerSecond = 4f; // ultimates come up within a short scripted match
             return r;
         }
     }
@@ -132,7 +136,8 @@ namespace DuckAndCover.Core
     /// </summary>
     public sealed class ScriptedPlayer
     {
-        static readonly string[] Heroes = { "vanguard", "striker", "support", "controller", "generic" };
+        /// <summary>The four starter heroes, and an id with no data (it plays the catalog's fallback hero).</summary>
+        static readonly string[] Heroes = { "bulwark", "lancer", "mender", "rigger", "generic" };
 
         /// <summary>Seconds of match time between changes of plan.</summary>
         const float PlanSeconds = 12f;
@@ -146,6 +151,8 @@ namespace DuckAndCover.Core
         bool wasAlive;
         int stepPlacement = -1;
         int firesSent;
+        int abilityPlan = -1;
+        readonly HashSet<int> choicesSent = new HashSet<int>();
         readonly WeaponLibrary weapons = StarterWeapons.Library();
         readonly Ruleset rules = Ruleset.Default;
 
@@ -241,6 +248,44 @@ namespace DuckAndCover.Core
             {
                 int enemy = FirstLivingEnemy(state, me);
                 if (enemy > 0) ShootAt(enemy);
+            }
+            // Once a plan, use an ability at the nearest enemy (the ultimate when it is ready), and
+            // take every upgrade as soon as it is offered: abilities and leveling run over the network too.
+            if (plan != abilityPlan && plan % 3 == 1)
+            {
+                abilityPlan = plan;
+                UseAbility(state, me, plan);
+            }
+            ChooseUpgrades(me);
+        }
+
+        void UseAbility(MatchState state, PlayerState me, int plan)
+        {
+            var snap = client.Snapshot;
+            var mine = snap == null || snap.abilities == null ? null : snap.abilities.Unit(me.id);
+            var m = snap == null ? null : snap.Motion(me.id);
+            if (mine == null || m == null || mine.slots.Count == 0) return;
+            int slot = (plan / 3 + me.id) % Math.Min(2, mine.slots.Count);
+            int ult = mine.slots.Count - 1;
+            if (mine.slots.Count > 2 && me.level >= rules.ultimateUnlockLevel && mine.ultimateCharge >= rules.ultimateChargeMax - 0.01f) slot = ult;
+            Vec3 eye = m.position + Vec3.Up * Hitboxes.EyeHeight(rules, m.crouched);
+            Vec3 aim = Vec3.Forward;
+            int enemy = FirstLivingEnemy(state, me);
+            var them = enemy > 0 ? snap.Motion(enemy) : null;
+            if (them != null) aim = (Hitboxes.Chest(rules, them.Pose(true)) - eye).Normalized;
+            Send(new UseAbilityCommand { slot = slot, abilityId = mine.slots[slot].abilityId, aimOrigin = eye, aimDirection = aim });
+        }
+
+        void ChooseUpgrades(PlayerState me)
+        {
+            var snap = client.Snapshot;
+            var mine = snap == null || snap.progression == null ? null : snap.progression.Player(me.id);
+            if (mine == null) return;
+            for (int level = 2; level <= mine.level; level++)
+            {
+                if (mine.HasPicked(level) || choicesSent.Contains(level)) continue;
+                choicesSent.Add(level);
+                Send(new ChooseUpgradeCommand { level = level, option = (me.id + level) % 2 });
             }
         }
 

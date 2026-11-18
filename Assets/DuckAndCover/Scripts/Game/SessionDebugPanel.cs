@@ -11,7 +11,6 @@ namespace DuckAndCover.Game
     /// </summary>
     public class SessionDebugPanel : MonoBehaviour
     {
-        static readonly string[] HeroIds = { "vanguard", "striker", "support", "controller" };
 
         public const float Width = 380f;
         /// <summary>The panel is on screen (so clicks on it aren't clicks into the game).</summary>
@@ -146,12 +145,12 @@ namespace DuckAndCover.Game
             if (state.phase == MatchPhase.Lobby || state.phase == MatchPhase.HeroPick)
             {
                 GUILayout.BeginHorizontal();
-                foreach (var hero in HeroIds)
-                    if (GUILayout.Button(hero)) client.Send(new PickHeroCommand { heroId = hero });
+                foreach (var hero in HeroData.Pickable())
+                    if (GUILayout.Button(hero.displayName + (me.heroId == hero.id ? " *" : ""))) client.Send(new PickHeroCommand { heroId = hero.id });
                 GUILayout.EndHorizontal();
             }
             if (state.IsPlaying || state.phase == MatchPhase.Deploy)
-                GUILayout.Label("Click the game to take the mouse, Esc frees it. WASD, Shift sprint, Ctrl crouch, Space jump or vault, R reload, 1/2 weapons.");
+                GUILayout.Label("Click the game to take the mouse, Esc frees it. WASD, Shift sprint, Ctrl crouch, Space jump or vault, R reload, 1/2 weapons, E and F abilities, X ultimate, hold Z or V to take the left or right upgrade.");
             if (lastRejection != "") GUILayout.Label("Refused: " + lastRejection);
         }
     }

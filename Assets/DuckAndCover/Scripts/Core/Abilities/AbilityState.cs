@@ -15,6 +15,8 @@ namespace DuckAndCover.Core
         /// <summary>The ability that placed it.</summary>
         public string abilityId = "";
         public Vec3 position;
+        /// <summary>Level direction the object faces (the caster's aim when placed). A wall stands across it.</summary>
+        public Vec3 facing = Vec3.Forward;
         public float health;
         /// <summary>Seconds left, when the definition has a lifetime.</summary>
         public float timeLeft;

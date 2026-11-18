@@ -1,0 +1,151 @@
+{
+  "abilities": [
+    {
+      "id": "bulwark_panel",
+      "displayName": "Bastion Panel",
+      "description": "Plant a 3 m wide armoured panel where you aim. It stops shots and bodies until it breaks or runs out. Teammates shoot through it.",
+      "cooldown": 14,
+      "targeting": {
+        "shape": "sphere",
+        "origin": "aimPoint",
+        "range": 4,
+        "radius": 0.5,
+        "affects": "enemies"
+      },
+      "effects": [
+        {
+          "kind": "spawn",
+          "objectId": "bulwark_panel"
+        }
+      ]
+    },
+    {
+      "id": "bulwark_rush",
+      "displayName": "Breach Rush",
+      "description": "Charge 7 m along your aim. Enemies where you land take damage and are knocked back.",
+      "cooldown": 9,
+      "targeting": {
+        "shape": "sphere",
+        "origin": "aimPoint",
+        "range": 7,
+        "radius": 3,
+        "affects": "enemies"
+      },
+      "effects": [
+        {
+          "kind": "push",
+          "amount": 7,
+          "duration": 0.35,
+          "direction": "aim",
+          "affects": "self"
+        },
+        {
+          "kind": "damage",
+          "amount": 35,
+          "delay": 0.35
+        },
+        {
+          "kind": "push",
+          "amount": 3,
+          "duration": 0.2,
+          "direction": "away",
+          "delay": 0.35
+        },
+        {
+          "kind": "stun",
+          "duration": 0.6,
+          "delay": 0.35,
+          "tag": "rushStun"
+        },
+        {
+          "kind": "shield",
+          "amount": 60,
+          "duration": 3,
+          "affects": "self",
+          "tag": "rushShield"
+        }
+      ]
+    },
+    {
+      "id": "bulwark_hold",
+      "displayName": "Hold the Line",
+      "description": "Ultimate. Lock down the ground around you for 6 seconds: enemies inside are slowed and worn down, and you gain a 100 shield.",
+      "ultimate": true,
+      "ultimateCost": 100,
+      "duration": 6,
+      "targeting": {
+        "shape": "sphere",
+        "origin": "caster",
+        "radius": 8,
+        "affects": "enemies"
+      },
+      "effects": [
+        {
+          "kind": "spawn",
+          "objectId": "bulwark_hold_field"
+        },
+        {
+          "kind": "shield",
+          "amount": 100,
+          "duration": 6,
+          "affects": "self"
+        },
+        {
+          "kind": "status",
+          "status": "root",
+          "duration": 1.5,
+          "tag": "holdRoot"
+        }
+      ]
+    },
+    {
+      "id": "bulwark_braced",
+      "displayName": "Braced",
+      "description": "Passive. Take 15% less damage while standing on a point.",
+      "passive": true,
+      "stats": [
+        {
+          "stat": "damageTaken",
+          "op": "multiply",
+          "value": 0.85,
+          "when": "onPoint"
+        }
+      ]
+    }
+  ],
+  "statuses": [],
+  "objects": [
+    {
+      "id": "bulwark_panel",
+      "displayName": "Bastion Panel",
+      "lifetime": 10,
+      "health": 500,
+      "trigger": "none",
+      "maxPerOwner": 1,
+      "blocksMovement": true,
+      "blocksShots": true,
+      "width": 3,
+      "height": 2.2
+    },
+    {
+      "id": "bulwark_hold_field",
+      "displayName": "Held Ground",
+      "lifetime": 6,
+      "radius": 8,
+      "trigger": "pulse",
+      "interval": 0.5,
+      "affects": "enemies",
+      "effects": [
+        {
+          "kind": "slow",
+          "amount": 0.4,
+          "duration": 1
+        },
+        {
+          "kind": "damage",
+          "amount": 8
+        }
+      ]
+    }
+  ]
+}

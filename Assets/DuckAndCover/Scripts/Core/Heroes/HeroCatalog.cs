@@ -6,7 +6,7 @@ namespace DuckAndCover.Core
     /// <summary>
     /// The heroes a match can use, and the check that each one's data is complete: every choice level
     /// has its options, every option exists and is the right kind, and talents only touch the hero's
-    /// own abilities. The Editor runs the same check on Data/Heroes so a gap fails the build.
+    /// own abilities. The hero data tests run the same check on Data/Resources/Heroes.
     /// </summary>
     public sealed class HeroCatalog
     {
@@ -63,6 +63,7 @@ namespace DuckAndCover.Core
             else foreach (var a in hero.abilities) if (string.IsNullOrEmpty(a)) errors.Add(who + " has an empty ability id");
             if (string.IsNullOrEmpty(hero.ultimateId)) errors.Add(who + " needs an ultimateId");
             if (string.IsNullOrEmpty(hero.passiveId)) errors.Add(who + " needs a passiveId");
+            if (hero.maxHealth < 0f) errors.Add(who + " has a negative maxHealth");
 
             // Upgrades: unique ids, a known kind, something to do, and only the hero's own abilities.
             var upgradeIds = new HashSet<string>();

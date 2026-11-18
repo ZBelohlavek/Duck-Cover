@@ -57,6 +57,7 @@ namespace DuckAndCover.Game
             effects.SetParent(transform, false);
             local = LocalPlayer.Create(this);
             local.transform.SetParent(transform, false);
+            gameObject.AddComponent<AbilityView>(); // what abilities do (WP11)
         }
 
         void OnDestroy()

@@ -1,0 +1,397 @@
+{
+    "id": "rigger",
+    "displayName": "Rigger",
+    "role": "controller",
+    "weaponId": "smg",
+    "maxHealth": 200,
+    "abilities": [
+        "rigger_mine",
+        "rigger_sentry"
+    ],
+    "ultimateId": "rigger_gate",
+    "passiveId": "rigger_tinker",
+    "levels": [
+        {
+            "level": 2,
+            "options": [
+                "rigger_steady_spray",
+                "rigger_light_feet"
+            ]
+        },
+        {
+            "level": 3,
+            "options": [
+                "rigger_spare_mines",
+                "rigger_shock_mine"
+            ]
+        },
+        {
+            "level": 4,
+            "options": [
+                "rigger_quick_reload",
+                "rigger_padded_vest"
+            ]
+        },
+        {
+            "level": 5,
+            "options": [
+                "rigger_long_lockout",
+                "rigger_snaring_gate"
+            ]
+        },
+        {
+            "level": 6,
+            "options": [
+                "rigger_long_fuse",
+                "rigger_wide_reach"
+            ]
+        },
+        {
+            "level": 7,
+            "options": [
+                "rigger_twin_sentry",
+                "rigger_hardened_sentry"
+            ]
+        },
+        {
+            "level": 8,
+            "options": [
+                "rigger_dug_in",
+                "rigger_charged"
+            ]
+        },
+        {
+            "level": 9,
+            "options": [
+                "rigger_heavy_rounds",
+                "rigger_wide_mines"
+            ]
+        },
+        {
+            "level": 10,
+            "options": [
+                "rigger_overclock",
+                "rigger_fortifier"
+            ]
+        }
+    ],
+    "upgrades": [
+        {
+            "id": "rigger_steady_spray",
+            "displayName": "Steady Spray",
+            "description": "Your weapons deal 8% more damage.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "weaponDamage",
+                    "op": "percent",
+                    "value": 0.08,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_light_feet",
+            "displayName": "Light Feet",
+            "description": "Move 6% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "moveSpeed",
+                    "op": "percent",
+                    "value": 0.06,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_spare_mines",
+            "displayName": "Spare Mines",
+            "description": "Snare Mine holds three charges, and three can be out at once.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "rigger_mine",
+                    "param": "charges",
+                    "op": "add",
+                    "value": 1,
+                    "text": ""
+                },
+                {
+                    "ability": "rigger_mine",
+                    "param": "object.maxPerOwner",
+                    "op": "add",
+                    "value": 1,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_shock_mine",
+            "displayName": "Shock Mine",
+            "description": "Snare Mine also stuns for 0.75 seconds.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "rigger_mine",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "mineStun"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_quick_reload",
+            "displayName": "Quick Reload",
+            "description": "Reload 25% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "reloadSpeed",
+                    "op": "percent",
+                    "value": 0.25,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_padded_vest",
+            "displayName": "Padded Vest",
+            "description": "+25 max health.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "maxHealth",
+                    "op": "add",
+                    "value": 25,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_long_lockout",
+            "displayName": "Long Lockout",
+            "description": "Lockout Gate stands 4 seconds longer.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "rigger_gate",
+                    "param": "object.lifetime",
+                    "op": "add",
+                    "value": 4,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_snaring_gate",
+            "displayName": "Snaring Gate",
+            "description": "Enemies within 4 m of the gate when it rises are slowed by 60% for 3 seconds.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "rigger_gate",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "gateSlow"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_long_fuse",
+            "displayName": "Long Fuse",
+            "description": "Slows and stuns you cause last 20% longer.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "statusDuration",
+                    "op": "percent",
+                    "value": 0.2,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_wide_reach",
+            "displayName": "Wide Reach",
+            "description": "Your mines, sentries and areas reach 15% further.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "abilityRadius",
+                    "op": "percent",
+                    "value": 0.15,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_twin_sentry",
+            "displayName": "Twin Sentry",
+            "description": "Two sentries can be out at once.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "rigger_sentry",
+                    "param": "object.maxPerOwner",
+                    "op": "add",
+                    "value": 1,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_hardened_sentry",
+            "displayName": "Hardened Sentry",
+            "description": "Sentries have 75% more health.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "rigger_sentry",
+                    "param": "object.health",
+                    "op": "multiply",
+                    "value": 1.75,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_dug_in",
+            "displayName": "Dug In",
+            "description": "Take 15% less damage on a point your team holds.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "damageTaken",
+                    "op": "multiply",
+                    "value": 0.85,
+                    "when": "onHeldPoint"
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_charged",
+            "displayName": "Charged",
+            "description": "Your ultimate charges 20% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "ultimateChargeRate",
+                    "op": "percent",
+                    "value": 0.2,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_heavy_rounds",
+            "displayName": "Heavy Rounds",
+            "description": "Sentry shots deal 4 more damage.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "rigger_sentry",
+                    "param": "object.effect.damage.amount",
+                    "op": "add",
+                    "value": 4,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_wide_mines",
+            "displayName": "Wide Mines",
+            "description": "Snare Mines go off for enemies 1.5 m further away.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "rigger_mine",
+                    "param": "object.radius",
+                    "op": "add",
+                    "value": 1.5,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_overclock",
+            "displayName": "Overclock",
+            "description": "Abilities recover 20% faster and sentries fire 20% faster.",
+            "kind": "capstone",
+            "stats": [
+                {
+                    "stat": "cooldownRate",
+                    "op": "percent",
+                    "value": 0.2,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [
+                {
+                    "ability": "rigger_sentry",
+                    "param": "object.interval",
+                    "op": "multiply",
+                    "value": 0.8,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_fortifier",
+            "displayName": "Fortifier",
+            "description": "Your mines, sentries and areas reach 20% further, and +25 max health.",
+            "kind": "capstone",
+            "stats": [
+                {
+                    "stat": "abilityRadius",
+                    "op": "percent",
+                    "value": 0.2,
+                    "when": ""
+                },
+                {
+                    "stat": "maxHealth",
+                    "op": "add",
+                    "value": 25,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        }
+    ]
+}
