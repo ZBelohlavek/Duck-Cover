@@ -375,7 +375,7 @@ namespace DuckAndCover.UI
 
         void LateUpdate()
         {
-            if (canvas.worldCamera == null) canvas.worldCamera = Camera.main;
+            UIKit.KeepInFront(canvas);
             if (canvas.enabled == ScreenshotDirector.HideHud) canvas.enabled = !ScreenshotDirector.HideHud;
             var runner = SessionRunner.Instance;
             Bind(runner == null ? null : runner.Client);

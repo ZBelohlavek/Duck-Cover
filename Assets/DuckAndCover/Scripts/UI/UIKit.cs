@@ -126,6 +126,21 @@ namespace DuckAndCover.UI
         }
 
         /// <summary>
+        /// Keep a camera canvas just past the camera's near clip plane, in front of everything else the
+        /// camera draws: the gun in the player's hands sits closer than the old 0.3 m and covered the ammo.
+        /// The canvas fills the view at any field of view, so zooming or scoping in keeps it whole. Call
+        /// every frame: the camera can change.
+        /// </summary>
+        public static void KeepInFront(Canvas canvas)
+        {
+            if (canvas.worldCamera == null) canvas.worldCamera = Camera.main;
+            var cam = canvas.worldCamera;
+            if (cam == null) return;
+            float distance = cam.nearClipPlane * 1.02f + 0.001f;
+            if (Mathf.Abs(canvas.planeDistance - distance) > 1e-5f) canvas.planeDistance = distance;
+        }
+
+        /// <summary>
         /// A 1920 x 1080 layer centred on <paramref name="parent"/>. Helmet-display parts hang from it and
         /// are placed in its pixels, (0, 0) bottom left to (1920, 1080) top right.
         /// </summary>

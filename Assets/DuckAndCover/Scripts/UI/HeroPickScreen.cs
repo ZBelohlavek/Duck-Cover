@@ -115,7 +115,7 @@ namespace DuckAndCover.UI
 
         void LateUpdate()
         {
-            if (canvas.worldCamera == null) canvas.worldCamera = Camera.main;
+            UIKit.KeepInFront(canvas);
             var runner = SessionRunner.Instance;
             var client = runner == null ? null : runner.Client;
             var state = client == null ? null : client.State;
