@@ -26,6 +26,7 @@ static class Program
         { "kitwaves", WaveHarness.Report },
         { "lanestudy", LaneStudyTests.Report },
         { "waves", LaneTests.Report },
+        { "overrun", OverrunSim.Report },
         { "breakwater", BreakwaterTests.Report },
     };
 

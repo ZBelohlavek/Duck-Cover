@@ -25,7 +25,8 @@ namespace DuckAndCover.Core
             this.state = state;
             this.rules = rules;
             this.mode = mode;
-            set = map.ZoneSet(mode.zoneSet) ?? throw new ArgumentException("map has no zone set " + mode.zoneSet);
+            // Overrun scores on Bastions, not zones: without a zone set it simply has none.
+            set = map.ZoneSet(mode.zoneSet) ?? (mode.IsOverrun() ? new ZoneSetDef() : throw new ArgumentException("map has no zone set " + mode.zoneSet));
             this.world = world;
             this.events = events;
         }

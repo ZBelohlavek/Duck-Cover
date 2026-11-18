@@ -26,6 +26,15 @@ namespace DuckAndCover.Core
         public float WaitFor(int level) => rules.respawnBaseSeconds + rules.respawnPerLevelSeconds * Math.Max(0, level - 1);
 
         /// <summary>
+        /// Seconds added to a team's respawn wait (negative shortens it; the wait never goes below 0).
+        /// Overrun shortens the wait of a team whose Forward Bastion fell. Null adds nothing.
+        /// </summary>
+        public Func<TeamId, float> WaitAdjust;
+
+        /// <summary>The wait a player of this team at this level gets when they go down now.</summary>
+        public float WaitFor(TeamId team, int level) => Math.Max(0f, WaitFor(level) + (WaitAdjust == null ? 0f : WaitAdjust(team)));
+
+        /// <summary>
         /// Seconds until a waiting player is back: their own wait, rounded up to the next wave.
         /// 0 for living players.
         /// </summary>
@@ -61,7 +70,7 @@ namespace DuckAndCover.Core
         {
             p.alive = false;
             p.deaths++;
-            p.respawnAt = state.elapsed + WaitFor(p.level);
+            p.respawnAt = state.elapsed + WaitFor(p.team, p.level);
             var killer = killerId >= 0 ? state.Player(killerId) : null;
             if (killer != null && killer.team != p.team) killer.eliminations++;
             Publish(new PlayerEliminatedEvent

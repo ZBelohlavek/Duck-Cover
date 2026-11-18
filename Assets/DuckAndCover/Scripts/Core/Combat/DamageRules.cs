@@ -32,6 +32,18 @@ namespace DuckAndCover.Core
             Roster = roster ?? new UnitRoster();
         }
 
+        /// <summary>
+        /// Asked before any damage lands (attacker id or -1, target id): false and nothing happens.
+        /// Overrun uses it for its Bastions (Core/Overrun). Null lets everything through.
+        /// </summary>
+        public Func<int, int, bool> DamageGate;
+
+        /// <summary>
+        /// Asked before healing or a shield from outside lands (source id or -1, target id): false and
+        /// nothing happens. Overrun keeps Bastion health from refilling with it. Null lets everything through.
+        /// </summary>
+        public Func<int, int, bool> RestoreGate;
+
         // ---- Who is who ----
 
         /// <summary>A player in the match or a living unit: someone whose stats count when they act.</summary>
@@ -191,6 +203,7 @@ namespace DuckAndCover.Core
         public float Damage(int attackerId, int targetId, float amount, string abilityId = "", int objectId = 0)
         {
             if (amount <= 0f || !match.State.IsPlaying || !IsAlive(targetId)) return 0f;
+            if (DamageGate != null && !DamageGate(attackerId, targetId)) return 0f;
             var target = Unit(targetId);
             bool attacker = IsKnown(attackerId);
             if (attacker && attackerId != targetId && SameTeam(attackerId, targetId) && !Rules.friendlyFire) return 0f;
@@ -243,6 +256,7 @@ namespace DuckAndCover.Core
         public float Heal(int healerId, int targetId, float amount, string abilityId = "", int objectId = 0)
         {
             if (amount <= 0f || !match.State.IsPlaying || !IsAlive(targetId)) return 0f;
+            if (RestoreGate != null && !RestoreGate(healerId, targetId)) return 0f;
             var target = Unit(targetId);
             float scaled = amount * Math.Max(0f, Stat(targetId, StatIds.HealingTaken));
             if (IsKnown(healerId))
@@ -266,6 +280,7 @@ namespace DuckAndCover.Core
         public float AddShield(int sourceId, int targetId, float amount, float seconds, string abilityId = "", int objectId = 0)
         {
             if (amount <= 0f || !match.State.IsPlaying || !IsAlive(targetId)) return 0f;
+            if (RestoreGate != null && !RestoreGate(sourceId, targetId)) return 0f;
             var target = Unit(targetId);
             abilityId = abilityId ?? "";
             if (seconds <= 0f) seconds = Rules.defaultShieldSeconds;
