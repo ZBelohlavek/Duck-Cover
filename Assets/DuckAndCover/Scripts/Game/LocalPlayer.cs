@@ -251,7 +251,7 @@ namespace DuckAndCover.Game
 
         void Choices(Keyboard keyboard, bool focused, MatchSnapshot snapshot, PlayerState me)
         {
-            int level = PendingLevel(snapshot, me.id);
+            int level = PendingLevel(snapshot, me.id, rules == null ? null : rules.progression);
             int key = -1;
             if (focused && !scripted && keyboard != null && level > 0)
             {
@@ -268,16 +268,14 @@ namespace DuckAndCover.Game
             client.Send(new ChooseUpgradeCommand { level = level, option = key });
         }
 
-        static readonly ProgressionRuleset Leveling = new ProgressionRuleset();
-
         /// <summary>The lowest level with a choice whose upgrade the player hasn't chosen yet, or 0.</summary>
-        public static int PendingLevel(MatchSnapshot snapshot, int playerId)
+        public static int PendingLevel(MatchSnapshot snapshot, int playerId, ProgressionRuleset leveling)
         {
             var mine = snapshot == null || snapshot.progression == null ? null : snapshot.progression.Player(playerId);
             if (mine == null) return 0;
-            // Levels without a choice (the automatic boosts) are skipped. Clients use the default numbers.
+            // Levels without a choice (the automatic boosts) are skipped, by the match's own level layout.
             for (int level = 2; level <= mine.level; level++)
-                if (Leveling.ChoiceAt(level) != UpgradeKind.None && !mine.HasPicked(level)) return level;
+                if (leveling != null && leveling.ChoiceAt(level) != UpgradeKind.None && !mine.HasPicked(level)) return level;
             return 0;
         }
 

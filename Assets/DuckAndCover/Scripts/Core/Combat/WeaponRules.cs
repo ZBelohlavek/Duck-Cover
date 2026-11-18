@@ -29,6 +29,8 @@ namespace DuckAndCover.Core
         /// Set by <see cref="CombatServer"/> to the ability rules' slow status; null = hits don't slow.
         /// </summary>
         public Action<int, int, float, float> Slow;
+        /// <summary>Clears a teammate's harmful statuses (the weaponCleanse stat). Set by <see cref="CombatServer"/>.</summary>
+        public Action<int> Cleanse;
         /// <summary>
         /// Hurts a placed object (barrier, turret, mine) a shot hit: object id, final amount, attacker.
         /// Set by <see cref="CombatServer"/> to the ability rules; null = shots don't hurt objects.
@@ -199,14 +201,19 @@ namespace DuckAndCover.Core
                 shot.hitParts[i] = hit.bodyPart;
                 float share = w.Falloff(hit.distance / reach) * w.PartMultiplier(hit.bodyPart);
                 // Heal shots on teammates are kept as negative amounts until the end.
-                float amount = w.allyHeal > 0f && IsTeammate(cmd.playerId, hit.playerId) ? -w.allyHeal * share : w.damage * scale * share;
+                // weaponDamage makes a healing weapon heal harder too.
+                float amount = w.allyHeal > 0f && IsTeammate(cmd.playerId, hit.playerId) ? -w.allyHeal * scale * share : w.damage * scale * share;
                 Add(targets, amounts, hit.playerId, amount);
             }
             Publish(shot);
             // One damage (or heal) call per target per shot, in the order the pellets reached them.
             for (int i = 0; i < targets.Count; i++)
             {
-                if (amounts[i] < 0f) combat.Heal(cmd.playerId, targets[i], -amounts[i], w.id);
+                if (amounts[i] < 0f)
+                {
+                    combat.Heal(cmd.playerId, targets[i], -amounts[i], w.id);
+                    if (Cleanse != null && combat.Stat(cmd.playerId, StatIds.WeaponCleanse) > 0f) Cleanse(targets[i]);
+                }
                 else AfterHit(cmd.playerId, targets[i], combat.Damage(cmd.playerId, targets[i], amounts[i], w.id), dir);
             }
             HurtObjects(cmd.playerId, objects, objectAmounts);

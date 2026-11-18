@@ -71,7 +71,7 @@ namespace DuckAndCover.Core
         public float catchUpBonus = 0.25f;
 
         /// <summary>The kind offered on reaching a level, or None.</summary>
-        /// <summary>The level where the ultimate's form is chosen (5 in the plan), or 0 if none is.</summary>
+        /// <summary>The level where the ultimate's form is chosen (8 with the default layout), or 0 if none is.</summary>
         public int UltimateFormLevel()
         {
             for (int level = 1; levelChoices != null && level <= levelChoices.Length; level++)

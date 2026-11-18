@@ -23,7 +23,7 @@ namespace DuckAndCover.Core
     /// Numeric params:
     ///   cooldown, charges, castTime, duration, ultimateCost, range, radius, count, spreadDegrees, maxTargets
     ///   effect.KEY.amount | duration | delay | interval
-    ///   object.lifetime | health | radius | interval | armTime | maxPerOwner | maxTargets
+    ///   object.lifetime | health | radius | interval | armTime | maxPerOwner | maxTargets | width | height
     ///   object.effect.KEY.amount | duration | delay | interval
     ///   stat.NAME   (a passive's stat change, e.g. stat.healthRegen)
     /// where KEY is an effect's kind ("damage", "heal", "slow"...), its status id or its tag; every
@@ -209,6 +209,8 @@ namespace DuckAndCover.Core
                         case "armTime": found.Add(new Slot { get = () => o.armTime, set = v => o.armTime = v }); break;
                         case "maxPerOwner": found.Add(new Slot { get = () => o.maxPerOwner, set = v => o.maxPerOwner = (int)v, whole = true }); break;
                         case "maxTargets": found.Add(new Slot { get = () => o.maxTargets, set = v => o.maxTargets = (int)v, whole = true }); break;
+                        case "width": found.Add(new Slot { get = () => o.width, set = v => o.width = v }); break;
+                        case "height": found.Add(new Slot { get = () => o.height, set = v => o.height = v }); break;
                     }
                 }
             }

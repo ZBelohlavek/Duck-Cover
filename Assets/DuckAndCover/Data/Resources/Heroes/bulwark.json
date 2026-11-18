@@ -21,64 +21,64 @@
         {
             "level": 4,
             "options": [
-                "bulwark_reinforced_panel",
-                "bulwark_double_rush"
+                "bulwark_long_rush",
+                "bulwark_reinforced_panel"
             ]
         },
         {
             "level": 6,
             "options": [
                 "bulwark_close_quarters",
-                "bulwark_quick_load"
+                "bulwark_steady_guard"
             ]
         },
         {
             "level": 8,
             "options": [
-                "bulwark_iron_ring",
+                "bulwark_crushing_line",
                 "bulwark_lockdown"
             ]
         },
         {
             "level": 10,
             "options": [
-                "bulwark_braced",
-                "bulwark_second_wind"
+                "bulwark_second_wind",
+                "bulwark_braced"
             ]
         },
         {
             "level": 12,
             "options": [
                 "bulwark_shockwave",
-                "bulwark_rapid_panel"
+                "bulwark_bastion_aura"
             ]
         },
         {
             "level": 14,
             "options": [
-                "bulwark_relentless",
+                "bulwark_last_stand",
                 "bulwark_point_warden"
             ]
         },
         {
             "level": 16,
             "options": [
-                "bulwark_long_rush",
-                "bulwark_rallying_rush"
+                "bulwark_double_rush",
+                "bulwark_wide_panel"
             ]
         },
         {
             "level": 18,
             "options": [
-                "bulwark_quick_panel",
-                "bulwark_quick_rush"
+                "bulwark_rallying_rush",
+                "bulwark_twin_panels"
             ]
         },
         {
             "level": 20,
             "options": [
                 "bulwark_unbreakable",
-                "bulwark_siege_breaker"
+                "bulwark_fortress"
             ]
         }
     ],
@@ -86,13 +86,13 @@
         {
             "id": "bulwark_thick_hide",
             "displayName": "Thick Hide",
-            "description": "+50 max health.",
+            "description": "+25 max health.",
             "kind": "trait",
             "stats": [
                 {
                     "stat": "maxHealth",
                     "op": "add",
-                    "value": 50,
+                    "value": 25,
                     "when": ""
                 }
             ],
@@ -102,13 +102,13 @@
         {
             "id": "bulwark_anchor",
             "displayName": "Anchor",
-            "description": "Take 10% less damage on a point your team holds.",
+            "description": "Take 8% less damage on a point your team holds.",
             "kind": "trait",
             "stats": [
                 {
                     "stat": "damageTaken",
                     "op": "multiply",
-                    "value": 0.9,
+                    "value": 0.92,
                     "when": "onHeldPoint"
                 }
             ],
@@ -116,9 +116,33 @@
             "scriptId": ""
         },
         {
+            "id": "bulwark_long_rush",
+            "displayName": "Long Rush",
+            "description": "Breach Rush goes 2 m further and knocks enemies 2 m further.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bulwark_rush",
+                    "param": "range",
+                    "op": "add",
+                    "value": 2,
+                    "text": ""
+                },
+                {
+                    "ability": "bulwark_rush",
+                    "param": "effect.push.amount",
+                    "op": "add",
+                    "value": 2,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
             "id": "bulwark_reinforced_panel",
             "displayName": "Reinforced Panel",
-            "description": "The panel has 50% more health.",
+            "description": "Bastion Panel has 30% more health.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
@@ -126,24 +150,7 @@
                     "ability": "bulwark_panel",
                     "param": "object.health",
                     "op": "multiply",
-                    "value": 1.5,
-                    "text": ""
-                }
-            ],
-            "scriptId": ""
-        },
-        {
-            "id": "bulwark_double_rush",
-            "displayName": "Double Rush",
-            "description": "Breach Rush holds two charges.",
-            "kind": "talent",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "bulwark_rush",
-                    "param": "charges",
-                    "op": "add",
-                    "value": 1,
+                    "value": 1.3,
                     "text": ""
                 }
             ],
@@ -152,11 +159,27 @@
         {
             "id": "bulwark_close_quarters",
             "displayName": "Close Quarters",
-            "description": "Your weapons deal 10% more damage.",
+            "description": "Your weapons deal 6% more damage.",
             "kind": "trait",
             "stats": [
                 {
                     "stat": "weaponDamage",
+                    "op": "percent",
+                    "value": 0.06,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "bulwark_steady_guard",
+            "displayName": "Steady Guard",
+            "description": "Abilities recover 10% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "cooldownRate",
                     "op": "percent",
                     "value": 0.1,
                     "when": ""
@@ -166,40 +189,17 @@
             "scriptId": ""
         },
         {
-            "id": "bulwark_quick_load",
-            "displayName": "Quick Load",
-            "description": "Reload 20% faster.",
-            "kind": "trait",
-            "stats": [
-                {
-                    "stat": "reloadSpeed",
-                    "op": "percent",
-                    "value": 0.2,
-                    "when": ""
-                }
-            ],
-            "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "bulwark_iron_ring",
-            "displayName": "Iron Ring",
-            "description": "Hold the Line covers 3 m more ground.",
+            "id": "bulwark_crushing_line",
+            "displayName": "Crushing Line",
+            "description": "Hold the Line wears enemies down twice as fast.",
             "kind": "ultimate",
             "stats": [],
             "abilityChanges": [
                 {
                     "ability": "bulwark_hold",
-                    "param": "object.radius",
-                    "op": "add",
-                    "value": 3,
-                    "text": ""
-                },
-                {
-                    "ability": "bulwark_hold",
-                    "param": "radius",
-                    "op": "add",
-                    "value": 3,
+                    "param": "object.effect.damage.amount",
+                    "op": "multiply",
+                    "value": 2,
                     "text": ""
                 }
             ],
@@ -223,22 +223,6 @@
             "scriptId": ""
         },
         {
-            "id": "bulwark_braced",
-            "displayName": "Braced",
-            "description": "Passive. Take 15% less damage while standing on a point.",
-            "kind": "passive",
-            "stats": [
-                {
-                    "stat": "damageTaken",
-                    "op": "multiply",
-                    "value": 0.85,
-                    "when": "onPoint"
-                }
-            ],
-            "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
             "id": "bulwark_second_wind",
             "displayName": "Second Wind",
             "description": "Passive. Regain 8 health a second when you haven't been hit for a while.",
@@ -249,6 +233,22 @@
                     "op": "add",
                     "value": 8,
                     "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "bulwark_braced",
+            "displayName": "Braced",
+            "description": "Passive. Take 15% less damage while standing on a point.",
+            "kind": "passive",
+            "stats": [
+                {
+                    "stat": "damageTaken",
+                    "op": "multiply",
+                    "value": 0.85,
+                    "when": "onPoint"
                 }
             ],
             "abilityChanges": [],
@@ -272,33 +272,33 @@
             "scriptId": ""
         },
         {
-            "id": "bulwark_rapid_panel",
-            "displayName": "Rapid Panel",
-            "description": "Bastion Panel recovers 30% sooner.",
+            "id": "bulwark_bastion_aura",
+            "displayName": "Bastion Aura",
+            "description": "Teammates within 4 m of where you plant Bastion Panel gain 15 shield a second while it stands.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
                     "ability": "bulwark_panel",
-                    "param": "cooldown",
-                    "op": "multiply",
-                    "value": 0.7,
-                    "text": ""
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "bastionAura"
                 }
             ],
             "scriptId": ""
         },
         {
-            "id": "bulwark_relentless",
-            "displayName": "Relentless",
-            "description": "Abilities recover 15% faster.",
+            "id": "bulwark_last_stand",
+            "displayName": "Last Stand",
+            "description": "Take 15% less damage while at half health or less.",
             "kind": "trait",
             "stats": [
                 {
-                    "stat": "cooldownRate",
-                    "op": "percent",
-                    "value": 0.15,
-                    "when": ""
+                    "stat": "damageTaken",
+                    "op": "multiply",
+                    "value": 0.85,
+                    "when": "lowHealth"
                 }
             ],
             "abilityChanges": [],
@@ -307,13 +307,13 @@
         {
             "id": "bulwark_point_warden",
             "displayName": "Point Warden",
-            "description": "Your weapons deal 15% more damage while on a point.",
+            "description": "Your weapons deal 12% more damage while on a point.",
             "kind": "trait",
             "stats": [
                 {
                     "stat": "weaponDamage",
                     "op": "percent",
-                    "value": 0.15,
+                    "value": 0.12,
                     "when": "onPoint"
                 }
             ],
@@ -321,24 +321,34 @@
             "scriptId": ""
         },
         {
-            "id": "bulwark_long_rush",
-            "displayName": "Long Rush",
-            "description": "Breach Rush goes 3 m further and knocks enemies 3 m further.",
+            "id": "bulwark_double_rush",
+            "displayName": "Double Rush",
+            "description": "Breach Rush holds two charges.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
                     "ability": "bulwark_rush",
-                    "param": "range",
+                    "param": "charges",
                     "op": "add",
-                    "value": 3,
+                    "value": 1,
                     "text": ""
-                },
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bulwark_wide_panel",
+            "displayName": "Wide Panel",
+            "description": "Bastion Panel is 1.5 m wider.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
                 {
-                    "ability": "bulwark_rush",
-                    "param": "effect.push.amount",
+                    "ability": "bulwark_panel",
+                    "param": "object.width",
                     "op": "add",
-                    "value": 3,
+                    "value": 1.5,
                     "text": ""
                 }
             ],
@@ -357,6 +367,30 @@
                     "op": "set",
                     "value": 0,
                     "text": "rushShield"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bulwark_twin_panels",
+            "displayName": "Twin Panels",
+            "description": "Bastion Panel holds two charges, and two can stand at once.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bulwark_panel",
+                    "param": "charges",
+                    "op": "add",
+                    "value": 1,
+                    "text": ""
+                },
+                {
+                    "ability": "bulwark_panel",
+                    "param": "object.maxPerOwner",
+                    "op": "add",
+                    "value": 1,
+                    "text": ""
                 }
             ],
             "scriptId": ""
@@ -384,59 +418,18 @@
             "scriptId": ""
         },
         {
-            "id": "bulwark_siege_breaker",
-            "displayName": "Siege Breaker",
-            "description": "Your weapons deal 15% more damage and Breach Rush recovers 25% sooner.",
+            "id": "bulwark_fortress",
+            "displayName": "Fortress",
+            "description": "Hold the Line also gives teammates inside it 20 shield a second.",
             "kind": "capstone",
-            "stats": [
-                {
-                    "stat": "weaponDamage",
-                    "op": "percent",
-                    "value": 0.15,
-                    "when": ""
-                }
-            ],
-            "abilityChanges": [
-                {
-                    "ability": "bulwark_rush",
-                    "param": "cooldown",
-                    "op": "multiply",
-                    "value": 0.75,
-                    "text": ""
-                }
-            ],
-            "scriptId": ""
-        },
-        {
-            "id": "bulwark_quick_panel",
-            "displayName": "Quick Panel",
-            "description": "Bastion Panel recovers 20% sooner.",
-            "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
-                    "ability": "bulwark_panel",
-                    "param": "cooldown",
-                    "op": "multiply",
-                    "value": 0.8,
-                    "text": ""
-                }
-            ],
-            "scriptId": ""
-        },
-        {
-            "id": "bulwark_quick_rush",
-            "displayName": "Quick Rush",
-            "description": "Breach Rush recovers 20% sooner.",
-            "kind": "talent",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "bulwark_rush",
-                    "param": "cooldown",
-                    "op": "multiply",
-                    "value": 0.8,
-                    "text": ""
+                    "ability": "bulwark_hold",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "fortress"
                 }
             ],
             "scriptId": ""

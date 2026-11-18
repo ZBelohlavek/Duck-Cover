@@ -16,6 +16,11 @@
         {
           "kind": "spawn",
           "objectId": "bulwark_panel"
+        },
+        {
+          "kind": "spawn",
+          "objectId": "bulwark_aura",
+          "tag": "bastionAura"
         }
       ]
     },
@@ -95,6 +100,11 @@
           "status": "root",
           "duration": 1.5,
           "tag": "holdRoot"
+        },
+        {
+          "kind": "spawn",
+          "objectId": "bulwark_fortress",
+          "tag": "fortress"
         }
       ]
     }
@@ -130,6 +140,40 @@
         {
           "kind": "damage",
           "amount": 8
+        }
+      ]
+    },
+    {
+      "id": "bulwark_aura",
+      "displayName": "Bastion Aura",
+      "lifetime": 10,
+      "radius": 4,
+      "trigger": "pulse",
+      "interval": 1,
+      "affects": "allies",
+      "maxPerOwner": 1,
+      "effects": [
+        {
+          "kind": "shield",
+          "amount": 15,
+          "duration": 2
+        }
+      ]
+    },
+    {
+      "id": "bulwark_fortress",
+      "displayName": "Fortress",
+      "lifetime": 6,
+      "radius": 8,
+      "trigger": "pulse",
+      "interval": 1,
+      "affects": "allies",
+      "maxPerOwner": 1,
+      "effects": [
+        {
+          "kind": "shield",
+          "amount": 20,
+          "duration": 2
         }
       ]
     }

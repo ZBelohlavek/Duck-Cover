@@ -66,7 +66,16 @@
       ]
     }
   ],
-  "statuses": [],
+  "statuses": [
+    {
+      "id": "rigger_tagged",
+      "displayName": "Tagged",
+      "negative": true,
+      "duration": 5,
+      "reveal": true,
+      "stacking": "refresh"
+    }
+  ],
   "objects": [
     {
       "id": "rigger_mine",
@@ -93,6 +102,12 @@
           "kind": "stun",
           "duration": 0.75,
           "tag": "mineStun"
+        },
+        {
+          "kind": "status",
+          "status": "rigger_tagged",
+          "duration": 5,
+          "tag": "stickyMine"
         }
       ]
     },

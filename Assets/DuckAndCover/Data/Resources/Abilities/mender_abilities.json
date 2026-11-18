@@ -97,6 +97,12 @@
         {
           "kind": "heal",
           "amount": 20
+        },
+        {
+          "kind": "shield",
+          "amount": 15,
+          "duration": 2,
+          "tag": "sanctuary"
         }
       ]
     }
