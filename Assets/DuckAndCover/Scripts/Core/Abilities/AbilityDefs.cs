@@ -241,8 +241,10 @@ namespace DuckAndCover.Core
         public const string Cleanse = "cleanse";
         public const string Push = "push";
         public const string Spawn = "spawn";
+        /// <summary>Refills the magazine of the weapon in the target's hand (the combat server provides it).</summary>
+        public const string Reload = "reload";
 
-        public static readonly string[] All = { Damage, Heal, Shield, Status, Slow, Stun, Cleanse, Push, Spawn };
+        public static readonly string[] All = { Damage, Heal, Shield, Status, Slow, Stun, Cleanse, Push, Spawn, Reload };
         public static bool IsKnown(string kind) => Array.IndexOf(All, kind) >= 0;
     }
 

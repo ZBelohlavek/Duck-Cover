@@ -71,6 +71,10 @@ namespace DuckAndCover.Core
         public float selfSplashShare = 0f;
         /// <summary>Projectiles that hit nothing are removed after this many seconds.</summary>
         public float projectileMaxSeconds = 4f;
+        /// <summary>Seconds a weapon hit's push (the weaponPush stat) takes to play out.</summary>
+        public float weaponPushSeconds = 0.12f;
+        /// <summary>Seconds a weapon hit's slow (the weaponSlow stat) lasts; each hit refreshes it.</summary>
+        public float weaponSlowSeconds = 1f;
 
         // ---- Personal shield (regenerates; ability shields stack on top, up to maxShield) ----
         /// <summary>Every hero's own shield. 0 turns personal shields off.</summary>
@@ -96,6 +100,7 @@ namespace DuckAndCover.Core
             if (fireBurstShots < 1f || weaponSwitchSeconds < 0f) e.Add("fireBurstShots must be at least 1");
             if (selfSplashShare < 0f || selfSplashShare > 1f) e.Add("selfSplashShare must be 0..1");
             if (projectileMaxSeconds <= 0f) e.Add("projectileMaxSeconds must be positive");
+            if (weaponPushSeconds <= 0f || weaponSlowSeconds <= 0f) e.Add("weaponPushSeconds and weaponSlowSeconds must be positive");
             if (personalShield < 0f || personalShieldDelaySeconds < 0f || personalShieldRegenPerSecond < 0f) e.Add("personal shield numbers can't be negative");
             return e;
         }

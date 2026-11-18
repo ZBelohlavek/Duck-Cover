@@ -10,19 +10,25 @@ static class ProgressionTests
     {
         var r = new ProgressionRuleset();
         Check.Equal(0, r.Validate().Count, "defaults are valid: " + string.Join("; ", r.Validate()));
-        Check.Equal(10, r.maxLevel, "levels 1 to 10");
-        Check.Equal("2,4,6,8", string.Join(",", r.ChoiceLevels().Where(l => r.ChoiceAt(l) == UpgradeKind.Trait)), "traits");
-        Check.Equal("3,7,9", string.Join(",", r.ChoiceLevels().Where(l => r.ChoiceAt(l) == UpgradeKind.Talent)), "talents");
-        Check.Equal(UpgradeKind.Ultimate, r.ChoiceAt(5), "ultimate form at 5");
-        Check.Equal(UpgradeKind.Capstone, r.ChoiceAt(10), "capstone at 10");
+        Check.Equal(20, r.maxLevel, "levels 1 to 20");
+        Check.Equal("2,4,6,8,10,12,14,16,18,20", string.Join(",", r.ChoiceLevels()), "a pick every other level");
+        Check.Equal("2,6,14", string.Join(",", r.ChoiceLevels().Where(l => r.ChoiceAt(l) == UpgradeKind.Trait)), "traits");
+        Check.Equal("4,12,16,18", string.Join(",", r.ChoiceLevels().Where(l => r.ChoiceAt(l) == UpgradeKind.Talent)), "talents");
+        Check.Equal(UpgradeKind.Ultimate, r.ChoiceAt(8), "ultimate form at 8");
+        Check.Equal(8, Ruleset.Default.ultimateUnlockLevel, "the ultimate unlocks with its form");
+        Check.Equal(UpgradeKind.Passive, r.ChoiceAt(10), "the passive at 10, halfway");
+        Check.Equal(UpgradeKind.Capstone, r.ChoiceAt(20), "capstone at 20");
+        Check.Equal(9, r.BoostLevels(20), "nine levels give the automatic boost");
+        Check.Equal(0, r.BoostLevels(2), "none by level 2");
+        Check.Equal(4900, r.xpToReach[19], "level 20 needs what level 10 needed before");
         Check.Equal(UpgradeKind.None, r.ChoiceAt(1), "level 1 is the base kit");
-        Check.Equal(9, r.ChoiceLevels().Count, "nine choices");
+        Check.Equal(10, r.ChoiceLevels().Count, "ten choices");
         Check.Equal(2, r.optionsPerLevel, "two options each");
         Check.Near(5f, r.xpPerSecondOnZone, "on a point");
         Check.Near(2f, r.xpPerSecondInMatch, "being in the match");
         Check.Near(100f, r.xpPerCapture, "capture");
         Check.Near(100f, r.xpPerElimination, "elimination");
-        Check.Equal(2, r.catchUpLevelGap, "catch-up from two levels below");
+        Check.Equal(4, r.catchUpLevelGap, "catch-up from four levels below");
         Check.Near(0.25f, r.catchUpBonus, "catch-up bonus");
         Check.True(Ruleset.Default.progression != null, "the ruleset carries progression numbers");
     }
@@ -30,9 +36,11 @@ static class ProgressionTests
     [Test]
     static void ProgressionRulesetValidation()
     {
-        var r = new ProgressionRuleset { xpToReach = new[] { 0, 100, 100, 300, 400, 500, 600, 700, 800, 900 } };
+        var r = new ProgressionRuleset { maxLevel = 10, xpToReach = new[] { 0, 100, 100, 300, 400, 500, 600, 700, 800, 900 },
+            levelChoices = new[] { "", "trait", "", "", "", "", "", "", "", "" } };
         Check.True(r.Validate().Any(e => e.Contains("rise")), "thresholds must rise");
-        r = new ProgressionRuleset { levelChoices = new[] { "", "trait", "perk", "", "", "", "", "", "", "" } };
+        r = new ProgressionRuleset { maxLevel = 10, xpToReach = new[] { 0, 100, 200, 300, 400, 500, 600, 700, 800, 900 },
+            levelChoices = new[] { "", "trait", "perk", "", "", "", "", "", "", "" } };
         Check.True(r.Validate().Any(e => e.Contains("perk")), "unknown kind");
         r = new ProgressionRuleset { maxLevel = 5 };
         Check.True(r.Validate().Any(e => e.Contains("xpToReach")), "thresholds per level");
@@ -152,26 +160,26 @@ static class ProgressionTests
     static void BountyFollowsLevels()
     {
         var p = new ProgressionHarness();
-        p.RaiseTo(p.B[0], 5);
+        p.RaiseTo(p.B[0], 9);
         p.Match.EliminatePlayer(p.B[0], p.A[0]);
         var high = p.Of<ExperienceAwardedEvent>().Last(e => e.source == ExperienceSource.Elimination);
-        Check.Near(140f, high.amount, "four levels above: +40%", 0.01f);
+        Check.Near(140f, high.amount, "eight levels above: +40%", 0.01f);
 
-        p.RaiseTo(p.A[1], 9);
+        p.RaiseTo(p.A[1], 17);
         p.Match.EliminatePlayer(p.B[1], p.A[1]);
         var low = p.Of<ExperienceAwardedEvent>().Last(e => e.source == ExperienceSource.Elimination);
-        Check.Near(50f, low.amount, "eight levels below: floored at half", 0.01f);
+        Check.Near(50f, low.amount, "sixteen levels below: floored at half", 0.01f);
     }
 
     [Test]
     static void TrailingPlayersCatchUp()
     {
         var p = new ProgressionHarness(perTeam: 2);
-        foreach (var id in new[] { p.A[0], p.A[1], p.B[0] }) p.RaiseTo(id, 4);
-        // Average (4+4+4+1)/4 = 3.25: B[1] at level 1 is two or more below.
+        foreach (var id in new[] { p.A[0], p.A[1], p.B[0] }) p.RaiseTo(id, 7);
+        // Average (7+7+7+1)/4 = 5.5: B[1] at level 1 is four or more below.
         float a = p.Xp(p.A[0]), b = p.Xp(p.B[1]);
         p.Run(10f);
-        Check.Near(20f, p.Xp(p.A[0]) - a, "level 4 earns the normal rate", 0.1f);
+        Check.Near(20f, p.Xp(p.A[0]) - a, "level 7 earns the normal rate", 0.1f);
         Check.Near(25f, p.Xp(p.B[1]) - b, "the trailing player earns 25% more", 0.1f);
     }
 
@@ -193,10 +201,10 @@ static class ProgressionTests
         p.Give(id, t[4] - p.Xp(id) + 1f);
         Check.Equal(5, p.Level(id), "one big grant can raise several levels");
         Check.Equal("3,4,5", string.Join(",", p.Of<LevelUpEvent>().Skip(1).Select(e => e.level)), "one event per level");
-        Check.Equal("2,3,4,5", string.Join(",", p.P.PendingLevels(id)), "every choice waits");
+        Check.Equal("2,4", string.Join(",", p.P.PendingLevels(id)), "every choice waits (odd levels offer none)");
 
         p.Give(id, 100000f);
-        Check.Equal(10, p.Level(id), "capped at 10");
+        Check.Equal(20, p.Level(id), "capped at 20");
         Check.Near(1f, p.P.LevelFraction(id), "the bar is full at the top");
     }
 
@@ -205,27 +213,28 @@ static class ProgressionTests
     {
         var p = new ProgressionHarness();
         int id = p.A[0];
-        p.RaiseTo(id, 5);
+        p.RaiseTo(id, 7);
         p.Match.EliminatePlayer(id, p.B[0]);
         Check.False(p.S.Player(id).alive, "waiting to respawn");
 
-        Check.True(p.P.Apply(new ChooseUpgradeCommand { playerId = id, level = 3, option = 1 }).IsAccepted, "choose while waiting, out of order");
+        Check.True(p.P.Apply(new ChooseUpgradeCommand { playerId = id, level = 4, option = 1 }).IsAccepted, "choose while waiting, out of order");
         Check.True(p.P.Apply(new ChooseUpgradeCommand { playerId = id, level = 2, option = 0 }).IsAccepted, "then an earlier level");
         var chosen = p.Of<UpgradeChosenEvent>();
         Check.Equal("short_dash,sturdy", string.Join(",", chosen.Select(e => e.upgradeId)), "the picked upgrades");
         Check.Equal(UpgradeKind.Talent, chosen[0].kind, "kind on the event");
 
         Check.False(p.P.Choose(id, 2, 1).IsAccepted, "choices are final");
-        Check.False(p.P.Choose(id, 6, 0).IsAccepted, "level not reached");
+        Check.False(p.P.Choose(id, 8, 0).IsAccepted, "level not reached");
         Check.False(p.P.Choose(id, 1, 0).IsAccepted, "level 1 offers nothing");
-        Check.False(p.P.Choose(id, 4, 2).IsAccepted, "no third option");
+        Check.False(p.P.Choose(id, 3, 0).IsAccepted, "nor do odd levels");
+        Check.False(p.P.Choose(id, 6, 2).IsAccepted, "no third option");
         Check.False(p.P.Choose(999, 2, 0).IsAccepted, "unknown player");
         Check.Equal(CommandStatus.NotHandled, p.P.Apply(new PingCommand { playerId = id }).status, "other commands pass through");
-        Check.Equal("4,5", string.Join(",", p.P.PendingLevels(id)), "the rest still wait");
+        Check.Equal("6", string.Join(",", p.P.PendingLevels(id)), "the rest still wait");
 
         p.H.Run(0f);
         p.RunUntil(() => p.S.Player(id).alive, 30f, "respawn");
-        Check.True(p.P.Choose(id, 4, 0).IsAccepted, "and while alive");
+        Check.True(p.P.Choose(id, 6, 0).IsAccepted, "and while alive");
         Check.Equal("sturdy,short_dash,fast_hands", string.Join(",", p.P.Chosen(id).Select(u => u.id)), "build in level order");
     }
 
@@ -234,12 +243,12 @@ static class ProgressionTests
     {
         var p = new ProgressionHarness();
         int id = p.A[0];
-        p.RaiseTo(id, 4);
-        Check.True(p.P.UltimateForm(id) == null, "no ultimate before level 5");
-        p.RaiseTo(id, 5);
-        Check.True(p.P.UltimateForm(id) == null, "level 5 reached, form not chosen");
-        Check.Equal("long_overdrive,wide_overdrive", string.Join(",", p.P.Options(id, 5).Select(u => u.id)), "two forms");
-        p.P.Choose(id, 5, 1);
+        p.RaiseTo(id, 7);
+        Check.True(p.P.UltimateForm(id) == null, "no ultimate before level 8");
+        p.RaiseTo(id, 8);
+        Check.True(p.P.UltimateForm(id) == null, "level 8 reached, form not chosen");
+        Check.Equal("long_overdrive,wide_overdrive", string.Join(",", p.P.Options(id, 8).Select(u => u.id)), "two forms");
+        p.P.Choose(id, 8, 1);
         Check.Equal("wide_overdrive", p.P.UltimateForm(id)?.id, "chosen form");
     }
 
@@ -248,10 +257,10 @@ static class ProgressionTests
     {
         var p = new ProgressionHarness();
         int id = p.A[0];
-        p.RaiseTo(id, 6);
+        p.RaiseTo(id, 11);
         p.Match.EliminatePlayer(id, p.B[0]);
         var e = p.Of<PlayerEliminatedEvent>().Last();
-        Check.Near(p.S.elapsed + 8f + 5f, e.respawnAt, "8 s plus one per level above 1");
+        Check.Near(p.S.elapsed + 8f + 5f, e.respawnAt, "8 s plus half a second per level above 1");
     }
 
     [Test]
@@ -349,9 +358,9 @@ static class ProgressionSimTests
     static void BotMatchesLevelOnThePlansPace()
     {
         var s = ProgressionSim.Run(24, 7);
-        Check.True(s.medianLevel5 > 240f && s.medianLevel5 < 360f, "level 5 near minute 5: " + s.medianLevel5 + " s");
-        Check.True(s.medianLevel10 > 600f && s.medianLevel10 < 780f, "level 10 near minute 12 for those who get there: " + s.medianLevel10 + " s");
-        Check.True(s.averageFinalLevel > 7.5f, "players end near the top: " + s.averageFinalLevel);
+        Check.True(s.medianLevel5 > 180f && s.medianLevel5 < 330f, "the ultimate (level 8) near minute 4: " + s.medianLevel5 + " s");
+        Check.True(s.medianLevel10 > 600f && s.medianLevel10 < 780f, "level 20 near minute 12 for those who get there: " + s.medianLevel10 + " s");
+        Check.True(s.averageFinalLevel > 16f, "players end near the top: " + s.averageFinalLevel);
         Check.True(s.supportVsOthers > 0.8f && s.supportVsOthers < 1.25f, "support levels at about the same pace: " + s.supportVsOthers);
         Check.True(s.eliminationsPerMinute > 2f, "fights happen: " + s.eliminationsPerMinute + " per minute");
     }

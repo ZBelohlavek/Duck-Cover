@@ -54,8 +54,8 @@ namespace DuckAndCover.Core
         // ---- Respawn ----
         /// <summary>Respawn wait at level 1.</summary>
         public float respawnBaseSeconds = 8f;
-        /// <summary>Added per level above 1: 8 s at level 1, 17 s at level 10.</summary>
-        public float respawnPerLevelSeconds = 1f;
+        /// <summary>Added per level above 1: 8 s at level 1, 17.5 s at level 20.</summary>
+        public float respawnPerLevelSeconds = 0.5f;
         /// <summary>Players return in waves this many seconds apart (0 = as soon as their wait ends).</summary>
         public float respawnWaveSeconds = 2f;
 

@@ -19,21 +19,28 @@ namespace DuckAndCover.Core
     [Serializable]
     public class ProgressionRuleset
     {
-        public int maxLevel = 10;
+        /// <summary>Levels run 1 to this.</summary>
+        public int maxLevel = 20;
 
         /// <summary>
-        /// Total experience needed to reach each level: entry 0 is level 1 (always 0), entry 9 is
-        /// level 10. Tuned with `report progression` so level 5 lands near minute 5 and level 10 near
-        /// minute 12 of a typical match.
+        /// Experience needed to reach each level (entry 0 is level 1). Twenty levels over the same
+        /// total as the first plan's ten, so level 20 lands about when level 10 did (near 11 minutes).
         /// </summary>
-        public int[] xpToReach = { 0, 440, 920, 1440, 2000, 2560, 3130, 3710, 4300, 4900 };
+        public int[] xpToReach = { 0, 210, 420, 640, 870, 1110, 1360, 1620, 1880, 2150, 2410, 2680, 2950, 3220, 3500, 3770, 4050, 4330, 4620, 4900 };
 
         /// <summary>
         /// What each level offers, by level (entry 0 is level 1): "" for nothing, otherwise trait,
-        /// talent, ultimate or capstone. The plan: traits at 2, 4, 6, 8; talents at 3, 7, 9; the
-        /// ultimate's form at 5; a capstone at 10.
+        /// talent, ultimate, passive or capstone. A pick every other level: traits at 2, 6, 14;
+        /// talents at 4, 12, 16, 18; the ultimate's form at 8; the hero's passive at 10 (heroes start
+        /// with none); a capstone at 20. The levels between give the automatic boost below.
         /// </summary>
-        public string[] levelChoices = { "", "trait", "talent", "trait", "ultimate", "trait", "talent", "trait", "talent", "capstone" };
+        public string[] levelChoices = { "", "trait", "", "talent", "", "trait", "", "ultimate", "", "passive",
+                                         "", "talent", "", "trait", "", "talent", "", "talent", "", "capstone" };
+
+        /// <summary>Max health gained at each level that offers no choice, as a share of the hero's base (0.02 = 2%).</summary>
+        public float levelHealthBonus = 0.02f;
+        /// <summary>Damage dealt gained at each level that offers no choice, as a share (0.02 = 2%).</summary>
+        public float levelDamageBonus = 0.02f;
 
         /// <summary>Options offered at each choice level.</summary>
         public int optionsPerLevel = 2;
@@ -56,11 +63,11 @@ namespace DuckAndCover.Core
 
         // ---- Keeping it from snowballing ----
         /// <summary>Elimination experience changes by this share per level the target is above (or below) the receiver.</summary>
-        public float bountyPerLevel = 0.1f;
+        public float bountyPerLevel = 0.05f;
         public float bountyMin = 0.5f;
         public float bountyMax = 1.5f;
         /// <summary>A player this many levels or more below the match average earns <see cref="catchUpBonus"/> more.</summary>
-        public int catchUpLevelGap = 2;
+        public int catchUpLevelGap = 4;
         public float catchUpBonus = 0.25f;
 
         /// <summary>The kind offered on reaching a level, or None.</summary>
@@ -76,6 +83,14 @@ namespace DuckAndCover.Core
         {
             if (levelChoices == null || level < 1 || level > levelChoices.Length) return UpgradeKind.None;
             return UpgradeKinds.Parse(levelChoices[level - 1]);
+        }
+
+        /// <summary>How many levels from 2 up to <paramref name="level"/> offer no choice (each gives the automatic boost).</summary>
+        public int BoostLevels(int level)
+        {
+            int n = 0;
+            for (int l = 2; l <= Math.Min(level, maxLevel); l++) if (ChoiceAt(l) == UpgradeKind.None) n++;
+            return n;
         }
 
         /// <summary>Levels that offer a choice, in order.</summary>
@@ -111,8 +126,9 @@ namespace DuckAndCover.Core
                 if (!string.IsNullOrEmpty(levelChoices[0])) errors.Add("level 1 is the base kit and offers no choice");
                 for (int i = 0; i < levelChoices.Length; i++)
                     if (!string.IsNullOrEmpty(levelChoices[i]) && UpgradeKinds.Parse(levelChoices[i]) == UpgradeKind.None)
-                        errors.Add("levelChoices[" + i + "] '" + levelChoices[i] + "' is not trait, talent, ultimate or capstone");
+                        errors.Add("levelChoices[" + i + "] '" + levelChoices[i] + "' is not trait, talent, ultimate, passive or capstone");
             }
+            if (levelHealthBonus < 0f || levelDamageBonus < 0f) errors.Add("level bonuses can't be negative");
             if (optionsPerLevel < 1) errors.Add("optionsPerLevel must be at least 1");
             if (xpPerSecondInMatch < 0f) errors.Add("xpPerSecondInMatch can't be negative");
             if (xpPerSecondOnZone < 0f) errors.Add("xpPerSecondOnZone can't be negative");

@@ -21,6 +21,10 @@ namespace DuckAndCover.Core
         public string[] abilities = new string[0];
         /// <summary>Unlocks at the ultimate level; its form is chosen there.</summary>
         public string ultimateId = "";
+        /// <summary>
+        /// An always-on passive ability in the base kit, or empty. The starter heroes have none: their
+        /// passive is an upgrade choice (kind "passive") partway through the match.
+        /// </summary>
         public string passiveId = "";
         /// <summary>One entry per choice level (2 to 10 with the plan's numbers).</summary>
         public HeroLevelChoice[] levels = new HeroLevelChoice[0];
@@ -70,7 +74,7 @@ namespace DuckAndCover.Core
         public string id = "";
         public string displayName = "";
         public string description = "";
-        /// <summary>trait, talent, ultimate or capstone (see <see cref="UpgradeKinds"/>).</summary>
+        /// <summary>trait, talent, ultimate, passive or capstone (see <see cref="UpgradeKinds"/>).</summary>
         public string kind = "";
         public StatModifier[] stats = new StatModifier[0];
         public AbilityParamChange[] abilityChanges = new AbilityParamChange[0];
@@ -91,6 +95,8 @@ namespace DuckAndCover.Core
         Ultimate = 3,
         /// <summary>The level 10 choice that ties the build together.</summary>
         Capstone = 4,
+        /// <summary>The hero's passive, picked partway through the match (stats only, like a trait).</summary>
+        Passive = 5,
     }
 
     /// <summary>Data files spell kinds as lower-case words; this maps them to <see cref="UpgradeKind"/>.</summary>
@@ -100,6 +106,7 @@ namespace DuckAndCover.Core
         public const string Talent = "talent";
         public const string Ultimate = "ultimate";
         public const string Capstone = "capstone";
+        public const string Passive = "passive";
 
         public static UpgradeKind Parse(string kind)
         {
@@ -109,6 +116,7 @@ namespace DuckAndCover.Core
                 case Talent: return UpgradeKind.Talent;
                 case Ultimate: return UpgradeKind.Ultimate;
                 case Capstone: return UpgradeKind.Capstone;
+                case Passive: return UpgradeKind.Passive;
                 default: return UpgradeKind.None;
             }
         }

@@ -97,20 +97,6 @@
           "tag": "holdRoot"
         }
       ]
-    },
-    {
-      "id": "bulwark_braced",
-      "displayName": "Braced",
-      "description": "Passive. Take 15% less damage while standing on a point.",
-      "passive": true,
-      "stats": [
-        {
-          "stat": "damageTaken",
-          "op": "multiply",
-          "value": 0.85,
-          "when": "onPoint"
-        }
-      ]
     }
   ],
   "statuses": [],

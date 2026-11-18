@@ -9,7 +9,7 @@
         "rigger_sentry"
     ],
     "ultimateId": "rigger_gate",
-    "passiveId": "rigger_tinker",
+    "passiveId": "",
     "levels": [
         {
             "level": 2,
@@ -19,56 +19,63 @@
             ]
         },
         {
-            "level": 3,
+            "level": 4,
             "options": [
                 "rigger_spare_mines",
                 "rigger_shock_mine"
             ]
         },
         {
-            "level": 4,
+            "level": 6,
             "options": [
                 "rigger_quick_reload",
                 "rigger_padded_vest"
             ]
         },
         {
-            "level": 5,
+            "level": 8,
             "options": [
                 "rigger_long_lockout",
                 "rigger_snaring_gate"
             ]
         },
         {
-            "level": 6,
+            "level": 10,
             "options": [
-                "rigger_long_fuse",
+                "rigger_tinker",
                 "rigger_wide_reach"
             ]
         },
         {
-            "level": 7,
+            "level": 12,
             "options": [
                 "rigger_twin_sentry",
                 "rigger_hardened_sentry"
             ]
         },
         {
-            "level": 8,
+            "level": 14,
             "options": [
                 "rigger_dug_in",
                 "rigger_charged"
             ]
         },
         {
-            "level": 9,
+            "level": 16,
             "options": [
                 "rigger_heavy_rounds",
                 "rigger_wide_mines"
             ]
         },
         {
-            "level": 10,
+            "level": 18,
+            "options": [
+                "rigger_quick_mine",
+                "rigger_quick_sentry"
+            ]
+        },
+        {
+            "level": 20,
             "options": [
                 "rigger_overclock",
                 "rigger_fortifier"
@@ -216,15 +223,15 @@
             "scriptId": ""
         },
         {
-            "id": "rigger_long_fuse",
-            "displayName": "Long Fuse",
-            "description": "Slows and stuns you cause last 20% longer.",
-            "kind": "trait",
+            "id": "rigger_tinker",
+            "displayName": "Tinkerer",
+            "description": "Passive. Abilities recover 10% faster.",
+            "kind": "passive",
             "stats": [
                 {
-                    "stat": "statusDuration",
+                    "stat": "cooldownRate",
                     "op": "percent",
-                    "value": 0.2,
+                    "value": 0.1,
                     "when": ""
                 }
             ],
@@ -234,8 +241,8 @@
         {
             "id": "rigger_wide_reach",
             "displayName": "Wide Reach",
-            "description": "Your mines, sentries and areas reach 15% further.",
-            "kind": "trait",
+            "description": "Passive. Your mines, sentries and areas reach 15% further.",
+            "kind": "passive",
             "stats": [
                 {
                     "stat": "abilityRadius",
@@ -391,6 +398,40 @@
                 }
             ],
             "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_quick_mine",
+            "displayName": "Quick Mine",
+            "description": "Snare Mine recovers 20% sooner.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "rigger_mine",
+                    "param": "cooldown",
+                    "op": "multiply",
+                    "value": 0.8,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "rigger_quick_sentry",
+            "displayName": "Quick Sentry",
+            "description": "Sentry recovers 20% sooner.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "rigger_sentry",
+                    "param": "cooldown",
+                    "op": "multiply",
+                    "value": 0.8,
+                    "text": ""
+                }
+            ],
             "scriptId": ""
         }
     ]

@@ -6,20 +6,36 @@
       "description": "Dash 6 m along your aim.",
       "cooldown": 6,
       "targeting": {
-        "shape": "self"
+        "shape": "sphere",
+        "origin": "caster",
+        "radius": 4,
+        "affects": "enemies"
       },
       "effects": [
         {
           "kind": "push",
           "amount": 6,
           "duration": 0.2,
-          "direction": "aim"
+          "direction": "aim",
+          "affects": "self"
         },
         {
-          "kind": "shield",
-          "amount": 40,
+          "kind": "push",
+          "amount": 4,
+          "duration": 0.25,
+          "direction": "away",
+          "tag": "repulse"
+        },
+        {
+          "kind": "slow",
+          "amount": 0.4,
           "duration": 2,
-          "tag": "slipShield"
+          "tag": "repulse"
+        },
+        {
+          "kind": "spawn",
+          "objectId": "lancer_firewalk",
+          "tag": "firewalk"
         }
       ]
     },
@@ -42,41 +58,48 @@
           "kind": "status",
           "status": "lancer_marked",
           "duration": 5
+        },
+        {
+          "kind": "slow",
+          "amount": 0.3,
+          "duration": 2,
+          "tag": "pinningMark"
+        },
+        {
+          "kind": "status",
+          "status": "lancer_hunted",
+          "duration": 5,
+          "tag": "huntersMark"
+        },
+        {
+          "kind": "heal",
+          "amount": 40,
+          "affects": "self",
+          "tag": "bloodMark"
         }
       ]
     },
     {
-      "id": "lancer_volley",
-      "displayName": "Lance Volley",
-      "description": "Ultimate. After half a second, fire five heavy rounds in a tight fan. Each deals 60 damage.",
+      "id": "lancer_firebomb",
+      "displayName": "Incendiary Grenade",
+      "description": "Ultimate. Throw a grenade where you aim: 40 damage to enemies within 3 m, and it leaves a 4 m fire for 5 seconds that burns enemies standing in it for 20 damage a second.",
       "ultimate": true,
       "ultimateCost": 100,
-      "castTime": 0.5,
       "targeting": {
-        "shape": "ray",
-        "range": 80,
-        "count": 5,
-        "spreadDegrees": 4,
+        "shape": "sphere",
+        "origin": "aimPoint",
+        "range": 30,
+        "radius": 3,
         "affects": "enemies"
       },
       "effects": [
         {
           "kind": "damage",
-          "amount": 60
-        }
-      ]
-    },
-    {
-      "id": "lancer_steady",
-      "displayName": "Steady Hands",
-      "description": "Passive. Reload 15% faster.",
-      "passive": true,
-      "stats": [
+          "amount": 40
+        },
         {
-          "stat": "reloadSpeed",
-          "op": "percent",
-          "value": 0.15,
-          "when": ""
+          "kind": "spawn",
+          "objectId": "lancer_fire"
         }
       ]
     }
@@ -97,7 +120,81 @@
           "when": ""
         }
       ]
+    },
+    {
+      "id": "lancer_burning",
+      "displayName": "Burning",
+      "negative": true,
+      "duration": 3,
+      "stacking": "refresh",
+      "scaleWithStrength": true,
+      "interval": 0.5,
+      "tickEffects": [
+        {
+          "kind": "damage",
+          "amount": 5
+        }
+      ]
+    },
+    {
+      "id": "lancer_hunted",
+      "displayName": "Hunted",
+      "negative": true,
+      "duration": 5,
+      "stacking": "refresh",
+      "stats": [
+        {
+          "stat": "damageTaken",
+          "op": "percent",
+          "value": 0.1,
+          "when": ""
+        }
+      ]
     }
   ],
-  "objects": []
+  "objects": [
+    {
+      "id": "lancer_fire",
+      "displayName": "Fire",
+      "lifetime": 5,
+      "radius": 4,
+      "trigger": "pulse",
+      "interval": 0.5,
+      "affects": "enemies",
+      "effects": [
+        {
+          "kind": "damage",
+          "amount": 10
+        },
+        {
+          "kind": "status",
+          "status": "lancer_burning",
+          "amount": 1,
+          "duration": 3,
+          "tag": "clingingFire"
+        },
+        {
+          "kind": "slow",
+          "amount": 0.25,
+          "duration": 0.6,
+          "tag": "stickyFire"
+        }
+      ]
+    },
+    {
+      "id": "lancer_firewalk",
+      "displayName": "Fire trail",
+      "lifetime": 3,
+      "radius": 2.5,
+      "trigger": "pulse",
+      "interval": 0.5,
+      "affects": "enemies",
+      "effects": [
+        {
+          "kind": "damage",
+          "amount": 8
+        }
+      ]
+    }
+  ]
 }

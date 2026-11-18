@@ -18,56 +18,63 @@
             ]
         },
         {
-            "level": 3,
+            "level": 4,
             "options": [
                 "cluster_grenade",
                 "short_dash"
             ]
         },
         {
-            "level": 4,
+            "level": 6,
             "options": [
                 "fast_hands",
                 "point_holder"
             ]
         },
         {
-            "level": 5,
+            "level": 8,
             "options": [
                 "long_overdrive",
                 "wide_overdrive"
             ]
         },
         {
-            "level": 6,
+            "level": 10,
             "options": [
                 "dug_in",
                 "quick_recovery"
             ]
         },
         {
-            "level": 7,
+            "level": 12,
             "options": [
                 "big_blast",
                 "double_dash"
             ]
         },
         {
-            "level": 8,
+            "level": 14,
             "options": [
                 "sharpshooter",
                 "thick_plating"
             ]
         },
         {
-            "level": 9,
+            "level": 16,
             "options": [
                 "hot_shrapnel",
                 "trail_dash"
             ]
         },
         {
-            "level": 10,
+            "level": 18,
+            "options": [
+                "cluster_grenade_more",
+                "short_dash_more"
+            ]
+        },
+        {
+            "level": 20,
             "options": [
                 "power_surge",
                 "last_stand"
@@ -211,7 +218,7 @@
             "id": "dug_in",
             "displayName": "Dug In",
             "description": "Take 10% less damage on a held point.",
-            "kind": "trait",
+            "kind": "passive",
             "stats": [
                 {
                     "stat": "damageTaken",
@@ -227,7 +234,7 @@
             "id": "quick_recovery",
             "displayName": "Quick Recovery",
             "description": "Cooldowns run 10% faster.",
-            "kind": "trait",
+            "kind": "passive",
             "stats": [
                 {
                     "stat": "cooldownRate",
@@ -375,6 +382,40 @@
                 }
             ],
             "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "cluster_grenade_more",
+            "displayName": "Cluster Grenade II",
+            "description": "The grenade splits into three.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "test_grenade",
+                    "param": "count",
+                    "op": "add",
+                    "value": 2,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "short_dash_more",
+            "displayName": "Short Fuse Dash II",
+            "description": "Dash cooldown 25% shorter.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "test_dash",
+                    "param": "cooldown",
+                    "op": "multiply",
+                    "value": 0.75,
+                    "text": ""
+                }
+            ],
             "scriptId": ""
         }
     ]

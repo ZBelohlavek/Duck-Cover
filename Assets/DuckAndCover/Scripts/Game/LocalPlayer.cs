@@ -268,13 +268,16 @@ namespace DuckAndCover.Game
             client.Send(new ChooseUpgradeCommand { level = level, option = key });
         }
 
-        /// <summary>The lowest level whose upgrade the player hasn't chosen yet, or 0.</summary>
+        static readonly ProgressionRuleset Leveling = new ProgressionRuleset();
+
+        /// <summary>The lowest level with a choice whose upgrade the player hasn't chosen yet, or 0.</summary>
         public static int PendingLevel(MatchSnapshot snapshot, int playerId)
         {
             var mine = snapshot == null || snapshot.progression == null ? null : snapshot.progression.Player(playerId);
             if (mine == null) return 0;
+            // Levels without a choice (the automatic boosts) are skipped. Clients use the default numbers.
             for (int level = 2; level <= mine.level; level++)
-                if (!mine.HasPicked(level)) return level;
+                if (Leveling.ChoiceAt(level) != UpgradeKind.None && !mine.HasPicked(level)) return level;
             return 0;
         }
 
@@ -456,7 +459,7 @@ namespace DuckAndCover.Game
             if (wantedSlot == state.current) wantedSlot = -1;
 
             WeaponName = def.displayName;
-            Magazine = def.magazine;
+            Magazine = state.CurrentMagazine > 0 ? state.CurrentMagazine : def.magazine;
             Reloading = state.Reloading;
             Ammo = Reloading ? 0 : Mathf.Max(0, state.CurrentAmmo - unacknowledged);
             if (!focused || scripted || stunned) return;
@@ -469,7 +472,7 @@ namespace DuckAndCover.Game
                 client.Send(new SwitchWeaponCommand { slot = slot });
                 return;
             }
-            if (keyboard != null && keyboard.rKey.wasPressedThisFrame && !Reloading && Ammo < def.magazine)
+            if (keyboard != null && keyboard.rKey.wasPressedThisFrame && !Reloading && Ammo < Magazine)
             {
                 client.Send(new ReloadCommand());
                 return;

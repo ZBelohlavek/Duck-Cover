@@ -19,8 +19,8 @@ static class HeroDataTests
         var test = catalog.Get("test_hero");
         Check.True(test != null, "test hero loads");
         if (test == null) return;
-        Check.Equal(9, test.levels.Length, "nine choice levels");
-        Check.Equal(18, test.upgrades.Length, "eighteen options");
+        Check.Equal(10, test.levels.Length, "ten choice levels");
+        Check.Equal(20, test.upgrades.Length, "twenty options");
         Check.Equal(UpgradeKind.Talent, test.Upgrade("cluster_grenade").Kind, "kinds parse");
         Check.Equal("onHeldPoint", test.Upgrade("dug_in").stats[0].when, "conditions load");
         Check.Equal("healTrail", test.Upgrade("trail_dash").abilityChanges[0].text, "text params load");
@@ -60,8 +60,8 @@ static class HeroDataTests
     static void ValidationCatchesGaps()
     {
         var h = Good();
-        h.levels = h.levels.Where(l => l.level != 7).ToArray();
-        Check.True(Finds(h, "missing its level 7 talent"), "a missing level");
+        h.levels = h.levels.Where(l => l.level != 12).ToArray();
+        Check.True(Finds(h, "missing its level 12 talent"), "a missing level");
 
         h = Good();
         h.levels[0].options = new[] { "sturdy" };

@@ -8,84 +8,91 @@
         "lancer_slip",
         "lancer_mark"
     ],
-    "ultimateId": "lancer_volley",
-    "passiveId": "lancer_steady",
+    "ultimateId": "lancer_firebomb",
+    "passiveId": "",
     "levels": [
         {
             "level": 2,
             "options": [
-                "lancer_light_kit",
-                "lancer_hardened"
-            ]
-        },
-        {
-            "level": 3,
-            "options": [
-                "lancer_double_slip",
-                "lancer_lingering_mark"
+                "lancer_steady_aim",
+                "lancer_lingering_heat"
             ]
         },
         {
             "level": 4,
             "options": [
-                "lancer_hair_trigger",
-                "lancer_quick_hands"
-            ]
-        },
-        {
-            "level": 5,
-            "options": [
-                "lancer_focused_volley",
-                "lancer_storm_volley"
+                "lancer_lingering_mark",
+                "lancer_pinning_mark"
             ]
         },
         {
             "level": 6,
             "options": [
-                "lancer_hollow_points",
-                "lancer_momentum"
-            ]
-        },
-        {
-            "level": 7,
-            "options": [
-                "lancer_evasive_slip",
-                "lancer_piercing_mark"
+                "lancer_extended_mag",
+                "lancer_quick_fuse"
             ]
         },
         {
             "level": 8,
             "options": [
-                "lancer_cold_blood",
-                "lancer_charged_up"
-            ]
-        },
-        {
-            "level": 9,
-            "options": [
-                "lancer_quick_slip",
-                "lancer_flare_mark"
+                "lancer_thermite",
+                "lancer_clinging_fire"
             ]
         },
         {
             "level": 10,
             "options": [
-                "lancer_executioner",
-                "lancer_ghost"
+                "lancer_bloodthirst",
+                "lancer_suppressing_fire"
+            ]
+        },
+        {
+            "level": 12,
+            "options": [
+                "lancer_hunters_mark",
+                "lancer_repulse"
+            ]
+        },
+        {
+            "level": 14,
+            "options": [
+                "lancer_long_barrel",
+                "lancer_stopping_power"
+            ]
+        },
+        {
+            "level": 16,
+            "options": [
+                "lancer_twin_marks",
+                "lancer_firewalk"
+            ]
+        },
+        {
+            "level": 18,
+            "options": [
+                "lancer_blood_mark",
+                "lancer_sticky_fire"
+            ]
+        },
+        {
+            "level": 20,
+            "options": [
+                "lancer_apex",
+                "lancer_inferno"
             ]
         }
     ],
     "upgrades": [
         {
-            "id": "lancer_light_kit",
-            "displayName": "Light Kit",
-            "description": "Move 6% faster.",
+            "id": "lancer_steady_aim",
+            "displayName": "Steady Aim",
+            "description": "Your weapons deal 5% more damage.",
             "kind": "trait",
             "stats": [
                 {
-                    "stat": "moveSpeed",
+                    "stat": "weaponDamage",
                     "op": "percent",
-                    "value": 0.06,
+                    "value": 0.05,
                     "when": ""
                 }
             ],
@@ -93,36 +100,19 @@
             "scriptId": ""
         },
         {
-            "id": "lancer_hardened",
-            "displayName": "Hardened",
-            "description": "+25 max health.",
+            "id": "lancer_lingering_heat",
+            "displayName": "Lingering Heat",
+            "description": "Your burns and slows last 15% longer.",
             "kind": "trait",
             "stats": [
                 {
-                    "stat": "maxHealth",
-                    "op": "add",
-                    "value": 25,
+                    "stat": "statusDuration",
+                    "op": "percent",
+                    "value": 0.15,
                     "when": ""
                 }
             ],
             "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "lancer_double_slip",
-            "displayName": "Double Slip",
-            "description": "Slip holds two charges.",
-            "kind": "talent",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "lancer_slip",
-                    "param": "charges",
-                    "op": "add",
-                    "value": 1,
-                    "text": ""
-                }
-            ],
             "scriptId": ""
         },
         {
@@ -143,29 +133,30 @@
             "scriptId": ""
         },
         {
-            "id": "lancer_hair_trigger",
-            "displayName": "Hair Trigger",
-            "description": "Fire 10% faster.",
-            "kind": "trait",
-            "stats": [
+            "id": "lancer_pinning_mark",
+            "displayName": "Pinning Mark",
+            "description": "Tracer Mark also slows the target by 30% for 2 seconds.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
                 {
-                    "stat": "fireRate",
-                    "op": "percent",
-                    "value": 0.1,
-                    "when": ""
+                    "ability": "lancer_mark",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "pinningMark"
                 }
             ],
-            "abilityChanges": [],
             "scriptId": ""
         },
         {
-            "id": "lancer_quick_hands",
-            "displayName": "Quick Hands",
-            "description": "Reload 25% faster.",
+            "id": "lancer_extended_mag",
+            "displayName": "Extended Mag",
+            "description": "Your magazines hold 25% more rounds.",
             "kind": "trait",
             "stats": [
                 {
-                    "stat": "reloadSpeed",
+                    "stat": "magazineSize",
                     "op": "percent",
                     "value": 0.25,
                     "when": ""
@@ -175,77 +166,13 @@
             "scriptId": ""
         },
         {
-            "id": "lancer_focused_volley",
-            "displayName": "Focused Volley",
-            "description": "Lance Volley fires one round that deals 180 damage.",
-            "kind": "ultimate",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "lancer_volley",
-                    "param": "count",
-                    "op": "set",
-                    "value": 1,
-                    "text": ""
-                },
-                {
-                    "ability": "lancer_volley",
-                    "param": "effect.damage.amount",
-                    "op": "add",
-                    "value": 120,
-                    "text": ""
-                }
-            ],
-            "scriptId": ""
-        },
-        {
-            "id": "lancer_storm_volley",
-            "displayName": "Storm Volley",
-            "description": "Lance Volley fires nine rounds in a wide fan.",
-            "kind": "ultimate",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "lancer_volley",
-                    "param": "count",
-                    "op": "add",
-                    "value": 4,
-                    "text": ""
-                },
-                {
-                    "ability": "lancer_volley",
-                    "param": "spreadDegrees",
-                    "op": "add",
-                    "value": 10,
-                    "text": ""
-                }
-            ],
-            "scriptId": ""
-        },
-        {
-            "id": "lancer_hollow_points",
-            "displayName": "Hollow Points",
-            "description": "Your weapons deal 8% more damage.",
+            "id": "lancer_quick_fuse",
+            "displayName": "Quick Fuse",
+            "description": "Your ultimate charges 15% faster.",
             "kind": "trait",
             "stats": [
                 {
-                    "stat": "weaponDamage",
-                    "op": "percent",
-                    "value": 0.08,
-                    "when": ""
-                }
-            ],
-            "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "lancer_momentum",
-            "displayName": "Momentum",
-            "description": "Abilities recover 15% faster.",
-            "kind": "trait",
-            "stats": [
-                {
-                    "stat": "cooldownRate",
+                    "stat": "ultimateChargeRate",
                     "op": "percent",
                     "value": 0.15,
                     "when": ""
@@ -255,9 +182,106 @@
             "scriptId": ""
         },
         {
-            "id": "lancer_evasive_slip",
-            "displayName": "Evasive Slip",
-            "description": "Slip gives you a 40 shield for 2 seconds.",
+            "id": "lancer_thermite",
+            "displayName": "Thermite",
+            "description": "Incendiary Grenade hits much harder where it lands (120 damage), but its fire is smaller.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "lancer_firebomb",
+                    "param": "effect.damage.amount",
+                    "op": "add",
+                    "value": 80,
+                    "text": ""
+                },
+                {
+                    "ability": "lancer_firebomb",
+                    "param": "object.radius",
+                    "op": "multiply",
+                    "value": 0.75,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "lancer_clinging_fire",
+            "displayName": "Clinging Fire",
+            "description": "Incendiary Grenade's fire reaches 1 m further, and enemies keep burning for 3 seconds after they leave it.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "lancer_firebomb",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "clingingFire"
+                },
+                {
+                    "ability": "lancer_firebomb",
+                    "param": "object.radius",
+                    "op": "add",
+                    "value": 1,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "lancer_bloodthirst",
+            "displayName": "Bloodthirst",
+            "description": "Passive. Heal for 10% of the damage your weapons deal.",
+            "kind": "passive",
+            "stats": [
+                {
+                    "stat": "lifeSteal",
+                    "op": "add",
+                    "value": 0.1,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "lancer_suppressing_fire",
+            "displayName": "Suppressing Fire",
+            "description": "Passive. Your bullets slow enemies by 15% for a second.",
+            "kind": "passive",
+            "stats": [
+                {
+                    "stat": "weaponSlow",
+                    "op": "add",
+                    "value": 0.15,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "lancer_hunters_mark",
+            "displayName": "Hunter's Mark",
+            "description": "Marked enemies take 25% more damage instead of 15%.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "lancer_mark",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "huntersMark"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "lancer_repulse",
+            "displayName": "Repulse",
+            "description": "Slip blasts enemies within 4 m of where you start 4 m away and slows them by 40% for 2 seconds.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
@@ -266,54 +290,27 @@
                     "param": "enable",
                     "op": "set",
                     "value": 0,
-                    "text": "slipShield"
+                    "text": "repulse"
                 }
             ],
             "scriptId": ""
         },
         {
-            "id": "lancer_piercing_mark",
-            "displayName": "Piercing Mark",
-            "description": "Tracer Mark deals 25 more damage.",
-            "kind": "talent",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "lancer_mark",
-                    "param": "effect.damage.amount",
-                    "op": "add",
-                    "value": 25,
-                    "text": ""
-                }
-            ],
-            "scriptId": ""
-        },
-        {
-            "id": "lancer_cold_blood",
-            "displayName": "Cold Blood",
-            "description": "Take 12% less damage while you have a shield.",
+            "id": "lancer_long_barrel",
+            "displayName": "Long Barrel",
+            "description": "Your weapons deal 8% more damage and keep full damage 30% further out.",
             "kind": "trait",
             "stats": [
                 {
-                    "stat": "damageTaken",
-                    "op": "multiply",
-                    "value": 0.88,
-                    "when": "shielded"
-                }
-            ],
-            "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "lancer_charged_up",
-            "displayName": "Charged Up",
-            "description": "Your ultimate charges 25% faster.",
-            "kind": "trait",
-            "stats": [
-                {
-                    "stat": "ultimateChargeRate",
+                    "stat": "weaponDamage",
                     "op": "percent",
-                    "value": 0.25,
+                    "value": 0.08,
+                    "when": ""
+                },
+                {
+                    "stat": "weaponRange",
+                    "op": "percent",
+                    "value": 0.3,
                     "when": ""
                 }
             ],
@@ -321,14 +318,37 @@
             "scriptId": ""
         },
         {
-            "id": "lancer_quick_slip",
-            "displayName": "Quick Slip",
-            "description": "Slip recovers 30% sooner.",
+            "id": "lancer_stopping_power",
+            "displayName": "Stopping Power",
+            "description": "Your bullets push enemies back slightly.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "weaponPush",
+                    "op": "add",
+                    "value": 0.15,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "lancer_twin_marks",
+            "displayName": "Twin Marks",
+            "description": "Tracer Mark holds two charges and recovers 30% sooner.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
-                    "ability": "lancer_slip",
+                    "ability": "lancer_mark",
+                    "param": "charges",
+                    "op": "add",
+                    "value": 1,
+                    "text": ""
+                },
+                {
+                    "ability": "lancer_mark",
                     "param": "cooldown",
                     "op": "multiply",
                     "value": 0.7,
@@ -338,45 +358,78 @@
             "scriptId": ""
         },
         {
-            "id": "lancer_flare_mark",
-            "displayName": "Flare Mark",
-            "description": "Tracer Mark bursts where it lands and marks every enemy within 3 m.",
+            "id": "lancer_firewalk",
+            "displayName": "Firewalk",
+            "description": "Slip leaves a 2.5 m fire where you started that burns enemies for 3 seconds.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
-                    "ability": "lancer_mark",
-                    "param": "targeting.shape",
+                    "ability": "lancer_slip",
+                    "param": "enable",
                     "op": "set",
                     "value": 0,
-                    "text": "sphere"
-                },
-                {
-                    "ability": "lancer_mark",
-                    "param": "targeting.origin",
-                    "op": "set",
-                    "value": 0,
-                    "text": "aimPoint"
-                },
-                {
-                    "ability": "lancer_mark",
-                    "param": "radius",
-                    "op": "add",
-                    "value": 3,
-                    "text": ""
+                    "text": "firewalk"
                 }
             ],
             "scriptId": ""
         },
         {
-            "id": "lancer_executioner",
-            "displayName": "Executioner",
-            "description": "Deal 10% more damage with everything.",
+            "id": "lancer_blood_mark",
+            "displayName": "Blood Mark",
+            "description": "Tracer Mark deals 40 more damage and heals you 40.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "lancer_mark",
+                    "param": "effect.damage.amount",
+                    "op": "add",
+                    "value": 40,
+                    "text": ""
+                },
+                {
+                    "ability": "lancer_mark",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "bloodMark"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "lancer_sticky_fire",
+            "displayName": "Sticky Fire",
+            "description": "Enemies in Incendiary Grenade's fire are slowed by 25%.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "lancer_firebomb",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "stickyFire"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "lancer_apex",
+            "displayName": "Apex Predator",
+            "description": "Your weapons deal 12% more damage and you heal for 10% more of it.",
             "kind": "capstone",
             "stats": [
                 {
-                    "stat": "damageDealt",
+                    "stat": "weaponDamage",
                     "op": "percent",
+                    "value": 0.12,
+                    "when": ""
+                },
+                {
+                    "stat": "lifeSteal",
+                    "op": "add",
                     "value": 0.1,
                     "when": ""
                 }
@@ -385,24 +438,38 @@
             "scriptId": ""
         },
         {
-            "id": "lancer_ghost",
-            "displayName": "Ghost",
-            "description": "Move 10% faster and Slip recovers 20% sooner.",
+            "id": "lancer_inferno",
+            "displayName": "Inferno",
+            "description": "Incendiary Grenade's fire reaches 1.5 m further, lasts 3 seconds longer and burns 30% harder.",
             "kind": "capstone",
-            "stats": [
-                {
-                    "stat": "moveSpeed",
-                    "op": "percent",
-                    "value": 0.1,
-                    "when": ""
-                }
-            ],
+            "stats": [],
             "abilityChanges": [
                 {
-                    "ability": "lancer_slip",
-                    "param": "cooldown",
-                    "op": "multiply",
-                    "value": 0.8,
+                    "ability": "lancer_firebomb",
+                    "param": "object.radius",
+                    "op": "add",
+                    "value": 1.5,
+                    "text": ""
+                },
+                {
+                    "ability": "lancer_firebomb",
+                    "param": "object.lifetime",
+                    "op": "add",
+                    "value": 3,
+                    "text": ""
+                },
+                {
+                    "ability": "lancer_firebomb",
+                    "param": "object.effect.damage.amount",
+                    "op": "percent",
+                    "value": 0.3,
+                    "text": ""
+                },
+                {
+                    "ability": "lancer_firebomb",
+                    "param": "object.effect.lancer_burning.amount",
+                    "op": "percent",
+                    "value": 0.3,
                     "text": ""
                 }
             ],

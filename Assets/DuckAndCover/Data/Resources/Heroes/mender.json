@@ -9,7 +9,7 @@
         "mender_purge"
     ],
     "ultimateId": "mender_aegis",
-    "passiveId": "mender_fieldkit",
+    "passiveId": "",
     "levels": [
         {
             "level": 2,
@@ -19,56 +19,63 @@
             ]
         },
         {
-            "level": 3,
+            "level": 4,
             "options": [
                 "mender_wide_field",
                 "mender_lasting_field"
             ]
         },
         {
-            "level": 4,
+            "level": 6,
             "options": [
                 "mender_fast_reload",
                 "mender_sturdy"
             ]
         },
         {
-            "level": 5,
+            "level": 8,
             "options": [
                 "mender_long_aegis",
                 "mender_broad_aegis"
             ]
         },
         {
-            "level": 6,
+            "level": 10,
             "options": [
-                "mender_efficient",
+                "mender_fieldkit",
                 "mender_charged"
             ]
         },
         {
-            "level": 7,
+            "level": 12,
             "options": [
                 "mender_quickening_purge",
                 "mender_deep_purge"
             ]
         },
         {
-            "level": 8,
+            "level": 14,
             "options": [
                 "mender_steadfast",
                 "mender_survivor"
             ]
         },
         {
-            "level": 9,
+            "level": 16,
             "options": [
                 "mender_rich_field",
                 "mender_rapid_purge"
             ]
         },
         {
-            "level": 10,
+            "level": 18,
+            "options": [
+                "mender_quick_field",
+                "mender_quick_purge"
+            ]
+        },
+        {
+            "level": 20,
             "options": [
                 "mender_lifeline",
                 "mender_battle_medic"
@@ -209,15 +216,15 @@
             "scriptId": ""
         },
         {
-            "id": "mender_efficient",
-            "displayName": "Efficient",
-            "description": "Abilities recover 15% faster.",
-            "kind": "trait",
+            "id": "mender_fieldkit",
+            "displayName": "Field Kit",
+            "description": "Passive. Regain 6 health a second when you haven't been hit for a while.",
+            "kind": "passive",
             "stats": [
                 {
-                    "stat": "cooldownRate",
-                    "op": "percent",
-                    "value": 0.15,
+                    "stat": "healthRegen",
+                    "op": "add",
+                    "value": 6,
                     "when": ""
                 }
             ],
@@ -227,8 +234,8 @@
         {
             "id": "mender_charged",
             "displayName": "Charged",
-            "description": "Your ultimate charges 20% faster.",
-            "kind": "trait",
+            "description": "Passive. Your ultimate charges 20% faster.",
+            "kind": "passive",
             "stats": [
                 {
                     "stat": "ultimateChargeRate",
@@ -382,6 +389,40 @@
                 }
             ],
             "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_quick_field",
+            "displayName": "Quick Field",
+            "description": "Mending Field recovers 20% sooner.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "mender_field",
+                    "param": "cooldown",
+                    "op": "multiply",
+                    "value": 0.8,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_quick_purge",
+            "displayName": "Quick Purge",
+            "description": "Purge recovers 20% sooner.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "mender_purge",
+                    "param": "cooldown",
+                    "op": "multiply",
+                    "value": 0.8,
+                    "text": ""
+                }
+            ],
             "scriptId": ""
         }
     ]

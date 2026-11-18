@@ -138,7 +138,8 @@ namespace DuckAndCover.Core
                             fx.Apply(new EffectContext
                             {
                                 runner = this, sourceId = s.sourceId, sourceTeam = source != null ? source.team : TeamId.None,
-                                abilityId = StatusSource(s.statusId), effect = e, scale = s.stacks,
+                                abilityId = StatusSource(s.statusId), effect = e,
+                                scale = s.stacks * (def.scaleWithStrength ? s.strength : 1f),
                             }, unit.playerId);
                         }
                     }

@@ -43,6 +43,8 @@ namespace DuckAndCover.Core
         public string[] weapons = new string[0];
         /// <summary>Rounds left in each slot's magazine.</summary>
         public int[] ammo = new int[0];
+        /// <summary>Each slot's full magazine for this player (the weapon's, times their magazineSize stat).</summary>
+        public int[] magazines = new int[0];
         /// <summary>The slot in hand.</summary>
         public int current;
         /// <summary>Seconds until the reload in progress finishes, 0 when not reloading.</summary>
@@ -55,6 +57,8 @@ namespace DuckAndCover.Core
 
         public string CurrentId => current >= 0 && current < weapons.Length ? weapons[current] : "";
         public int CurrentAmmo => current >= 0 && current < ammo.Length ? ammo[current] : 0;
+        /// <summary>The full magazine of the weapon in hand, 0 when unknown (an older snapshot).</summary>
+        public int CurrentMagazine => current >= 0 && current < magazines.Length ? magazines[current] : 0;
         public bool Reloading => reloadLeft > 0f;
 
         public WeaponState Clone()
@@ -62,6 +66,7 @@ namespace DuckAndCover.Core
             var c = (WeaponState)MemberwiseClone();
             c.weapons = (string[])weapons.Clone();
             c.ammo = (int[])ammo.Clone();
+            c.magazines = (int[])magazines.Clone();
             return c;
         }
     }

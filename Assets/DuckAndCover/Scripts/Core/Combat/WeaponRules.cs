@@ -25,6 +25,11 @@ namespace DuckAndCover.Core
 
         public WeaponLibrary Library { get; }
         /// <summary>
+        /// Slows a player a weapon hit (the weaponSlow stat): target, shooter, share of speed, seconds.
+        /// Set by <see cref="CombatServer"/> to the ability rules' slow status; null = hits don't slow.
+        /// </summary>
+        public Action<int, int, float, float> Slow;
+        /// <summary>
         /// Hurts a placed object (barrier, turret, mine) a shot hit: object id, final amount, attacker.
         /// Set by <see cref="CombatServer"/> to the ability rules; null = shots don't hurt objects.
         /// </summary>
@@ -75,6 +80,7 @@ namespace DuckAndCover.Core
         {
             s.weapons = (string[])ids.Clone();
             s.ammo = new int[ids.Length];
+            s.magazines = new int[ids.Length];
             Refill(s);
         }
 
@@ -83,7 +89,8 @@ namespace DuckAndCover.Core
             for (int i = 0; i < s.weapons.Length; i++)
             {
                 var w = Library.Weapon(s.weapons[i]);
-                s.ammo[i] = w == null ? 0 : w.magazine;
+                s.magazines[i] = Magazine(s.playerId, w);
+                s.ammo[i] = s.magazines[i];
             }
             s.current = 0;
             s.reloadLeft = 0f;
@@ -170,25 +177,27 @@ namespace DuckAndCover.Core
             // A healing weapon stops on teammates (to heal them) instead of passing through.
             var passThrough = w.allyHeal > 0f ? null : PassThrough(cmd.playerId);
             float scale = WeaponDamage(cmd.playerId);
+            float reach = Math.Max(0.1f, combat.Stat(cmd.playerId, StatIds.WeaponRange));
+            float range = w.range * reach;
             for (int i = 0; i < w.pellets; i++)
             {
                 Vec3 d = SpreadPattern.Direction(dir, i, w.pellets, w.spreadDegrees);
                 shot.hitPlayers[i] = -1;
-                if (!world.RaycastFrom(cmd.playerId, cmd.origin, d, w.range, tick, out var hit, passThrough))
+                if (!world.RaycastFrom(cmd.playerId, cmd.origin, d, range, tick, out var hit, passThrough))
                 {
-                    shot.ends[i] = cmd.origin + d * w.range;
+                    shot.ends[i] = cmd.origin + d * range;
                     continue;
                 }
                 shot.ends[i] = hit.point;
                 if (hit.kind == HitKind.Device)
                 {
-                    Add(objects, objectAmounts, hit.deviceId, w.damage * scale * w.Falloff(hit.distance));
+                    Add(objects, objectAmounts, hit.deviceId, w.damage * scale * w.Falloff(hit.distance / reach));
                     continue;
                 }
                 if (hit.kind != HitKind.Player) continue;
                 shot.hitPlayers[i] = hit.playerId;
                 shot.hitParts[i] = hit.bodyPart;
-                float share = w.Falloff(hit.distance) * w.PartMultiplier(hit.bodyPart);
+                float share = w.Falloff(hit.distance / reach) * w.PartMultiplier(hit.bodyPart);
                 // Heal shots on teammates are kept as negative amounts until the end.
                 float amount = w.allyHeal > 0f && IsTeammate(cmd.playerId, hit.playerId) ? -w.allyHeal * share : w.damage * scale * share;
                 Add(targets, amounts, hit.playerId, amount);
@@ -198,7 +207,7 @@ namespace DuckAndCover.Core
             for (int i = 0; i < targets.Count; i++)
             {
                 if (amounts[i] < 0f) combat.Heal(cmd.playerId, targets[i], -amounts[i], w.id);
-                else combat.Damage(cmd.playerId, targets[i], amounts[i], w.id);
+                else AfterHit(cmd.playerId, targets[i], combat.Damage(cmd.playerId, targets[i], amounts[i], w.id), dir);
             }
             HurtObjects(cmd.playerId, objects, objectAmounts);
         }
@@ -257,7 +266,7 @@ namespace DuckAndCover.Core
             var w = Current(s);
             if (w == null) return CommandResult.Reject("no weapon in hand");
             if (s.Reloading) return CommandResult.Accepted;
-            if (s.CurrentAmmo >= w.magazine) return CommandResult.Reject("already full");
+            if (s.CurrentAmmo >= Magazine(playerId, w)) return CommandResult.Reject("already full");
             StartReload(s, w);
             return CommandResult.Accepted;
         }
@@ -276,6 +285,46 @@ namespace DuckAndCover.Core
 
         /// <summary>Seconds between shots for this player: the weapon's, divided by their fireRate stat.</summary>
         public float FireInterval(int playerId, WeaponDef w) => w.fireInterval / Math.Max(0.1f, combat.Stat(playerId, StatIds.FireRate));
+
+        /// <summary>Fill the magazine of the weapon in hand at once, cancelling any reload (an ability's "reload" effect).</summary>
+        public void RefillCurrent(int playerId)
+        {
+            var s = Weapons(playerId);
+            var w = s == null ? null : Current(s);
+            if (w == null || s.current >= s.ammo.Length) return;
+            s.reloadLeft = 0f;
+            s.ammo[s.current] = Magazine(playerId, w);
+        }
+
+        /// <summary>Rounds in a full magazine for this player: the weapon's, times their magazineSize stat (at least 1).</summary>
+        public int Magazine(int playerId, WeaponDef w) =>
+            w == null ? 0 : Math.Max(1, (int)Math.Round(w.magazine * Math.Max(0f, combat.Stat(playerId, StatIds.MagazineSize))));
+
+        /// <summary>
+        /// What a weapon hit does beyond its damage, from the shooter's stats: life steal heals them by a
+        /// share of what the target lost, weaponPush shoves the target along <paramref name="direction"/>
+        /// and weaponSlow slows them. Only hits on someone else that did damage count.
+        /// </summary>
+        void AfterHit(int shooterId, int targetId, float dealt, Vec3 direction)
+        {
+            if (dealt <= 0f || shooterId == targetId || !State.IsAlive(shooterId)) return;
+            float steal = combat.Stat(shooterId, StatIds.LifeSteal);
+            if (steal > 0f) combat.Heal(shooterId, shooterId, dealt * steal, StatIds.LifeSteal);
+            if (!State.IsAlive(targetId)) return;
+            float push = combat.Stat(shooterId, StatIds.WeaponPush);
+            if (push > 0f && direction.Magnitude > 1e-4f)
+            {
+                Vec3 flat = new Vec3(direction.x, 0f, direction.z);
+                if (flat.Magnitude > 1e-4f)
+                    Publish(new PushedEvent
+                    {
+                        targetId = targetId, sourceId = shooterId, mode = PushDirections.Aim, origin = Vec3.Zero,
+                        direction = flat.Normalized, distance = push, seconds = Rules.weaponPushSeconds, abilityId = StatIds.WeaponPush,
+                    });
+            }
+            float slow = combat.Stat(shooterId, StatIds.WeaponSlow);
+            if (slow > 0f && Slow != null) Slow(targetId, shooterId, Math.Min(1f, slow), Rules.weaponSlowSeconds);
+        }
 
         /// <summary>The player's weaponDamage stat (1 = the weapon's own numbers).</summary>
         float WeaponDamage(int playerId) => Math.Max(0f, combat.Stat(playerId, StatIds.WeaponDamage));
@@ -326,8 +375,11 @@ namespace DuckAndCover.Core
                 if (s.reloadLeft > 0f)
                 {
                     s.reloadLeft -= dt;
-                    if (s.reloadLeft <= 0f) { s.reloadLeft = 0f; s.ammo[s.current] = w.magazine; }
+                    if (s.reloadLeft <= 0f) { s.reloadLeft = 0f; s.ammo[s.current] = Magazine(s.playerId, w); }
                 }
+                // Keep the full sizes current (a trait can change them mid-life); rounds in hand stay until a reload.
+                for (int i = 0; i < s.weapons.Length && i < s.magazines.Length; i++)
+                    s.magazines[i] = Magazine(s.playerId, Library.Weapon(s.weapons[i]));
                 s.fireCredit = Math.Min(Rules.fireBurstShots, s.fireCredit + dt / FireInterval(s.playerId, w));
             }
             TickProjectiles(dt);
@@ -393,7 +445,13 @@ namespace DuckAndCover.Core
                     else amounts[k] += amount;
                 }
             }
-            for (int i = 0; i < targets.Count; i++) combat.Damage(p.ownerId, targets[i], amounts[i], p.weaponId);
+            for (int i = 0; i < targets.Count; i++)
+            {
+                Vec3 away = p.velocity;
+                if (targets[i] != direct && world.History.PoseAt(targets[i], State.tick, out var at))
+                    away = Hitboxes.Chest(Rules, at) - point;
+                AfterHit(p.ownerId, targets[i], combat.Damage(p.ownerId, targets[i], amounts[i], p.weaponId), away);
+            }
         }
 
         public void FillSnapshot(MatchSnapshot s)

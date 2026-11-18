@@ -64,20 +64,6 @@
           "tag": "gateSlow"
         }
       ]
-    },
-    {
-      "id": "rigger_tinker",
-      "displayName": "Tinkerer",
-      "description": "Passive. Abilities recover 10% faster.",
-      "passive": true,
-      "stats": [
-        {
-          "stat": "cooldownRate",
-          "op": "percent",
-          "value": 0.1,
-          "when": ""
-        }
-      ]
     }
   ],
   "statuses": [],

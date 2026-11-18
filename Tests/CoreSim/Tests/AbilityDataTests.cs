@@ -33,7 +33,7 @@ static class AbilityDataTests
         foreach (var def in file.abilities.Where(a => !a.passive))
         {
             var h = new AbilityHarness();
-            h.S.Player(A1).level = 5;
+            h.S.Player(A1).level = h.Match.Rules.ultimateUnlockLevel;
             h.Give(A1, def.id);
             h.Abilities.AddUltimateCharge(A1, 100f);
             h.Place(A1, 0); h.Place(B1, 4); h.Place(A2, 0, 2);
