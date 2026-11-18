@@ -34,6 +34,8 @@ namespace DuckAndCover.Core
         OvertimeTimeout = 5,
         /// <summary>Flag Rush: level at the time cap, then the next capture won.</summary>
         OvertimeCapture = 6,
+        /// <summary>Overrun: level on Bastions destroyed at the time cap; won on the tie-break (larger share of enemy Bastion health taken, then more damage to enemy Bastions, then more minion kills).</summary>
+        BastionDamage = 7,
     }
 
     /// <summary>One player. Level is owned by Progression (WP8); the rules here only read it.</summary>

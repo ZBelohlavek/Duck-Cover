@@ -60,7 +60,7 @@ namespace DuckAndCover.Core
             var u = new UnitState
             {
                 id = Roster.nextId++, typeId = def.id, team = team, position = position, yaw = yaw, alive = true,
-                maxHealth = def.maxHealth, size = def.size, moveSpeed = def.moveSpeed,
+                maxHealth = def.maxHealth, size = def.size, moveSpeed = def.moveSpeed, anchored = def.anchored,
             };
             Roster.units.Add(u);
             Combat.Unit(u.id); // full health
@@ -170,7 +170,7 @@ namespace DuckAndCover.Core
         {
             if (!(e is PushedEvent pushed) || !UnitIds.IsUnit(pushed.targetId)) return;
             var u = Roster.Get(pushed.targetId);
-            if (u == null || !u.alive || pushed.distance <= 0f) return;
+            if (u == null || !u.alive || u.anchored || pushed.distance <= 0f) return;
             Vec3 dir = new Vec3(pushed.direction.x, 0f, pushed.direction.z);
             if (dir.Magnitude < 1e-4f) return;
             dir = dir.Normalized;

@@ -18,11 +18,14 @@ namespace DuckAndCover.Core
         public const string ZonesObjective = "zones";
         /// <summary>Score comes from carrying the flag into the enemy base (Flag Rush, Core/Flag).</summary>
         public const string FlagObjective = "flag";
+        /// <summary>Score comes from destroying enemy Bastions on a lane map (Overrun, Core/Overrun).</summary>
+        public const string OverrunObjective = "overrun";
 
         public string id = "";
         public string displayName = "";
         /// <summary>
-        /// How the mode scores: <see cref="ZonesObjective"/> (empty means the same) or <see cref="FlagObjective"/>.
+        /// How the mode scores: <see cref="ZonesObjective"/> (empty means the same), <see cref="FlagObjective"/>
+        /// or <see cref="OverrunObjective"/> (no zone set: zoneSet stays empty; score counts enemy Bastions destroyed).
         /// A flag mode's zone set holds one capture zone in each base: the zone whose startOwner is a
         /// team is that team's base, where the other team scores.
         /// </summary>
@@ -96,7 +99,28 @@ namespace DuckAndCover.Core
             mapShiftScore = 3,
         };
 
+        /// <summary>
+        /// Overrun: one lane, minion waves, two Bastions a side. Score is enemy Bastions destroyed, so
+        /// destroying the Core Bastion (only possible after the Forward one) reaches 2 and wins. At
+        /// 15 minutes more Bastions destroyed wins, then the larger share of enemy Bastion health taken.
+        /// Bastion, wave and late-push numbers live in the ruleset (Core/Overrun/Ruleset.Overrun.cs).
+        /// </summary>
+        public static ModeDef Overrun() => new ModeDef
+        {
+            id = "overrun",
+            displayName = "Overrun",
+            objective = OverrunObjective,
+            zoneSet = "",
+            activeZoneCount = 0,
+            scoreToWin = 2,
+            scorePerSecond = 1f, // unused: no zones
+            allHeldMultiplier = 1f,
+            timeCapSeconds = 900f,
+            mapShiftScore = 0,   // the side gates open per base, when its Forward Bastion falls
+        };
+
         public bool IsFlag() => objective == FlagObjective;
+        public bool IsOverrun() => objective == OverrunObjective;
 
         public ModeDef Clone() => (ModeDef)MemberwiseClone();
 
@@ -114,8 +138,15 @@ namespace DuckAndCover.Core
             if (rotationSeconds < 0f) errors.Add("rotationSeconds can't be negative");
             if (rotationWarningSeconds < 0f || (rotationSeconds > 0f && rotationWarningSeconds >= rotationSeconds))
                 errors.Add("rotationWarningSeconds must be between 0 and rotationSeconds");
-            if (!string.IsNullOrEmpty(objective) && objective != ZonesObjective && objective != FlagObjective)
-                errors.Add("objective must be '" + ZonesObjective + "' or '" + FlagObjective + "'");
+            if (!string.IsNullOrEmpty(objective) && objective != ZonesObjective && objective != FlagObjective && objective != OverrunObjective)
+                errors.Add("objective must be '" + ZonesObjective + "', '" + FlagObjective + "' or '" + OverrunObjective + "'");
+            if (IsOverrun())
+            {
+                if (!string.IsNullOrEmpty(zoneSet) || activeZoneCount != 0 || rotationSeconds > 0f) errors.Add("Overrun plays on Bastions, not zones: leave zoneSet empty");
+                if (mapShiftScore != 0) errors.Add("Overrun opens each base's side gate when its Forward Bastion falls: mapShiftScore must be 0");
+                if (scoreToWin != 2) errors.Add("Overrun is won by the second Bastion (the Core): scoreToWin must be 2");
+                return errors;
+            }
             if (IsFlag() && (rotationSeconds > 0f || activeZoneCount != 0)) errors.Add("a flag mode's base zones don't rotate");
             if (map != null && IsFlag())
             {

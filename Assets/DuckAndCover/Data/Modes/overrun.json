@@ -1,0 +1,14 @@
+{
+    "id": "overrun",
+    "objective": "overrun",
+    "displayName": "Overrun",
+    "zoneSet": "",
+    "activeZoneCount": 0,
+    "rotationSeconds": 0,
+    "rotationWarningSeconds": 0,
+    "scoreToWin": 2,
+    "scorePerSecond": 1,
+    "allHeldMultiplier": 1,
+    "timeCapSeconds": 900,
+    "mapShiftScore": 0
+}

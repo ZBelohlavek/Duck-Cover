@@ -19,6 +19,8 @@ namespace DuckAndCover.Core
         public float size = 1f;
         /// <summary>Walking speed in metres a second before slows (the moveSpeed stat multiplies it).</summary>
         public float moveSpeed = 4f;
+        /// <summary>Fixed in place (Bastions): pushes and knockbacks don't move it.</summary>
+        public bool anchored;
 
         // ---- Fighting (WP15). A kind with no attackDamage doesn't shoot. ----
         /// <summary>Damage of one shot, through DamageRules.Damage (so the unit's damageDealt stat scales it).</summary>

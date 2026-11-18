@@ -155,6 +155,12 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
   `MatchRules.ScoreFlagCapture`). A map carries it with a "bases" zone set (one capture zone per base, its
   startOwner is the base's team) and `MapDef.flagSpots`, which the validator checks are within 5% of the same
   walk from both bases. `Tools/unity.ps1 netsmoke flag_rush` plays it in real Unity.
+- Overrun (WP16) is `ModeDef.Overrun()` (objective "overrun", no zone set, score = enemy Bastions destroyed, 2
+  wins): `Core/Overrun/OverrunServer`, built on the host after the `LaneServer`, runs the Bastions (minions always
+  hurt them, heroes only with their own minion within 12 m, Cores sealed until their Forward falls), shield
+  refills, Bastion fire, side gates, the late push and the time cap tie-break. Hook-ups in other modules:
+  `DamageRules.DamageGate`/`RestoreGate`, `SpawnRules.WaitAdjust`, `MatchRules.TieBreak`. Wiring it into
+  Unity is WP19. `report overrun` plays bot matches.
 - Heroes (WP11): Bulwark (vanguard), Lancer (striker), Mender (support), Rigger (controller), as data in
   Data/Resources. `HeroServer` (Core/Heroes) gives a pick its kit, runs leveling beside the match and
   applies upgrades; `HeroKitTests` checks every ability and all 80 upgrades. Levels run 1 to 20 (picks on even levels); each hero has two upgrade paths, left and right (`docs/HEROES.md`).

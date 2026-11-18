@@ -22,6 +22,15 @@ namespace DuckAndCover.Core
         public SpawnRules Spawn { get; }
         /// <summary>Flag Rush: score is captures, reported by the flag rules (Core/Flag) through <see cref="ScoreFlagCapture"/>.</summary>
         public bool FlagMode => Mode.IsFlag();
+        /// <summary>Overrun: score is enemy Bastions destroyed, reported by the Overrun rules (Core/Overrun) through <see cref="ScoreBastion"/>.</summary>
+        public bool OverrunMode => Mode.IsOverrun();
+
+        /// <summary>
+        /// Overrun: who wins a match level on Bastions at the time cap (the Overrun rules answer with
+        /// the team that took the larger share of enemy Bastion health), or None while that is level
+        /// too, which plays on until it isn't.
+        /// </summary>
+        public Func<TeamId> TieBreak;
 
         readonly IGameEvents events;
 
@@ -72,7 +81,7 @@ namespace DuckAndCover.Core
             p.connected = true;
             p.alive = false;
             if (State.phase == MatchPhase.Deploy) Spawn.SpawnAtBase(p); // not yet fighting: straight into the spawn room
-            else if (State.IsPlaying) p.respawnAt = State.elapsed + Spawn.WaitFor(p.level);
+            else if (State.IsPlaying) p.respawnAt = State.elapsed + Spawn.WaitFor(p.team, p.level);
             return CommandResult.Accepted;
         }
 
@@ -163,7 +172,7 @@ namespace DuckAndCover.Core
                     if (CountDown(dt))
                     {
                         EnterPhase(MatchPhase.Play, 0f);
-                        if (!FlagMode) Zones.Unlock(); // a flag mode's base zones are only volumes, never points
+                        if (!FlagMode && !OverrunMode) Zones.Unlock(); // a flag mode's base zones are only volumes, never points; Overrun has none
 
                     }
                     break;
@@ -188,7 +197,22 @@ namespace DuckAndCover.Core
             else State.scoreB = Math.Min(Mode.scoreToWin, State.scoreB + 1);
             CheckMapShift();
             if (State.phase == MatchPhase.Play) CheckCaps();
-            else CheckFlagOvertime();
+            else CheckSuddenDeath();
+            return true;
+        }
+
+        /// <summary>
+        /// Overrun: <paramref name="team"/> destroyed an enemy Bastion. Adds a point (destroying the
+        /// Core Bastion reaches the mode's scoreToWin, 2) and settles the result on the same tick.
+        /// False if nothing could score.
+        /// </summary>
+        public bool ScoreBastion(TeamId team)
+        {
+            if (!OverrunMode || !State.IsPlaying || (team != TeamId.A && team != TeamId.B)) return false;
+            if (team == TeamId.A) State.scoreA = Math.Min(Mode.scoreToWin, State.scoreA + 1);
+            else State.scoreB = Math.Min(Mode.scoreToWin, State.scoreB + 1);
+            if (State.phase == MatchPhase.Play) CheckCaps();
+            else CheckSuddenDeath();
             return true;
         }
 
@@ -209,7 +233,7 @@ namespace DuckAndCover.Core
             CheckMapShift();
 
             if (State.phase == MatchPhase.Play) CheckCaps();
-            else if (FlagMode) CheckFlagOvertime();
+            else if (FlagMode || OverrunMode) CheckSuddenDeath();
             else CheckOvertime(dt);
         }
 
@@ -260,10 +284,16 @@ namespace DuckAndCover.Core
             else if (State.elapsed >= Mode.timeCapSeconds - Epsilon)
             {
                 leader = State.Leader;
+                if (leader == TeamId.None && OverrunMode && TieBreak != null)
+                {
+                    // Overrun, level on Bastions: the larger share of enemy Bastion health taken wins.
+                    leader = TieBreak();
+                    if (leader != TeamId.None) { EndMatch(leader, MatchEndReason.BastionDamage); return; }
+                }
                 if (leader == TeamId.None)
                 {
-                    // Level at the time cap: play on until someone scores. Flag Rush calls that overtime.
-                    if (FlagMode && Rules.overtimeEnabled) StartFlagOvertime();
+                    // Level at the time cap: play on until someone scores (Overrun: until the tie breaks).
+                    if ((FlagMode || OverrunMode) && Rules.overtimeEnabled) StartFlagOvertime();
                     return;
                 }
                 reason = MatchEndReason.TimeCap;
@@ -312,10 +342,20 @@ namespace DuckAndCover.Core
             Publish(new OvertimeStartedEvent { leader = TeamId.None });
         }
 
-        /// <summary>Flag Rush overtime: the next capture wins; past overtimeMaxSeconds (if set) it is a draw.</summary>
-        void CheckFlagOvertime()
+        /// <summary>
+        /// Flag Rush overtime: the next capture wins. Overrun: the next Bastion destroyed, or the
+        /// first moment one team has taken the larger share of enemy Bastion health. Past
+        /// overtimeMaxSeconds (if set) it is a draw.
+        /// </summary>
+        void CheckSuddenDeath()
         {
-            if (State.Leader != TeamId.None) { EndMatch(State.Leader, MatchEndReason.OvertimeCapture); return; }
+            if (State.phase != MatchPhase.Overtime) return;
+            if (State.Leader != TeamId.None) { EndMatch(State.Leader, OverrunMode ? MatchEndReason.TimeCap : MatchEndReason.OvertimeCapture); return; }
+            if (OverrunMode && TieBreak != null)
+            {
+                var ahead = TieBreak();
+                if (ahead != TeamId.None) { EndMatch(ahead, MatchEndReason.BastionDamage); return; }
+            }
             if (Rules.overtimeMaxSeconds > 0f && State.overtimeElapsed >= Rules.overtimeMaxSeconds - Epsilon)
                 EndMatch(TeamId.None, MatchEndReason.OvertimeTimeout);
         }

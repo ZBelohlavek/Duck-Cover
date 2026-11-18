@@ -24,6 +24,8 @@ namespace DuckAndCover.Core
         public float maxHealth;
         public float size = 1f;
         public float moveSpeed;
+        /// <summary>From the kind: pushes don't move it (Bastions).</summary>
+        public bool anchored;
         /// <summary>Seconds since it was destroyed: kept for the lag compensation window, then removed.</summary>
         public float deadFor;
         /// <summary>A push in progress: metres a second, and seconds left.</summary>

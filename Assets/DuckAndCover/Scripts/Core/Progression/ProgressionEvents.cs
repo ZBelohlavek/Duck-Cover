@@ -52,5 +52,7 @@ namespace DuckAndCover.Core
         Flag = 6,
         /// <summary>A neutral camp taken in Overrun (WP15).</summary>
         Camp = 7,
+        /// <summary>Overrun (WP16): near your own wave, minion kills, Bastion damage, Bastions destroyed.</summary>
+        Overrun = 8,
     }
 }

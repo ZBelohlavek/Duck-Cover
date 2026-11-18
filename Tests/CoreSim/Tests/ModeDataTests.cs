@@ -18,7 +18,7 @@ static class ModeDataTests
     [Test]
     static void ModeFilesMatchPresets()
     {
-        foreach (var (file, preset) in new[] { ("capture_hold.json", ModeDef.CaptureAndHold()), ("king_of_the_hill.json", ModeDef.KingOfTheHill()), ("flag_rush.json", ModeDef.FlagRush()) })
+        foreach (var (file, preset) in new[] { ("capture_hold.json", ModeDef.CaptureAndHold()), ("king_of_the_hill.json", ModeDef.KingOfTheHill()), ("flag_rush.json", ModeDef.FlagRush()), ("overrun.json", ModeDef.Overrun()) })
         {
             var loaded = Load(file);
             foreach (var f in typeof(ModeDef).GetFields(BindingFlags.Public | BindingFlags.Instance))

@@ -38,7 +38,7 @@ https://claude.ai/artifact/7qbJG2ukrZDQ6ZTfX3nXGs
 | WP15 Lanes, waves and camps | Core | WP14 | Cloud wave report; all four camp kinds tested | Done |
 | WP18 Breakwater greybox, launch pads and ledges | Layout and Core | WP14's lane fields | Validator (mirror symmetry, lane, one-way ledges and drop, jungle joins the lane at both ends); map plan | In review |
 | WP20 Hero kits against waves | Data and tests | WP14 | Each hero has a tested way to clear or protect a wave | Done |
-| WP16 Overrun rules | Core | WP15 | Overrun from data; bot matches end inside 15 minutes | Waiting |
+| WP16 Overrun rules | Core | WP15 | Overrun from data; bot matches end inside 15 minutes | Done |
 | WP19 Overrun in Unity | Scripts | WP16, WP18 | Two players over the network; netsmoke with 40 units; capture | Waiting |
 
 WP17 (Salvage and build pads) was dropped on Nov 18.
@@ -77,6 +77,14 @@ WP17 (Salvage and build pads) was dropped on Nov 18.
   (neutral guards, then a pad held like a point; Juggernaut, damage, experience and speed rewards). `UnitDef` gained
   attack fields. Tests in `LaneTests.cs`; `dotnet run --project Tests/CoreSim -- report waves` runs waves on a test
   lane with no heroes and ends with whether they stalled in the middle. Bastions (the far end of the lane) are WP16.
+- WP16: `Core/Overrun`. `OverrunServer` sits on a `LaneServer`, spawns the map's four Bastions as anchored units with
+  their own shield layer, and decides who may hurt them through `DamageRules.DamageGate` (minions always, heroes only
+  with one of their own minions within 12 m, nothing on a Core while its Forward stands; `RestoreGate` keeps their
+  health from coming back). It runs shield refills, Bastion fire, the side gates, the defenders' shorter respawn
+  (`SpawnRules.WaitAdjust`), the late push and Overrun experience, and scores through `MatchRules.ScoreBastion`;
+  `MatchRules.TieBreak` settles the time cap. Numbers in `Ruleset.overrun`, mode in `ModeDef.Overrun()` and
+  `Data/Modes/overrun.json`. Tests in `OverrunTests.cs` (helpers in `OverrunHarness.cs`);
+  `dotnet run --project Tests/CoreSim -- report overrun [matches] [seed]` plays 5v5 bot matches on Breakwater's lane.
 - WP18: Breakwater as data in `Core/Maps/Breakwater.cs` (lane and camps in WP15's `LaneDef`/`CampDef`; Bastions,
   launch pads, one-way drops, jungle routes and base entrances in `MapDef.Overrun.cs`), checked by `LaneMapValidator`;
   launch pads in the movement check (`Core/Combat/LaunchPad.cs`, `MovementRules.Launch.cs`) and flown by `LocalPlayer`;
