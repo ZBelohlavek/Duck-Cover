@@ -235,6 +235,13 @@ namespace DuckAndCover.Core
             PairRaw(m, "LaneStackZig", BlockKind.Crate, 18f, -28f, 1.6f, 2.6f, 1.6f, 0f, ShiftRole.None, 0, "");
             PairRaw(m, "LaneLowZigEast", BlockKind.LowCover, 27f, -23f, 0.5f, 1f, 3f, 0f, ShiftRole.None, 0, "");
             PairRaw(m, "LaneLowMidEast", BlockKind.LowCover, 26f, -5f, 0.5f, 1f, 3f, 0f, ShiftRole.None, 0, "rocks");
+            // Tall pieces down the middle of the lane, staggered with the edge cover, so the long look down the
+            // centre is broken every 15 to 20 m; minions and three abreast pass either side.
+            PairRaw(m, "LaneStackMiddle", BlockKind.Crate, -18f, -70f, 2f, 2.6f, 2f, 0f, ShiftRole.None, 0, "");
+            PairRaw(m, "LaneWallFwd", BlockKind.Wall, -17f, -47f, 4f, 2.4f, 1f, 0f, ShiftRole.None, 0, "rocks");
+            PairRaw(m, "LaneStackBendMid", BlockKind.Crate, -4f, -37f, 2f, 2.6f, 2f, 0f, ShiftRole.None, 0, "");
+            PairRaw(m, "LaneWallZig", BlockKind.Wall, 17f, -21f, 1f, 2.4f, 4f, 0f, ShiftRole.None, 0, "rocks");
+            PairRaw(m, "LaneStackMidLane", BlockKind.Crate, 9f, -5f, 2f, 2.6f, 2f, 0f, ShiftRole.None, 0, "");
             Cover(m, "LaneLowPlaza", BlockKind.LowCover, -15f, -69f, 3f, 1f, 0.5f);
             Cover(m, "LaneLowLedge", BlockKind.LowCover, -9f, -50f, 0.5f, 1f, 3f);
             Cover(m, "LaneRockBend", BlockKind.LowCover, 1f, -35f, 2f, 1.1f, 2f, 0f, ShiftRole.None, 0, "rocks");
@@ -267,6 +274,8 @@ namespace DuckAndCover.Core
             PairRaw(m, "ExperienceRock", BlockKind.Wall, 57f, -76f, 2f, 2.4f, 2.5f, 0f, ShiftRole.None, 0, "rocks");
             PairRaw(m, "SpeedLow", BlockKind.LowCover, 23f, -62f, 2.5f, 1f, 0.5f, 0f, ShiftRole.None, 0, "rocks");
             PairRaw(m, "SideBendRock", BlockKind.Wall, -57.5f, -65f, 2f, 2.4f, 2f, 0f, ShiftRole.None, 0, "rocks");
+            PairRaw(m, "DamageStack", BlockKind.Crate, 17f, -89f, 1.6f, 2.6f, 1.6f, 0f, ShiftRole.None, 0, "");
+            PairRaw(m, "SpeedRock", BlockKind.Wall, 15f, -54f, 2f, 2.4f, 2f, 0f, ShiftRole.None, 0, "rocks");
             Cover(m, "ExperienceLow", BlockKind.LowCover, 30f, -83f, 2.5f, 1f, 1.5f, 0f, ShiftRole.None, 0, "rocks");
             // Broken temple walls at the top of each stair keep the camp out of sight from the lane below.
             PairRaw(m, "ShelfScreen", BlockKind.Wall, -37.5f, -7.5f, 7f, 3f, 1.5f, ShelfHeight, ShiftRole.None, 0, "rocks");

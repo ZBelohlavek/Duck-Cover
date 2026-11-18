@@ -153,7 +153,7 @@ static class BreakwaterTests
         }, "has no way out", "a base with one way in");
         // A launch pad aimed into the jungle wall.
         Rejects(m => { m.launchPads[0].apexHeight = 2f; m.launchPads[1].apexHeight = 2f; }, "arc hits", "a launch arc too low to clear the walls");
-        Rejects(m => { m.launchPads[0].landing = new Vec3(-18f, 0f, -70f); m.launchPads[1].landing = new Vec3(-18f, 0f, 70f); }, "middle of the lane", "a pad that lands by its own base");
+        Rejects(m => { m.launchPads[0].landing = new Vec3(-22f, 0f, -66f); m.launchPads[1].landing = new Vec3(-22f, 0f, 66f); }, "middle of the lane", "a pad that lands by its own base");
         Rejects(m => m.camps.RemoveAll(c => c.kind == CampKind.Speed), "Speed camp", "no speed camps");
         Rejects(m => { m.flagSpots.Clear(); m.flagSpots.Add(new Vec3(12f, 0f, -30f)); m.flagSpots.Add(new Vec3(12f, 0f, 30f)); }, "closer to one base", "flag spots nearer one base");
         Rejects(m => m.zones.RemoveAll(z => z.set == "bases"), "'bases'", "no Flag Rush capture zones");

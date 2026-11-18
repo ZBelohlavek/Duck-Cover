@@ -129,6 +129,8 @@ namespace DuckAndCover.Game
             sun = C(0xFFE2B8), sunEuler = new Vector3(36f, -140f, 0f),
             ambientSky = C(0x9AD6C8), ambientEquator = C(0xD2C49A), ambientGround = C(0x4A4A5A),
             fog = C(0xE6DCB4), fogStart = 60f, fogEnd = 560f,
+            // Wall vines were flat leaf ovals on the faces; they read as stuck-on in captures.
+            vines = false,
         };
 
         /// <summary>
