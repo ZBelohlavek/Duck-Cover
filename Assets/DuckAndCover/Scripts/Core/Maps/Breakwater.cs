@@ -237,7 +237,7 @@ namespace DuckAndCover.Core
             PairRaw(m, "LaneRockBendWest", BlockKind.Wall, -10f, -42f, 2.5f, 2.6f, 2.5f, 0f, ShiftRole.None, 0, "rocks");
             PairRaw(m, "LaneStackZig", BlockKind.Crate, 18f, -28f, 1.6f, 2.6f, 1.6f, 0f, ShiftRole.None, 0, "");
             PairRaw(m, "LaneLowZigEast", BlockKind.LowCover, 27f, -23f, 0.5f, CoverHeight, 3f, 0f, ShiftRole.None, 0, "");
-            PairRaw(m, "LaneLowMidEast", BlockKind.LowCover, 26f, -5f, 1f, CoverHeight, 3f, 0f, ShiftRole.None, 0, "rocks");
+            PairRaw(m, "LaneLowMidEast", BlockKind.LowCover, 26f, -5f, 0.5f, CoverHeight, 3f, 0f, ShiftRole.None, 0, "rocks");
             // Tall pieces down the middle of the lane, staggered with the edge cover, so the long look down the
             // centre is broken every 15 to 20 m; minions and three abreast pass either side.
             PairRaw(m, "LaneStackMiddle", BlockKind.Crate, -18f, -70f, 2f, 2.6f, 2f, 0f, ShiftRole.None, 0, "");
