@@ -1,6 +1,6 @@
 # Duck and Cover
 
-An original 5v5 attack-and-defend shooter where the building remembers every round. Walls that break
+An original 4v4 attack-and-defend shooter where the building remembers every round. Walls that break
 stay broken for the whole match, teams swap sides every round, and eliminated players keep helping
 their team through cameras, scout bots and pings.
 

@@ -4,12 +4,12 @@ using System.Linq;
 using DuckAndCover.Core;
 
 /// <summary>
-/// Overrun bot matches (WP16): five against five on Breakwater's lane with the real rules (heroes,
+/// Overrun bot matches (WP16): four against four (or any team size) on Breakwater's lane with the real rules (heroes,
 /// weapons, abilities, leveling, waves, camps' guards, Bastions), and simple bots. Each bot walks the
 /// lane a few metres behind its team's front minion, shoots the nearest enemy hero, then minion, then a
 /// Bastion it may hurt, with its own aim, uses its abilities on cooldown and takes a random upgrade at
 /// each level. Bots never leave the lane (camps and flanks are for people), so this checks pacing, not
-/// strategy: dotnet run --project Tests/CoreSim -- report overrun [matches] [seed].
+/// strategy: dotnet run --project Tests/CoreSim -- report overrun [matches] [seed] [players per team] [Bastion scale to try].
 /// </summary>
 static class OverrunSim
 {
@@ -46,18 +46,28 @@ static class OverrunSim
 
     static readonly string[] Heroes = HeroHarness.StarterIds;
 
-    public static Result Play(int seed)
+    public static Result Play(int seed, int perTeam = 0, float bastionScale = 1f)
     {
+        if (perTeam <= 0) perTeam = Ruleset.Default.maxPlayersPerTeam;
         var rng = new Rng(seed);
         var picks = new Dictionary<int, string>();
-        for (int i = 1; i <= 5; i++)
+        for (int i = 1; i <= perTeam; i++)
         {
             picks[i] = Heroes[(int)(rng.Next() * Heroes.Length) % Heroes.Length];
             picks[100 + i] = Heroes[(int)(rng.Next() * Heroes.Length) % Heroes.Length];
         }
         var r = OverrunHarness.QuickRules();
         r.personalShield = Ruleset.Default.personalShield;
-        var h = new OverrunHarness(r, waves: true, perTeam: 5, picks: picks, record: false);
+        r.maxPlayersPerTeam = Math.Max(r.maxPlayersPerTeam, perTeam); // so the old 5v5 can still be played for comparison
+        if (bastionScale != 1f)
+        {
+            // Tuning: every Bastion's health and shield times this.
+            r.overrun = r.overrun.Clone();
+            foreach (var u in r.overrun.units) u.maxHealth *= bastionScale;
+            r.overrun.forwardShield *= bastionScale;
+            r.overrun.coreShield *= bastionScale;
+        }
+        var h = new OverrunHarness(r, waves: true, perTeam: perTeam, picks: picks, record: false);
         var lane = h.Breakwater.lanes[0];
         float len = lane.Length;
 
@@ -183,16 +193,19 @@ static class OverrunSim
     {
         int matches = args.Length > 0 && int.TryParse(args[0], out var n) ? n : 20;
         int seed = args.Length > 1 && int.TryParse(args[1], out var s) ? s : 1;
+        int perTeam = args.Length > 2 && int.TryParse(args[2], out var t) ? t : Ruleset.Default.maxPlayersPerTeam;
+        float scale = args.Length > 3 ? float.Parse(args[3], System.Globalization.CultureInfo.InvariantCulture) : 1f;
         var rules = Ruleset.Default.overrun;
-        Console.WriteLine("Overrun bot matches on Breakwater's lane, 5 v 5, random starter heroes, open ground (no walls).");
+        Console.WriteLine($"Overrun bot matches on Breakwater's lane, {perTeam} v {perTeam}, random starter heroes, open ground (no walls).");
         Console.WriteLine($"Forward Bastion {rules.Kind(BastionTier.Forward).maxHealth} health + {rules.forwardShield} shield, Core {rules.Kind(BastionTier.Core).maxHealth} + {rules.coreShield}; " +
                           $"Bastions hit for {rules.Kind(BastionTier.Forward).attackDamage}/{rules.Kind(BastionTier.Core).attackDamage} a second at 25 m; late push from minute {rules.latePushMinute}.");
+        if (scale != 1f) Console.WriteLine("Trying every Bastion's health and shield x" + scale + ".");
         Console.WriteLine();
         Console.WriteLine(" seed  winner  how             time   first Bastion   ahead at 7:30   Bastions A-B   avg level   hero deaths   minions killed");
         var all = new List<Result>();
         for (int i = 0; i < matches; i++)
         {
-            var r = Play(seed + i);
+            var r = Play(seed + i, perTeam, scale);
             all.Add(r);
             string first = r.firstBastion == TeamId.None ? "-" : r.firstBastion + " at " + Clock(r.firstBastionAt);
             Console.WriteLine($" {seed + i,4}  {r.winner,-6}  {r.reason,-14}  {Clock(r.seconds),5}   {first,-13}   {r.aheadAtHalf,-13}   {r.bastionsA}-{r.bastionsB}            {r.avgLevel,5:0.0}   {r.heroDeaths,11}   {r.minionsKilled,14}");

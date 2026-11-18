@@ -6,9 +6,9 @@
     "activeZoneCount": 1,
     "rotationSeconds": 120,
     "rotationWarningSeconds": 20,
-    "scoreToWin": 500,
-    "scorePerSecond": 2,
+    "scoreToWin": 1000,
+    "scorePerSecond": 2.6,
     "allHeldMultiplier": 1,
     "timeCapSeconds": 900,
-    "mapShiftScore": 250
+    "mapShiftScore": 500
 }

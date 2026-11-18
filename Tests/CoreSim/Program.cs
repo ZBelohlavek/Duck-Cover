@@ -22,6 +22,8 @@ static class Program
     {
         { "progression", ProgressionSim.Report },
         { "scorerate", ProgressionSim.RateReport },
+        { "teamsize", ProgressionSim.TeamSizeReport },
+        { "flagrush", FlagSim.Report },
         { "map", MapTests.Report },
         { "kitwaves", WaveHarness.Report },
         { "lanestudy", LaneStudyTests.Report },

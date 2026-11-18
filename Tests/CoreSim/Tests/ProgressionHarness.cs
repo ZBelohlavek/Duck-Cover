@@ -30,7 +30,7 @@ sealed class ProgressionHarness
     public static HeroCatalog DataCatalog() =>
         new HeroCatalog(Directory.GetFiles(HeroesDir, "*.json").OrderBy(f => f, StringComparer.Ordinal).Select(LoadHero), "test_hero");
 
-    public ProgressionHarness(int perTeam = 5, Ruleset rules = null, HeroCatalog heroes = null, bool toPlay = true, ModeDef mode = null)
+    public ProgressionHarness(int perTeam = 4, Ruleset rules = null, HeroCatalog heroes = null, bool toPlay = true, ModeDef mode = null)
     {
         H = new MatchHarness(mode, perTeam, rules, toPlay: false);
         P = new ProgressionRules(H.Match, heroes ?? DataCatalog(), H.World, H.Events);

@@ -42,13 +42,16 @@ namespace DuckAndCover.Core
         /// <summary>The Bastion kinds, given to the unit library when the Overrun rules start. Anchored: pushes don't move them.</summary>
         public UnitDef[] units =
         {
-            new UnitDef { id = ForwardBastion, name = "Forward Bastion", maxHealth = 2000f, size = 2.2f, moveSpeed = 0f, anchored = true, attackDamage = 35f, attackSeconds = 1f, attackRange = 25f, sightRange = 25f },
-            new UnitDef { id = CoreBastion, name = "Core Bastion", maxHealth = 3000f, size = 2.5f, moveSpeed = 0f, anchored = true, attackDamage = 45f, attackSeconds = 1f, attackRange = 25f, sightRange = 25f },
+            new UnitDef { id = ForwardBastion, name = "Forward Bastion", maxHealth = 1700f, size = 2.2f, moveSpeed = 0f, anchored = true, attackDamage = 35f, attackSeconds = 1f, attackRange = 25f, sightRange = 25f },
+            new UnitDef { id = CoreBastion, name = "Core Bastion", maxHealth = 2550f, size = 2.5f, moveSpeed = 0f, anchored = true, attackDamage = 45f, attackSeconds = 1f, attackRange = 25f, sightRange = 25f },
         };
 
         // ---- Shields ----
-        public float forwardShield = 600f;
-        public float coreShield = 900f;
+        // Health and shields were 2000 + 600 and 3000 + 900 at 5v5; 4v4 brings a fifth less hero damage
+        // to a Bastion, so they are about 15% lower (report overrun: Core wins and match length back to
+        // what 5v5 bot matches showed).
+        public float forwardShield = 500f;
+        public float coreShield = 750f;
         /// <summary>The shield comes back to full after this long with no enemy minion within <see cref="minionRadius"/>.</summary>
         public float shieldRefillSeconds = 10f;
 

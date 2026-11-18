@@ -59,7 +59,7 @@ static class MatchTests
         float pick = h.RunUntil(() => h.S.phase == MatchPhase.Deploy);
         Check.Near(30f, pick, "hero pick lasts 30 s", 0.06f);
         Check.True(h.S.players.All(p => p.alive), "everyone spawns for deploy");
-        Check.Equal(10, h.Of<PlayerSpawnedEvent>().Count(e => e.initial), "ten initial spawns");
+        Check.Equal(8, h.Of<PlayerSpawnedEvent>().Count(e => e.initial), "eight initial spawns (4v4)");
         float deploy = h.RunUntil(() => h.S.phase == MatchPhase.Play);
         Check.Near(10f, deploy, "deploy lasts 10 s", 0.06f);
         var phases = h.Of<PhaseChangedEvent>().Select(e => e.to).ToArray();
@@ -75,8 +75,8 @@ static class MatchTests
         Check.False(m.StartMatch().IsAccepted, "team B is empty");
         m.AddPlayer(101, TeamId.B);
         Check.True(m.StartMatch().IsAccepted, "1v1 works");
-        for (int i = 2; i <= 6; i++) m.AddPlayer(i, TeamId.A);
-        Check.False(m.AddPlayer(7, TeamId.A).IsAccepted, "team of five is full");
+        for (int i = 2; i <= 4; i++) Check.True(m.AddPlayer(i, TeamId.A).IsAccepted, "player " + i + " joins team A");
+        Check.False(m.AddPlayer(5, TeamId.A).IsAccepted, "team of four is full");
         Check.False(m.AddPlayer(1, TeamId.B).IsAccepted, "can't join twice");
     }
 
@@ -312,7 +312,7 @@ static class MatchTests
         h.Take(Hills[0], TeamId.A);
         int before = h.S.scoreA;
         h.Run(10f);
-        Check.Equal(before + 20, h.S.scoreA, "the holder scores 2 per second");
+        Check.Equal(before + 26, h.S.scoreA, "the holder scores 2.6 per second");
 
         h.RunUntil(() => h.Of<ZoneUpcomingEvent>().Count > 0, 120f);
         Check.Near(100f, h.S.elapsed, "next hill announced 20 s ahead", 0.06f);
@@ -352,8 +352,8 @@ static class MatchTests
     {
         h = new MatchHarness(toPlay: false);
         h.Match.StartMatch();
-        string[] heroes = { "vanguard", "striker", "support", "controller", "vanguard2" };
-        for (int i = 0; i < 5; i++)
+        string[] heroes = { "vanguard", "striker", "support", "controller" };
+        for (int i = 0; i < 4; i++)
         {
             h.Match.Apply(new PickHeroCommand { playerId = h.A[i], heroId = heroes[i] });
             h.Match.Apply(new PickHeroCommand { playerId = h.B[i], heroId = heroes[i] });
@@ -363,7 +363,7 @@ static class MatchTests
 
         // Minutes 0-1: each team takes its own point, A also takes the middle.
         m.World.Put(m.A.Take(2), NearA);
-        m.World.Put(m.A.Skip(2).Take(3), Mid);
+        m.World.Put(m.A.Skip(2).Take(2), Mid);
         m.World.Put(m.B.Take(2), NearB);
         m.RunUntil(() => m.Zone(Mid).owner == TeamId.A && m.Zone(NearB).owner == TeamId.B, 60f);
         m.World.ClearAll();
@@ -373,7 +373,7 @@ static class MatchTests
         {
             m.World.Put(m.B.Take(2), Mid);
             m.Run(2f);
-            foreach (var id in m.B.Take(2)) { m.Match.EliminatePlayer(id, m.A[round % 5]); m.World.Clear(id); }
+            foreach (var id in m.B.Take(2)) { m.Match.EliminatePlayer(id, m.A[round % 4]); m.World.Clear(id); }
             m.Run(28f);
         }
 
@@ -403,9 +403,9 @@ static class MatchTests
             return h.S.phase == MatchPhase.MatchEnd;
         }, 900f, "match end");
         Check.Equal(TeamId.A, h.S.winner, "A wins");
-        Check.Equal(500, h.S.scoreA, "first to 500");
+        Check.Equal(1000, h.S.scoreA, "first to 1000");
         Check.True(h.Of<ZoneDeactivatedEvent>().Count >= 2, "the hill moved during the match");
-        Check.Equal(1, h.Of<MapShiftEvent>().Count, "map shift at 250");
+        Check.Equal(1, h.Of<MapShiftEvent>().Count, "map shift at 500");
     }
 
     [Test]

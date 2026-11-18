@@ -208,7 +208,7 @@ static class OverrunTests
         var h = new OverrunHarness(r);
         h.Destroy(FwdB(h));
         int m = h.Scrapper(TeamId.B, 300f, 0f);
-        h.Combat.Damage.Damage(m, FwdA(h).unitId, 2500f); // B hurt A's Forward a lot, but destroyed none
+        h.Combat.Damage.Damage(m, FwdA(h).unitId, FwdA(h).maxShield + FwdA(h).maxHealth - 200f); // B hurt A's Forward a lot, but destroyed none
         h.Run(ModeDef.Overrun().timeCapSeconds + 1f);
         Check.Equal(TeamId.A, h.S.winner, "the team with more Bastions destroyed wins at the cap");
         Check.Equal(MatchEndReason.TimeCap, h.S.endReason, "by the time cap");

@@ -23,7 +23,7 @@ static class ZoneTests
     [Test]
     static void CaptureTimeScalesWithPlayersUpToThree()
     {
-        foreach (var (players, expected) in new[] { (1, 6f), (2, 4f), (3, 3f), (5, 3f) })
+        foreach (var (players, expected) in new[] { (1, 6f), (2, 4f), (3, 3f), (4, 3f) })
         {
             var h = new MatchHarness();
             h.World.Put(h.A.Take(players), Mid);

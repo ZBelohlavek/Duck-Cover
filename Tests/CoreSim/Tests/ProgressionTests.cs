@@ -338,8 +338,8 @@ static class ProgressionTests
             p.World.Put(p.B.Take(4), Mid);
             for (int i = 0; i < 6; i++)
             {
-                p.P.RecordDamage(p.B[i % 4], p.A[i % 5]);
-                p.Match.EliminatePlayer(p.A[i % 5], p.B[i % 4]);
+                p.P.RecordDamage(p.B[i % 4], p.A[i % 4]);
+                p.Match.EliminatePlayer(p.A[i % 4], p.B[i % 4]);
                 p.Run(15f);
             }
             p.Run(120f);

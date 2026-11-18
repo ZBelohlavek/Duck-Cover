@@ -64,7 +64,12 @@ namespace DuckAndCover.Core
             mapShiftScore = 500,
         };
 
-        /// <summary>King of the hill: one hill moving every 2 minutes, first to 500.</summary>
+        /// <summary>
+        /// King of the hill: one hill moving every 2 minutes, first to 1000 (the project's score target),
+        /// map shift at 500. 2.6 points a second: 4v4 bot matches then run about 13.5 minutes and two
+        /// players in three reach level 20 (report teamsize). It was first to 500 at 2 a second, which ran
+        /// under 9 minutes and left most players short of level 20.
+        /// </summary>
         public static ModeDef KingOfTheHill() => new ModeDef
         {
             id = "king_of_the_hill",
@@ -73,11 +78,11 @@ namespace DuckAndCover.Core
             activeZoneCount = 1,
             rotationSeconds = 120f,
             rotationWarningSeconds = 20f,
-            scoreToWin = 500,
-            scorePerSecond = 2f,
+            scoreToWin = 1000,
+            scorePerSecond = 2.6f,
             allHeldMultiplier = 1f,
             timeCapSeconds = 900f,
-            mapShiftScore = 250,
+            mapShiftScore = 500,
         };
 
         /// <summary>
