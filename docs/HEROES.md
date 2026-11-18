@@ -20,13 +20,13 @@ Left (Z) is the **Juggernaut** path: shotgun, Breach Rush and staying alive up f
 
 | Level | Left (hold Z) | Right (hold V) |
 |---|---|---|
-| 2 trait | **Thick Hide**: +25 max health. | **Anchor**: Take 8% less damage on a point your team holds. |
+| 2 trait | **Thick Hide**: +25 max health. | **Anchor**: Take 8% less damage on a point your team holds, or beside your own minions. |
 | 4 talent | **Long Rush**: Breach Rush goes 2 m further and knocks enemies 2 m further. | **Reinforced Panel**: Bastion Panel has 30% more health. |
 | 6 trait | **Close Quarters**: Your weapons deal 6% more damage. | **Steady Guard**: Abilities recover 10% faster. |
 | 8 ultimate | **Crushing Line**: Hold the Line wears enemies down twice as fast. | **Lockdown**: Enemies caught when Hold the Line goes up are rooted for 1.5 seconds. |
-| 10 passive | **Second Wind**: Regain 8 health a second when you haven't been hit for a while. | **Braced**: Take 15% less damage while standing on a point. |
+| 10 passive | **Second Wind**: Regain 8 health a second when you haven't been hit for a while. | **Braced**: Take 15% less damage while standing on a point, or beside your own minions. |
 | 12 talent | **Shockwave**: Breach Rush stuns the enemies you hit for 0.6 seconds. | **Bastion Aura**: Teammates within 4 m of where you plant Bastion Panel gain 15 shield a second while it stands. |
-| 14 trait | **Last Stand**: Take 15% less damage while at half health or less. | **Point Warden**: Your weapons deal 12% more damage while on a point. |
+| 14 trait | **Last Stand**: Take 15% less damage while at half health or less. | **Point Warden**: Your weapons deal 12% more damage while on a point, or beside your own minions. |
 | 16 talent | **Double Rush**: Breach Rush holds two charges. | **Wide Panel**: Bastion Panel is 1.5 m wider. |
 | 18 talent | **Rallying Rush**: Breach Rush gives you a 60 shield for 3 seconds. | **Twin Panels**: Bastion Panel holds two charges, and two can stand at once. |
 | 20 capstone | **Unbreakable**: +75 max health and 5 more health regained a second. | **Fortress**: Hold the Line also gives teammates inside it 20 shield a second. |
@@ -99,3 +99,21 @@ Left (Z) is the **Engineer** path: Sentry and the SMG. Right (V) is the **Trappe
 | 16 talent | **Overclock**: Sentries fire 20% faster and their shots deal 2 more damage. | **Spare Mines**: Snare Mine holds three charges, and three can be out at once. |
 | 18 talent | **Twin Sentry**: Two sentries can be out at once, and Sentry holds two charges. | **Sticky Mines**: Enemies who set off a Snare Mine show through walls to your team for 5 seconds. |
 | 20 capstone | **Fortified Sentry**: Sentries reach 30% further and have 50% more health. | **Minefield**: Snare Mines go off for enemies 1.5 m further away, and their slow lasts 3 seconds longer. |
+
+## Against minion waves (WP20)
+
+Every ability and weapon hits minions, Bastions and camp guards as it hits heroes. Each hero's job against a wave,
+as `Tests/CoreSim/Tests/WaveKitTests.cs` checks it:
+
+- **Bulwark** protects: Bastion Panel stops minion fire and minion feet (`UnitRules.LineOfFire`, `UnitRules.Walk`), and
+  Hold the Line pins a wave (Lockdown roots it) while wearing it down. His shotgun clears a wave from close up.
+- **Lancer** clears: Incendiary Grenade catches a whole wave; Thermite destroys Scrappers outright.
+- **Mender** protects her own wave: Mending Field heals minions, Purge frees them from slows, Aegis Pulse shields them.
+- **Rigger** holds a lane: a Sentry left alone takes apart most of a wave, Snare Mine slows the front of a wave that
+  walks onto it, and Lockout Gate holds a wave and its fire while Rigger's own minions shoot out through it.
+
+Sentries shoot the nearest enemy they can see, so a minion in front of one comes before a hero at the edge of its reach.
+Upgrades that work "on a point" (Anchor, Braced, Point Warden) also work within 8 m of your own minions or Bastion
+(`Ruleset.escortRadius`). Damage and healing on units give half the ultimate charge they give on heroes
+(`Ruleset.ultimateChargeUnitShare`), so clearing waves helps ultimates without replacing fights.
+`dotnet run --project Tests/CoreSim -- report waves` shows how long each hero takes to clear one wave alone.

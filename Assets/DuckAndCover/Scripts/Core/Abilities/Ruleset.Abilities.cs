@@ -18,6 +18,12 @@ namespace DuckAndCover.Core
         public float regenDelaySeconds = 5f;
         /// <summary>At or below this share of max health a hero counts as "lowHealth" for conditional modifiers.</summary>
         public float lowHealthShare = 0.5f;
+        /// <summary>
+        /// The lane version of the point conditions (StatConditions.OnPoint, OnHeldPoint): a hero
+        /// within this many metres of one of their own team's units (a minion or Bastion) counts as
+        /// holding ground too, so upgrades that work on points also work in a lane mode (WP20).
+        /// </summary>
+        public float escortRadius = 8f;
         /// <summary>Whether damage effects and weapons can hurt teammates.</summary>
         public bool friendlyFire = false;
 
@@ -36,6 +42,12 @@ namespace DuckAndCover.Core
         public float ultimateChargePerDamage = 0.05f;
         /// <summary>Ultimate charge per point of healing or shield given to teammates.</summary>
         public float ultimateChargePerHealing = 0.05f;
+        /// <summary>
+        /// Share of the damage and healing charge above that counts when the other side is a unit (a
+        /// minion, Bastion or camp guard) rather than a hero, so clearing waves doesn't bring ultimates
+        /// round far faster than fighting heroes does (WP20).
+        /// </summary>
+        public float ultimateChargeUnitShare = 0.5f;
         /// <summary>Most charge a hero can bank.</summary>
         public float ultimateChargeMax = 100f;
 
@@ -62,6 +74,8 @@ namespace DuckAndCover.Core
             if (ultimateInterruptRefund < 0f || ultimateInterruptRefund > 1f) e.Add("ultimateInterruptRefund must be between 0 and 1");
             if (ultimateUnlockLevel < 1) e.Add("ultimateUnlockLevel must be at least 1");
             if (ultimateChargePerSecond < 0f || ultimateChargePerDamage < 0f || ultimateChargePerHealing < 0f) e.Add("ultimate charge rates can't be negative");
+            if (ultimateChargeUnitShare < 0f) e.Add("ultimateChargeUnitShare can't be negative");
+            if (escortRadius < 0f) e.Add("escortRadius can't be negative");
             if (ultimateChargeMax <= 0f) e.Add("ultimateChargeMax must be positive");
             if (minMoveSpeed < 0f || minMoveSpeed > 1f) e.Add("minMoveSpeed must be between 0 and 1");
             if (maxStunSeconds <= 0f) e.Add("maxStunSeconds must be positive");

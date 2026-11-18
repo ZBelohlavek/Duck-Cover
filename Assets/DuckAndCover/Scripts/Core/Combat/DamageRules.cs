@@ -122,10 +122,23 @@ namespace DuckAndCover.Core
                         if (when == StatConditions.OnHeldPoint && z.owner != p.team) continue;
                         if (Array.IndexOf(world.PlayersInZone(z.id), u.playerId) >= 0) return true;
                     }
-                    return false;
+                    return NearOwnUnits(p);
                 default:
                     return false;
             }
+        }
+
+        /// <summary>
+        /// The lane version of standing on a point: within Ruleset.escortRadius of one of the hero's
+        /// own team's living units. Modes without units never meet it.
+        /// </summary>
+        bool NearOwnUnits(PlayerState p)
+        {
+            if (Roster.units.Count == 0 || p.team == TeamId.None || !(world is IPositionQuery where)) return false;
+            if (!where.TryGetPosition(p.id, match.State.tick, out var at)) return false;
+            foreach (var unit in Roster.units)
+                if (unit.alive && unit.team == p.team && Vec3.Distance(unit.position, at) <= Rules.escortRadius) return true;
+            return false;
         }
 
         /// <summary>The hero's own max health before modifiers (from hero data). Refills to the new maximum.</summary>

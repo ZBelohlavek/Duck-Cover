@@ -483,16 +483,19 @@ namespace DuckAndCover.Core
                     break;
                 }
                 case DamagedEvent hit:
-                    if (hit.attackerId >= 0 && hit.attackerId != hit.targetId) AddUltimateCharge(hit.attackerId, hit.amount * Rules.ultimateChargePerDamage);
+                    if (hit.attackerId >= 0 && hit.attackerId != hit.targetId) AddUltimateCharge(hit.attackerId, hit.amount * Rules.ultimateChargePerDamage * ChargeShare(hit.targetId));
                     break;
                 case HealedEvent heal:
-                    if (heal.healerId != heal.targetId) AddUltimateCharge(heal.healerId, heal.amount * Rules.ultimateChargePerHealing);
+                    if (heal.healerId != heal.targetId) AddUltimateCharge(heal.healerId, heal.amount * Rules.ultimateChargePerHealing * ChargeShare(heal.targetId));
                     break;
                 case ShieldedEvent shield:
-                    if (shield.sourceId != shield.targetId) AddUltimateCharge(shield.sourceId, shield.amount * Rules.ultimateChargePerHealing);
+                    if (shield.sourceId != shield.targetId) AddUltimateCharge(shield.sourceId, shield.amount * Rules.ultimateChargePerHealing * ChargeShare(shield.targetId));
                     break;
             }
         }
+
+        /// <summary>Ultimate charge counts in full against heroes and at a share against units.</summary>
+        float ChargeShare(int targetId) => UnitIds.IsUnit(targetId) ? Rules.ultimateChargeUnitShare : 1f;
 
         void CancelCasts(HeroUnit unit, string reason)
         {

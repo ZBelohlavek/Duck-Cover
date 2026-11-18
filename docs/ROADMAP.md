@@ -37,7 +37,7 @@ https://claude.ai/artifact/7qbJG2ukrZDQ6ZTfX3nXGs
 | WP21 Flag Rush | Core, map data, Unity | Merged match rules, Gantry Yard | Flag rules tested; fair flag spots pass the validator; netsmoke flag match; capture | Ready, start first |
 | WP15 Lanes, waves and camps | Core | WP14 | Cloud wave report; all four camp kinds tested | Waiting |
 | WP18 Breakwater greybox, launch pads and ledges | Layout and Core | WP14's lane fields | Validator (mirror symmetry, lane, one-way ledges and drop, jungle joins the lane at both ends); map plan | Waiting |
-| WP20 Hero kits against waves | Data and tests | WP14 | Each hero has a tested way to clear or protect a wave | Waiting |
+| WP20 Hero kits against waves | Data and tests | WP14 | Each hero has a tested way to clear or protect a wave | In review |
 | WP16 Overrun rules | Core | WP15 | Overrun from data; bot matches end inside 15 minutes | Waiting |
 | WP19 Overrun in Unity | Scripts | WP16, WP18 | Two players over the network; netsmoke with 40 units; capture | Waiting |
 

@@ -19,6 +19,7 @@ namespace DuckAndCover.Core
         readonly AbilityRunner abilities;
         readonly HitHistory history;
         readonly IWorldQuery geometry;
+        readonly CombatWorld world;
         readonly IGameEvents events;
 
         public UnitRoster Roster { get; }
@@ -28,9 +29,12 @@ namespace DuckAndCover.Core
         MatchState State => match.State;
         Ruleset Rules => match.Rules;
 
-        /// <param name="geometry">The map, for stopping pushes at walls (map geometry only, no bodies).</param>
-        public UnitRules(MatchRules match, AbilityRunner abilities, HitHistory history, IWorldQuery geometry, IGameEvents events, UnitLibrary library = null)
+        /// <param name="geometry">The map, for stopping walks and pushes at walls (map geometry only, no bodies).</param>
+        /// <param name="world">The combat world (map, bodies, placed barriers and gates), for <see cref="LineOfFire"/>
+        /// and for walks and pushes stopping at barriers. Without it only the map counts.</param>
+        public UnitRules(MatchRules match, AbilityRunner abilities, HitHistory history, IWorldQuery geometry, IGameEvents events, UnitLibrary library = null, CombatWorld world = null)
         {
+            this.world = world;
             this.match = match ?? throw new ArgumentNullException(nameof(match));
             this.abilities = abilities ?? throw new ArgumentNullException(nameof(abilities));
             this.history = history ?? throw new ArgumentNullException(nameof(history));
@@ -111,6 +115,46 @@ namespace DuckAndCover.Core
             return true;
         }
 
+        /// <summary>
+        /// Walk a living unit by a step (the lane walker's move): like <see cref="Move"/>, but it stops
+        /// short of map geometry and of any placed object that blocks movement (Bastion Panel, Lockout
+        /// Gate), as those objects' colliders stop heroes. Returns the metres actually walked.
+        /// </summary>
+        public float Walk(int unitId, Vec3 step, float yaw)
+        {
+            var u = Roster.Get(unitId);
+            if (u == null || !u.alive) return 0f;
+            Vec3 from = u.position;
+            u.position = Slide(u, step);
+            u.yaw = yaw;
+            history.Record(u.id, State.tick, u.Pose());
+            return Vec3.Distance(from, u.position);
+        }
+
+        /// <summary>
+        /// Whether a unit's shot at a target would reach it now: a ray from the unit's chest to the
+        /// target's chest that no map geometry and no enemy barrier or gate stops. The unit's own
+        /// team's barriers let its shots through, as they do for heroes; other bodies don't block.
+        /// Range is the caller's to check. Minion attacks call this before
+        /// <see cref="DamageRules.Damage"/>, so Bastion Panel and Lockout Gate shelter heroes from a wave.
+        /// </summary>
+        public bool LineOfFire(int unitId, int targetId)
+        {
+            var u = Roster.Get(unitId);
+            if (u == null || !u.alive || !Combat.IsAlive(targetId) || !history.PoseAt(targetId, State.tick, out var pose)) return false;
+            Vec3 from = Hitboxes.Chest(Rules, u.Pose());
+            Vec3 to = Hitboxes.Chest(Rules, pose);
+            Vec3 d = to - from;
+            float len = d.Magnitude;
+            if (len < 1e-4f) return true;
+            Vec3 dir = d / len;
+            if (world == null)
+                return !(geometry.Raycast(from, dir, len, State.tick, out var wall) && wall.kind != HitKind.Nothing && wall.kind != HitKind.Player);
+            // Only the target's body counts; the ray passes every other body.
+            if (!world.RaycastFrom(unitId, from, dir, len + Rules.torsoRadius * (pose.size > 0f ? pose.size : 1f) + 0.5f, State.tick, out var hit, id => id != targetId)) return false;
+            return hit.kind == HitKind.Player && hit.playerId == targetId;
+        }
+
         void OnEvent(GameEvent e)
         {
             if (!(e is PushedEvent pushed) || !UnitIds.IsUnit(pushed.targetId)) return;
@@ -129,7 +173,7 @@ namespace DuckAndCover.Core
             u.pushLeft = pushed.seconds;
         }
 
-        /// <summary>Move a unit by a step, stopping short of map geometry at chest height.</summary>
+        /// <summary>Move a unit by a step, stopping short of map geometry and movement-blocking objects at chest height.</summary>
         Vec3 Slide(UnitState u, Vec3 step)
         {
             float len = step.Magnitude;
@@ -137,8 +181,12 @@ namespace DuckAndCover.Core
             Vec3 dir = step / len;
             Vec3 chest = Hitboxes.Chest(Rules, u.Pose());
             float radius = Rules.torsoRadius * u.size;
-            if (geometry.Raycast(chest, dir, len + radius, State.tick, out var hit) && hit.kind != HitKind.Nothing && hit.kind != HitKind.Player)
-                len = Math.Max(0f, hit.distance - radius);
+            float reach = len + radius;
+            if (geometry.Raycast(chest, dir, reach, State.tick, out var hit) && hit.kind != HitKind.Nothing && hit.kind != HitKind.Player)
+                reach = hit.distance;
+            if (world != null && SolidObjects.Raycast(world.Objects, chest, dir, reach, o => !o.def.blocksMovement, out var solid))
+                reach = solid.distance;
+            len = Math.Min(len, Math.Max(0f, reach - radius));
             return u.position + dir * len;
         }
 

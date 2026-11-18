@@ -51,14 +51,16 @@ namespace DuckAndCover.Core
             Abilities = new AbilityRunner(match, abilities ?? new AbilityLibrary(), World, events, new UnitRoster());
             Movement = new MovementRules(match, Damage, History, events, layout);
             Weapons = new WeaponRules(match, Damage, Movement, World, events, weapons ?? StarterWeapons.Library(), tickSeconds);
-            Units = new UnitRules(match, Abilities, History, geometry, events, units);
+            Units = new UnitRules(match, Abilities, History, geometry, events, units, World);
             Units.Attach();
             // Placed barriers and gates stop shots and rays; shots hurt placed objects.
             World.Objects = Abilities.State.objects;
+            // Units shoot through their own team's barriers too, so ask the damage rules for the team.
             World.PassesObject = (shooterId, o) =>
             {
-                var p = Match.State.Player(shooterId);
-                return p != null && p.team == o.team && !Rules.friendlyFire;
+                if (!Damage.IsKnown(shooterId)) return false;
+                var team = Damage.TeamOf(shooterId);
+                return team != TeamId.None && team == o.team && !Rules.friendlyFire;
             };
             Weapons.DamageObject = (objectId, amount, attackerId) => Abilities.DamageObject(objectId, amount, attackerId);
             Abilities.RegisterEffect(EffectKinds.Reload, new ReloadEffect(Weapons));
