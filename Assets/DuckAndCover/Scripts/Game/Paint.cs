@@ -40,6 +40,43 @@ namespace DuckAndCover.Game
             return material;
         }
 
+        static readonly Dictionary<Texture2D, Material> textured = new Dictionary<Texture2D, Material>();
+        static readonly Dictionary<Texture2D, Material> glowing = new Dictionary<Texture2D, Material>();
+
+        /// <summary>
+        /// The shared material for a painted texture (the dressed map's surfaces). Like the flat colours,
+        /// the colour lives in the texture and the tint stays white. <paramref name="glow"/> also lights
+        /// the surface by its own texture (trim strips, fruit), with the same white emission tint on
+        /// every glowing material, so nothing depends on a per-material colour property.
+        /// </summary>
+        public static Material Textured(Texture2D texture, bool glow = false)
+        {
+            var table = glow ? glowing : textured;
+            if (texture == null) return For(Color.white);
+            if (table.TryGetValue(texture, out var found) && found != null) return found;
+
+            if (shader == null) shader = FindShader();
+            var material = new Material(shader);
+            material.name = (glow ? "Glow " : "Painted ") + texture.name;
+            if (material.HasProperty("_BaseMap")) material.SetTexture("_BaseMap", texture);
+            if (material.HasProperty("_MainTex")) material.SetTexture("_MainTex", texture);
+            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", Color.white);
+            if (material.HasProperty("_Color")) material.SetColor("_Color", Color.white);
+            // Matte, painted surfaces: no gloss highlight.
+            if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.08f);
+            if (material.HasProperty("_Glossiness")) material.SetFloat("_Glossiness", 0.08f);
+            if (material.HasProperty("_SpecularHighlights")) { material.SetFloat("_SpecularHighlights", 0f); material.EnableKeyword("_SPECULARHIGHLIGHTS_OFF"); }
+            if (material.HasProperty("_EnvironmentReflections")) { material.SetFloat("_EnvironmentReflections", 0f); material.EnableKeyword("_ENVIRONMENTREFLECTIONS_OFF"); }
+            if (glow)
+            {
+                material.EnableKeyword("_EMISSION");
+                if (material.HasProperty("_EmissionMap")) material.SetTexture("_EmissionMap", texture);
+                if (material.HasProperty("_EmissionColor")) material.SetColor("_EmissionColor", new Color(1.6f, 1.6f, 1.6f));
+            }
+            table[texture] = material;
+            return material;
+        }
+
         public static void Apply(GameObject go, Color color)
         {
             var renderer = go.GetComponent<Renderer>();

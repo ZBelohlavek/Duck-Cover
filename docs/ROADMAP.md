@@ -38,6 +38,8 @@ https://claude.ai/artifact/JJ4fD74nbDB3AsykT2WWen
 - WP9: the map as data in `Core/Maps` (`MapDef`, the layout in `GantryYard`, `MapNav` and `MapValidator`
   for the fairness checks); `Game/MapScene` builds the greybox and `Game/MapView` shows zone owners and
   the shift; tests and the `report map` plan in `MapTests.cs`.
+- Environments: themes in `Game/Env` (`EnvTheme`, `PaintedTextures`, `EnvMesh`, `SkyPainter`,
+  `MapDresser`), chosen per layout by `MapDef.theme`; see `docs/ENVIRONMENTS.md`.
 - WP4 to WP8: `Scripts/Game` and `Scripts/UI`, with their rules in Core folders of their own
   (`Core/Combat`, `Core/Abilities`, `Core/Backline`).
 

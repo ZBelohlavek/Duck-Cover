@@ -227,6 +227,8 @@ namespace UnityEngine
         public static Quaternion identity => new Quaternion { w = 1 };
         public static Quaternion Euler(float x, float y, float z) => identity;
         public static Quaternion LookRotation(Vector3 forward) => identity;
+        public static Quaternion FromToRotation(Vector3 fromDirection, Vector3 toDirection) => identity;
+        public static Vector3 operator *(Quaternion rotation, Vector3 point) => point;
     }
 
     public struct Color
@@ -237,6 +239,8 @@ namespace UnityEngine
         public static Color white => new Color(1, 1, 1);
         public static Color black => new Color(0, 0, 0);
         public static Color Lerp(Color a, Color b, float t) => a;
+        public static Color operator *(Color a, float b) => a;
+        public static Color operator +(Color a, Color b) => a;
         public static bool operator ==(Color lhs, Color rhs) => lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a;
         public static bool operator !=(Color lhs, Color rhs) => !(lhs == rhs);
         public override bool Equals(object other) => other is Color c && this == c;
@@ -286,7 +290,40 @@ namespace UnityEngine
         public void SetFloat(string name, float value) { }
         public Color color { get; set; }
         public bool HasProperty(string name) => false;
+        public void EnableKeyword(string keyword) { }
         public void SetColor(string name, Color value) { }
+    }
+
+    public sealed class Mesh : Object
+    {
+        public Mesh() { }
+        public void SetVertices(List<Vector3> inVertices) { }
+        public void SetNormals(List<Vector3> inNormals) { }
+        public void SetUVs(int channel, List<Vector2> uvs) { }
+        public void SetTriangles(List<int> triangles, int submesh) { }
+        public void RecalculateBounds() { }
+    }
+
+    public sealed class MeshFilter : Component
+    {
+        public Mesh sharedMesh { get; set; }
+        public Mesh mesh { get; set; }
+    }
+
+    public enum FogMode { Linear = 1, Exponential = 2, ExponentialSquared = 3 }
+
+    public sealed class RenderSettings : Object
+    {
+        public static bool fog { get; set; }
+        public static FogMode fogMode { get; set; }
+        public static Color fogColor { get; set; }
+        public static float fogStartDistance { get; set; }
+        public static float fogEndDistance { get; set; }
+        public static UnityEngine.Rendering.AmbientMode ambientMode { get; set; }
+        public static Color ambientSkyColor { get; set; }
+        public static Color ambientEquatorColor { get; set; }
+        public static Color ambientGroundColor { get; set; }
+        public static Material skybox { get; set; }
     }
 
     public class Renderer : Component
@@ -295,10 +332,15 @@ namespace UnityEngine
         public Material sharedMaterial { get; set; }
     }
 
+    public enum TextureWrapMode { Repeat = 0, Clamp = 1, Mirror = 2, MirrorOnce = 3 }
+    public enum FilterMode { Point = 0, Bilinear = 1, Trilinear = 2 }
+
     public class Texture : Object
     {
         public int width => 0;
         public int height => 0;
+        public TextureWrapMode wrapMode { get; set; }
+        public FilterMode filterMode { get; set; }
     }
 
     public enum TextureFormat { RGB24 = 3, RGBA32 = 4, ARGB32 = 5 }
@@ -308,6 +350,8 @@ namespace UnityEngine
         public Texture2D(int width, int height, TextureFormat textureFormat, bool mipChain) { }
         public void ReadPixels(Rect source, int destX, int destY) { }
         public void SetPixel(int x, int y, Color color) { }
+        public void SetPixels(Color[] colors) { }
+        public void Apply(bool updateMipmaps) { }
         public Color GetPixel(int x, int y) => default;
         public void Apply() { }
     }
@@ -365,6 +409,13 @@ namespace UnityEngine
     public struct Mathf
     {
         public static int CeilToInt(float f) => (int)Math.Ceiling(f);
+        public static int FloorToInt(float f) => (int)Math.Floor(f);
+        public static float Floor(float f) => (float)Math.Floor(f);
+        public static float Abs(float f) => Math.Abs(f);
+        public static float Pow(float f, float p) => 0f;
+        public static float Tan(float f) => 0f;
+        public static float Acos(float f) => 0f;
+        public const float PI = 3.14159274f;
         public static int RoundToInt(float f) => (int)Math.Round(f);
         public static float Clamp01(float value) => value < 0f ? 0f : value > 1f ? 1f : value;
         public const float Rad2Deg = 57.29578f;
@@ -461,6 +512,8 @@ namespace UnityEngine.Rendering
     public enum GraphicsDeviceType { Null = 4, Direct3D11 = 2, Direct3D12 = 18, Vulkan = 21, Metal = 16, OpenGLCore = 17 }
 
     public abstract class RenderPipelineAsset : ScriptableObject { }
+
+    public enum AmbientMode { Skybox = 0, Trilight = 1, Flat = 3, Custom = 4 }
 
     public sealed class GraphicsSettings : Object
     {
