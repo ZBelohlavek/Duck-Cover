@@ -6,7 +6,8 @@ namespace DuckAndCover.Game
 {
     /// <summary>
     /// Keeps the built map in step with the match: zone rings and beacons take the colour of the
-    /// team holding them (grey while locked), and when the rules say the map has shifted
+    /// team holding them (grey while locked), only the zones the match's mode plays on show (Flag
+    /// Rush's base capture zones, in their team's colour, only in Flag Rush), and when the rules say the map has shifted
     /// (<see cref="MatchState.mapShifted"/>, set with the MapShiftEvent) the shutters roll up
     /// over <see cref="ShiftSeconds"/>. It follows the state rather than the event, so a player who
     /// joins after the shift sees the map already open, and a new match shuts it again.
@@ -38,6 +39,7 @@ namespace DuckAndCover.Game
             public MapZone zone;
             public GameObject[] parts;
             public Color shown;
+            public bool visible = true;
         }
 
         readonly List<ShiftPiece> pieces = new List<ShiftPiece>();
@@ -70,14 +72,25 @@ namespace DuckAndCover.Game
                 Pose(p);
             }
 
+            string modeSet = state == null ? null : SessionRunner.ModeById(state.modeId).zoneSet;
             foreach (var z in zones)
             {
-                var color = ColorFor(state, z.zone.id);
+                // In a match only the mode's zones show; with no match, everything but the flag bases.
+                bool visible = modeSet != null ? z.zone.set == modeSet : z.zone.set != "bases";
+                if (visible != z.visible)
+                {
+                    z.visible = visible;
+                    foreach (var part in z.parts) if (part != null) part.SetActive(visible);
+                }
+                if (!visible) continue;
+                var color = z.zone.set == "bases" ? TeamColor(z.zone.startOwner) : ColorFor(state, z.zone.id);
                 if (color == z.shown) continue;
                 z.shown = color;
                 foreach (var part in z.parts) if (part != null) Paint.Apply(part, color);
             }
         }
+
+        static Color TeamColor(TeamId team) => team == TeamId.A ? MapScene.TeamA : team == TeamId.B ? MapScene.TeamB : Neutral;
 
         static Color ColorFor(MatchState state, ZoneId id)
         {

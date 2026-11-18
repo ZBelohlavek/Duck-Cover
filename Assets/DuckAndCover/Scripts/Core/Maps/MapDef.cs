@@ -85,6 +85,12 @@ namespace DuckAndCover.Core
             return Min.y + t * size.y;
         }
 
+        /// <summary>
+        /// Art only: how the dresser draws this block, for example "treeline" or "rocks" for natural walls
+        /// that frame a lane. Empty draws it by its kind. Rules never read it.
+        /// </summary>
+        public string style = "";
+
         public MapBlock Clone() => (MapBlock)MemberwiseClone();
     }
 
@@ -102,6 +108,44 @@ namespace DuckAndCover.Core
         }
 
         public bool Contains(float x, float z) => x >= minX && x <= maxX && z >= minZ && z <= maxZ;
+    }
+
+    /// <summary>
+    /// A path painted flat on the ground along a line of points (x and z; y is ignored). Art only.
+    /// Styles: "lane" (a wide dirt lane with darker verges) and "trail" (a narrow mossy trail that
+    /// starts with a leafy arch overhead, marking a way into the jungle).
+    /// </summary>
+    [Serializable]
+    public class ArtPath
+    {
+        public string style = "lane";
+        public float width = 8f;
+        public List<Vec3> points = new List<Vec3>();
+
+        public ArtPath() { }
+        public ArtPath(string style, float width, params Vec3[] points)
+        {
+            this.style = style; this.width = width; this.points.AddRange(points);
+        }
+
+        /// <summary>Distance on the ground from (x, z) to the path's centre line.</summary>
+        public float DistanceTo(float x, float z)
+        {
+            float best = float.MaxValue;
+            for (int i = 0; i + 1 < points.Count; i++)
+            {
+                Vec3 a = points[i], b = points[i + 1];
+                float dx = b.x - a.x, dz = b.z - a.z;
+                float len2 = dx * dx + dz * dz;
+                float t = len2 < 1e-6f ? 0f : ((x - a.x) * dx + (z - a.z) * dz) / len2;
+                t = t < 0f ? 0f : t > 1f ? 1f : t;
+                float px = a.x + dx * t - x, pz = a.z + dz * t - z;
+                float d = (float)Math.Sqrt(px * px + pz * pz);
+                if (d < best) best = d;
+            }
+            if (points.Count == 1) best = (float)Math.Sqrt((points[0].x - x) * (points[0].x - x) + (points[0].z - z) * (points[0].z - z));
+            return best;
+        }
     }
 
     /// <summary>A zone on the map: a standing cylinder. Its id is the one the mode's zone set uses.</summary>
@@ -152,6 +196,11 @@ namespace DuckAndCover.Core
         public List<SpawnPoint> spawnsB = new List<SpawnPoint>();
         public List<SpawnPoint> forward = new List<SpawnPoint>();
         public List<SpawnPoint> dummies = new List<SpawnPoint>();
+        /// <summary>
+        /// Where a Flag Rush flag may appear (feet height). Each is the same walk from both bases, and
+        /// the list holds every spot's turned twin; <see cref="MapValidator"/> checks both.
+        /// </summary>
+        public List<Vec3> flagSpots = new List<Vec3>();
         /// <summary>What the shift does, for the HUD and the docs.</summary>
         public string shiftDescription = "";
         /// <summary>Where the camera sits when nobody is playing (looks at <see cref="overviewTarget"/>).</summary>
@@ -164,6 +213,8 @@ namespace DuckAndCover.Core
         public string theme = "";
         /// <summary>Parts of the map dressed in another theme (a temple quarter in a jungle). Art only, like <see cref="theme"/>.</summary>
         public List<ArtRegion> artRegions = new List<ArtRegion>();
+        /// <summary>Art only: painted ground paths, such as a dirt lane or a trail off into the jungle.</summary>
+        public List<ArtPath> paths = new List<ArtPath>();
 
         /// <summary>The theme for something standing at (x, z): the last region holding it, else the map's theme.</summary>
         public string ThemeAt(float x, float z)
@@ -189,6 +240,7 @@ namespace DuckAndCover.Core
         public MatchMap ToMatchMap()
         {
             var map = new MatchMap { mapId = id };
+            map.flagSpots.AddRange(flagSpots);
             foreach (var z in zones)
             {
                 var set = map.ZoneSet(z.set);

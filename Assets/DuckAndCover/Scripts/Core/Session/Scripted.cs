@@ -14,6 +14,11 @@ namespace DuckAndCover.Core
         public ZoneId zone;
     }
 
+    /// <summary>"I run to the flag." Flag Rush only: puts the player on the flag where it lies (and on no zone).</summary>
+    public sealed class ScriptedToFlagCommand : MatchCommand
+    {
+    }
+
     /// <summary>"I took this enemy down."</summary>
     public sealed class ScriptedEliminateCommand : MatchCommand
     {
@@ -56,7 +61,8 @@ namespace DuckAndCover.Core
         /// Let a host accept the scripted commands, moving players in <paramref name="world"/>, and
         /// give it the combat rules (WP4) with that world as a map with no walls, so scripted players
         /// fight with real shots. With hero data (WP11) the heroes' abilities, leveling and upgrades
-        /// run too. Returns the combat rules.
+        /// run too. In Flag Rush the flag runs (seed 1, so runs repeat) and scripted players reach
+        /// it with <see cref="ScriptedToFlagCommand"/>. Returns the combat rules.
         /// </summary>
         public static CombatServer Attach(SessionHost host, ScriptedWorld world, IGameEvents events,
             HeroCatalog heroes = null, AbilityLibrary abilities = null)
@@ -64,7 +70,10 @@ namespace DuckAndCover.Core
             var match = host.Match;
             var combat = new CombatServer(match, world, events, host.Settings.TickSeconds, abilities: abilities);
             combat.Attach(host);
-            if (heroes != null) new HeroServer(combat, heroes, world, events).Attach(host);
+            HeroServer heroServer = null;
+            if (heroes != null) (heroServer = new HeroServer(combat, heroes, world, events)).Attach(host);
+            FlagServer flag = null;
+            if (match.FlagMode) (flag = new FlagServer(combat, world, events, 1, heroServer == null ? null : heroServer.Progression)).Attach(host);
             host.AddCommandHandler(cmd =>
             {
                 var state = match.State;
@@ -74,6 +83,13 @@ namespace DuckAndCover.Core
                         if (!state.IsAlive(cmd.playerId)) return CommandResult.Reject("only living players move");
                         if (stand.zone.IsValid && state.Zone(stand.zone) == null) return CommandResult.Reject("no such zone");
                         world.Put(cmd.playerId, stand.zone);
+                        return CommandResult.Accepted;
+                    case ScriptedToFlagCommand _:
+                        if (flag == null) return CommandResult.NotHandled;
+                        if (!state.IsAlive(cmd.playerId)) return CommandResult.Reject("only living players move");
+                        if (flag.State.status != FlagStatus.AtSpot && flag.State.status != FlagStatus.Dropped) return CommandResult.Reject("the flag isn't lying anywhere");
+                        world.Clear(cmd.playerId);
+                        combat.Movement.Teleport(cmd.playerId, flag.State.position, 0f);
                         return CommandResult.Accepted;
                     case ScriptedEliminateCommand kill:
                         var me = state.Player(cmd.playerId);
@@ -95,7 +111,7 @@ namespace DuckAndCover.Core
             return combat;
         }
 
-        /// <summary>A stand-in objective layout until the first map (WP9): three points and four hills.</summary>
+        /// <summary>A stand-in objective layout for scripted play: three points, four hills, and Flag Rush's two bases and three flag spots.</summary>
         public static MatchMap PlaceholderMap() => new MatchMap
         {
             mapId = "placeholder",
@@ -111,7 +127,13 @@ namespace DuckAndCover.Core
                     name = "hills",
                     zones = { new ZoneDef(11), new ZoneDef(12), new ZoneDef(13), new ZoneDef(14) },
                 },
+                new ZoneSetDef
+                {
+                    name = "bases",
+                    zones = { new ZoneDef(21, startOwner: TeamId.A), new ZoneDef(22, startOwner: TeamId.B) },
+                },
             },
+            flagSpots = { new Vec3(-10f, 0f, 0f), new Vec3(0f, 0f, 0f), new Vec3(10f, 0f, 0f) },
         };
 
         /// <summary>The usual ruleset with a short hero pick and deploy, a capped overtime and quick ultimates, so a scripted run starts, uses everything and ends.</summary>
@@ -123,6 +145,8 @@ namespace DuckAndCover.Core
             r.matchEndSeconds = 5f;
             r.overtimeMaxSeconds = 30f; // scripted players never give a point up, so overtime needs an end
             r.ultimateChargePerSecond = 4f; // ultimates come up within a short scripted match
+            r.flagFirstSpawnSeconds = 5f;   // Flag Rush: flags come round quickly too
+            r.flagAfterCaptureSeconds = 4f;
             return r;
         }
     }
@@ -231,8 +255,13 @@ namespace DuckAndCover.Core
                 wasAlive = true;
                 standing = ZoneId.None;
                 lastPlan = -1;
+                flagStand = ZoneId.None;
+                flagPlan = -1;
+                carryingSince = -1f;
             }
-            if (plan != lastPlan)
+            var flag = client.Snapshot == null ? null : client.Snapshot.flag;
+            if (flag != null) PlayFlag(state, me, flag, plan); // shooting and abilities below run as in the other modes
+            else if (plan != lastPlan)
             {
                 lastPlan = plan;
                 var target = ChooseZone(state, me, plan);
@@ -244,7 +273,10 @@ namespace DuckAndCover.Core
             }
             StepAside();
             // Now and then, one player shoots an enemy down, so damage, shields and respawns run too.
-            if (plan % 3 == 2 && (plan / 3 + me.id) % 4 == 0)
+            // In Flag Rush anyone may go after an enemy carrier, so carriers go down and drop the flag.
+            var carried = flag != null && flag.status == FlagStatus.Carried && flag.carrierTeam != me.team ? flag.carrierId : -1;
+            if (carried > 0 && state.IsAlive(carried) && (int)(state.elapsed / 3f) % 2 == me.id % 2) ShootAt(carried);
+            else if (plan % 3 == 2 && (plan / 3 + me.id) % 4 == 0)
             {
                 int enemy = FirstLivingEnemy(state, me);
                 if (enemy > 0) ShootAt(enemy);
@@ -257,6 +289,46 @@ namespace DuckAndCover.Core
                 UseAbility(state, me, plan);
             }
             ChooseUpgrades(me);
+        }
+
+        int flagPlan = -1;
+        ZoneId flagStand;
+        float carryingSince = -1f;
+        /// <summary>Flag Rush: seconds a scripted carrier takes to reach the enemy base.</summary>
+        const float CarrySeconds = 6f;
+
+        /// <summary>
+        /// Flag Rush: a carrier heads for the enemy base; others run for a lying flag once a plan
+        /// (team B only one plan in three, so team A ends up ahead, as with the zones).
+        /// </summary>
+        void PlayFlag(MatchState state, PlayerState me, FlagState flag, int plan)
+        {
+            if (flag.IsCarrier(me.id))
+            {
+                // The run home takes a while, so the other team has a chance to bring the carrier down.
+                if (carryingSince < 0f) carryingSince = state.elapsed;
+                var enemyBase = EnemyBase(state, me.team);
+                if (enemyBase.IsValid && flagStand != enemyBase && state.elapsed >= carryingSince + CarrySeconds)
+                {
+                    flagStand = enemyBase;
+                    Send(new ScriptedStandCommand { zone = enemyBase });
+                }
+                return;
+            }
+            flagStand = ZoneId.None;
+            carryingSince = -1f;
+            if (flag.status != FlagStatus.AtSpot && flag.status != FlagStatus.Dropped) return;
+            if (plan == flagPlan) return;
+            if (me.team == TeamId.B && (plan + me.id) % 3 != 0) return;
+            flagPlan = plan;
+            Send(new ScriptedToFlagCommand());
+        }
+
+        /// <summary>The capture zone in the other team's base: the zone whose startOwner is the enemy.</summary>
+        static ZoneId EnemyBase(MatchState state, TeamId team)
+        {
+            foreach (var z in state.zones) if (z.startOwner == team.Other() && z.startOwner != TeamId.None) return z.id;
+            return ZoneId.None;
         }
 
         void UseAbility(MatchState state, PlayerState me, int plan)

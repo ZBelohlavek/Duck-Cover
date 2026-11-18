@@ -294,7 +294,7 @@ static class MapTests
               .Append("' fill='").Append(Fill(b)).Append("' stroke='#000' stroke-opacity='0.35'/>");
         foreach (var z in map.zones)
         {
-            string col = z.set == "points" ? "#ffffff" : "#7fe0ff";
+            string col = z.set == "points" ? "#ffffff" : z.set == "bases" ? (z.startOwner == TeamId.A ? "#3d99f2" : "#f28c33") : "#7fe0ff";
             sb.Append("<circle cx='").Append(X(z.center.x)).Append("' cy='").Append(Y(z.center.z)).Append("' r='").Append(N(z.radius))
               .Append("' fill='").Append(col).Append("' fill-opacity='0.12' stroke='").Append(col).Append("' stroke-width='2'").Append(z.set == "hills" ? " stroke-dasharray='6 4'" : "").Append("/>");
             sb.Append("<text x='").Append(X(z.center.x)).Append("' y='").Append(Y(z.center.z) ).Append("' fill='").Append(col).Append("' font-size='16' text-anchor='middle' dy='5'>").Append(z.label).Append("</text>");
@@ -305,6 +305,9 @@ static class MapTests
         foreach (var p in map.spawnsB) Spot(p, "#f28c33");
         foreach (var p in map.forward) Spot(p, map.Zone(p.zone).forwardSpawnFor == TeamId.A ? "#3d99f2" : "#f28c33");
         foreach (var p in map.dummies) Spot(p, "#ff5bd0");
+        // Flag Rush flag spots: yellow dots ringed in black.
+        foreach (var f in map.flagSpots)
+            sb.Append("<circle cx='").Append(X(f.x)).Append("' cy='").Append(Y(f.z)).Append("' r='7' fill='#ffe14d' stroke='#000' stroke-width='2'/>");
 
         var rules = Ruleset.Default;
         foreach (bool shifted in new[] { false, true })

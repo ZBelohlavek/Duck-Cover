@@ -50,6 +50,23 @@ namespace DuckAndCover.Game
 
         public LocalPlayer Local => local;
 
+        /// <summary>
+        /// Where a player's feet are drawn right now: the local player's own body, or another player's
+        /// body between state copies. False if they aren't shown.
+        /// </summary>
+        public bool DrawnFeet(int playerId, out Vector3 feet)
+        {
+            feet = Vector3.zero;
+            if (client != null && playerId == client.PlayerId && local != null && local.Active)
+            {
+                feet = local.transform.position;
+                return true;
+            }
+            if (!bodies.TryGetValue(playerId, out var b) || b.view == null || !b.view.gameObject.activeSelf) return false;
+            feet = Vector3.Lerp(b.from, b.to, Blend);
+            return true;
+        }
+
         void Awake()
         {
             Instance = this;
@@ -58,6 +75,7 @@ namespace DuckAndCover.Game
             local = LocalPlayer.Create(this);
             local.transform.SetParent(transform, false);
             gameObject.AddComponent<AbilityView>(); // what abilities do (WP11)
+            gameObject.AddComponent<FlagView>(); // the Flag Rush flag (WP21)
         }
 
         void OnDestroy()
