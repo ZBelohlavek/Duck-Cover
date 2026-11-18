@@ -9,7 +9,8 @@ namespace DuckAndCover.UI
     /// <summary>
     /// The fighting HUD: crosshair and hit marker, health and shield, the weapon and its ammo, the
     /// hero's abilities with their cooldowns, level and experience, the upgrade on offer, the respawn
-    /// countdown, and who took whom down. It reads the latest state and the local player; it decides
+    /// countdown, who took whom down, and in Flag Rush the captures and where the flag is (WP21).
+    /// It reads the latest state and the local player; it decides
     /// nothing. Score and zones come with WP6; the ability and upgrade panels here are plain text
     /// stand-ins until the hero UI (WP12).
     /// </summary>
@@ -27,6 +28,8 @@ namespace DuckAndCover.UI
         Text healthText, weaponText, ammoText, stanceText, centerText, feedText, levelText, choiceText;
         readonly List<Text> abilityTexts = new List<Text>();
         GameObject choicePanel;
+        GameObject flagPanel;
+        Text flagScoreA, flagScoreB, flagGoal, flagStatus;
         static readonly string[] AbilityKeys = { "E", "F", "X" };
         GameObject hitMarker;
         readonly List<Image> hitTicks = new List<Image>();
@@ -97,6 +100,19 @@ namespace DuckAndCover.UI
             choicePanel = UIKit.Box(f, "ChoiceBack", rm, new Vector2(-40f, 0f), new Vector2(520f, 230f), UITheme.Panel).gameObject;
             choiceText = UIKit.Label(choicePanel.transform, "Choice", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(490f, 210f), "", 20, UITheme.Text, TextAnchor.MiddleLeft);
 
+            // Top middle, Flag Rush only: captures each side and what the flag is doing. Shows outside the fight too.
+            var tm = new Vector2(0.5f, 1f);
+            flagPanel = UIKit.Rect(root, "FlagRush", tm, new Vector2(0f, -40f), new Vector2(1920f, 140f)).gameObject;
+            var fp = flagPanel.transform;
+            UIKit.Box(fp, "ScoreBack", tm, new Vector2(0f, -40f), new Vector2(360f, 72f), UITheme.Panel);
+            UIKit.Box(fp, "ScoreA", tm, new Vector2(-130f, -40f), new Vector2(84f, 60f), UITheme.TeamA);
+            UIKit.Box(fp, "ScoreB", tm, new Vector2(130f, -40f), new Vector2(84f, 60f), UITheme.TeamB);
+            flagScoreA = UIKit.Label(fp, "CapturesA", tm, new Vector2(-130f, -40f), new Vector2(84f, 60f), "0", 40, UITheme.Text, TextAnchor.MiddleCenter);
+            flagScoreB = UIKit.Label(fp, "CapturesB", tm, new Vector2(130f, -40f), new Vector2(84f, 60f), "0", 40, UITheme.Text, TextAnchor.MiddleCenter);
+            flagGoal = UIKit.Label(fp, "Goal", tm, new Vector2(0f, -40f), new Vector2(160f, 60f), "", 20, UITheme.TextDim, TextAnchor.MiddleCenter);
+            flagStatus = UIKit.Label(fp, "FlagStatus", tm, new Vector2(0f, -104f), new Vector2(1100f, 40f), "", 26, UITheme.Text, TextAnchor.MiddleCenter);
+            flagPanel.SetActive(false);
+
             // Messages in the middle, and the feed top right. These show outside the fight too.
             centerText = UIKit.Label(root, "Center", new Vector2(0.5f, 0.5f), new Vector2(0f, 160f), new Vector2(1200f, 80f), "", 40, UITheme.Text, TextAnchor.MiddleCenter);
             feedText = UIKit.Label(root, "Feed", new Vector2(1f, 1f), new Vector2(-40f, -40f), new Vector2(700f, 160f), "", 22, UITheme.Text, TextAnchor.UpperRight);
@@ -115,12 +131,33 @@ namespace DuckAndCover.UI
 
         void OnEvent(GameEvent e)
         {
-            if (!(e is PlayerEliminatedEvent down) || down.disconnected) return;
-            string victim = Name(down.playerId);
-            string line = down.killerId >= 0 ? Name(down.killerId) + "  took down  " + victim : victim + "  went down";
+            string line;
+            switch (e)
+            {
+                case PlayerEliminatedEvent down when !down.disconnected:
+                    string victim = Name(down.playerId);
+                    line = down.killerId >= 0 ? Name(down.killerId) + "  took down  " + victim : victim + "  went down";
+                    break;
+                case FlagTakenEvent taken:
+                    line = Name(taken.playerId) + "  took the flag";
+                    break;
+                case FlagDroppedEvent dropped:
+                    line = Name(dropped.playerId) + "  dropped the flag";
+                    break;
+                case FlagCapturedEvent captured:
+                    line = Name(captured.playerId) + "  CAPTURED the flag for " + TeamName(captured.team);
+                    break;
+                case FlagResetEvent _:
+                    line = "The flag reset";
+                    break;
+                default:
+                    return;
+            }
             feed.Add(new KeyValuePair<float, string>(Time.unscaledTime, line));
             if (feed.Count > 5) feed.RemoveAt(0);
         }
+
+        static string TeamName(TeamId team) => team == TeamId.A ? "Team A" : team == TeamId.B ? "Team B" : "nobody";
 
         string Name(int playerId) =>
             client.Snapshot != null && client.Snapshot.IsDummy(playerId) ? "Practice dummy" : client.NameOf(playerId);
@@ -143,6 +180,7 @@ namespace DuckAndCover.UI
             feedText.text = lines.ToString();
 
             centerText.text = CenterMessage(snapshot, me);
+            ShowFlag(snapshot, me);
             if (!fighting) return;
 
             var unit = snapshot.abilities == null ? null : snapshot.abilities.Unit(me.id);
@@ -157,7 +195,7 @@ namespace DuckAndCover.UI
             weaponText.text = local.WeaponName;
             ammoText.text = local.Reloading ? "Reloading" : local.Ammo + " / " + local.Magazine;
             ammoText.color = local.Reloading ? UITheme.Warning : local.Ammo == 0 ? UITheme.Danger : UITheme.Text;
-            stanceText.text = local.Vaulting ? "Vaulting" : local.Crouched ? "Crouched" : local.Sprinting ? "Sprinting" : "";
+            stanceText.text = local.Vaulting ? "Vaulting" : local.Crouched ? "Crouched" : local.Sprinting ? "Sprinting" : local.CarryingFlag ? "Carrying the flag: no sprint or dash" : "";
 
             ShowAbilities(snapshot, me, unit);
             ShowChoice(snapshot, me, local);
@@ -242,6 +280,53 @@ namespace DuckAndCover.UI
             if (u == null) return key + ": ?";
             string bar = progress > 0f ? "  " + new string('|', Mathf.CeilToInt(progress * 10f)) : "";
             return key + ": " + u.displayName + bar + "\n   " + u.description;
+        }
+
+        /// <summary>Flag Rush: captures for each team (first to the mode's score), and one line on the flag.</summary>
+        void ShowFlag(MatchSnapshot snapshot, PlayerState me)
+        {
+            var f = snapshot == null ? null : snapshot.flag;
+            var state = snapshot == null ? null : snapshot.match;
+            bool show = f != null && state != null && state.phase >= MatchPhase.Deploy;
+            if (flagPanel.activeSelf != show) flagPanel.SetActive(show);
+            if (!show) return;
+
+            flagScoreA.text = state.scoreA.ToString();
+            flagScoreB.text = state.scoreB.ToString();
+            flagGoal.text = state.phase == MatchPhase.Overtime ? "OVERTIME" : "First to " + SessionRunner.ModeById(state.modeId).scoreToWin;
+            flagGoal.color = state.phase == MatchPhase.Overtime ? UITheme.Warning : UITheme.TextDim;
+
+            TeamId mine = me == null ? TeamId.None : me.team;
+            string line;
+            Color color = UITheme.Text;
+            if (state.phase == MatchPhase.MatchEnd) line = state.winner == TeamId.None ? "Draw" : TeamName(state.winner) + " wins";
+            else if (state.phase == MatchPhase.Deploy) line = "Carry the flag into the enemy base";
+            else
+            {
+                switch (f.status)
+                {
+                    case FlagStatus.Waiting:
+                        line = "Flag appears in " + Mathf.Max(0, Mathf.CeilToInt(f.appearAt - state.elapsed)) + " (ringed on the map)";
+                        color = UITheme.TextDim;
+                        break;
+                    case FlagStatus.AtSpot:
+                        line = "The flag is up: grab it";
+                        color = UITheme.Warning;
+                        break;
+                    case FlagStatus.Dropped:
+                        line = "Flag dropped: resets in " + Mathf.Max(0, Mathf.CeilToInt(f.resetAt - state.elapsed));
+                        color = UITheme.Warning;
+                        break;
+                    default:
+                        if (me != null && f.carrierId == me.id) { line = "YOU HAVE THE FLAG: take it into the enemy base"; color = UITheme.ForTeam(mine); }
+                        else if (f.carrierTeam == mine) { line = "Your team has the flag: escort " + Name(f.carrierId); color = UITheme.ForTeam(mine); }
+                        else { line = "Enemy has the flag: stop " + Name(f.carrierId); color = UITheme.Danger; }
+                        break;
+                }
+                if (state.phase == MatchPhase.Overtime) line = "Overtime, next capture wins.   " + line;
+            }
+            flagStatus.text = line;
+            flagStatus.color = color;
         }
 
         string CenterMessage(MatchSnapshot snapshot, PlayerState me)

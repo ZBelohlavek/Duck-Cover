@@ -13,7 +13,8 @@ namespace DuckAndCover.Game
     ///
     /// A hosted match also runs the combat rules (movement checks, weapons, health) against the
     /// scene's physics, on the first map (WP9): its zones, spawn spots and the zone cylinders that
-    /// say who stands where. Scripted runs (the smoke test) keep their stand-in layout.
+    /// say who stands where, and in Flag Rush the flag (WP21) with its spots and base zones.
+    /// Scripted runs (the smoke test) keep their stand-in layout.
     /// </summary>
     public class SessionRunner : MonoBehaviour
     {
@@ -35,6 +36,8 @@ namespace DuckAndCover.Game
         public CombatServer Combat { get; private set; }
         /// <summary>Hero kits, leveling and upgrades on the server (WP11); on the host only, once the session is up.</summary>
         public HeroServer Heroes { get; private set; }
+        /// <summary>The Flag Rush flag on the server (WP21); on a Flag Rush host only, once the session is up.</summary>
+        public FlagServer Flag { get; private set; }
         /// <summary>
         /// The numbers this machine moves and draws by. Clients aren't sent the host's ruleset yet, so
         /// everyone uses the defaults; a host with changed movement numbers would correct its guests.
@@ -55,7 +58,7 @@ namespace DuckAndCover.Game
         }
 
         public static ModeDef ModeById(string id) =>
-            id == "king_of_the_hill" ? ModeDef.KingOfTheHill() : ModeDef.CaptureAndHold();
+            id == "king_of_the_hill" ? ModeDef.KingOfTheHill() : id == "flag_rush" ? ModeDef.FlagRush() : ModeDef.CaptureAndHold();
 
         /// <summary>Host a match. With <paramref name="useJoinCode"/> it goes through Unity Relay.</summary>
         /// <param name="rules">Other numbers than the defaults (the screenshot run shortens the waits).</param>
@@ -63,6 +66,7 @@ namespace DuckAndCover.Game
         {
             Leave();
             var events = new GameEventBus();
+            flagSeed = Environment.TickCount; // a different run of flag spots every match
             if (rules == null) rules = scripted ? ScriptedPlay.SmokeRuleset() : Ruleset.Default;
             IWorldQuery world;
             if (scripted) world = World = new ScriptedWorld();
@@ -97,6 +101,8 @@ namespace DuckAndCover.Game
         {
             if (Session != null) Session.Shutdown();
             Session = null;
+            if (Flag != null) Flag.Dispose();
+            Flag = null;
             if (Heroes != null) Heroes.Dispose();
             Heroes = null;
             if (Combat != null) Combat.Dispose();
@@ -108,6 +114,7 @@ namespace DuckAndCover.Game
         }
 
         bool scriptedHost;
+        int flagSeed;
         bool attached;
         GameEventBus hostEvents;
         IWorldQuery hostWorld;
@@ -126,6 +133,12 @@ namespace DuckAndCover.Game
                     Combat.Attach(Session.Host);
                     Heroes = new HeroServer(Combat, HeroData.Catalog, hostWorld, hostEvents);
                     Heroes.Attach(Session.Host);
+                    if (Match.FlagMode)
+                    {
+                        // After the hero server: the flag wraps its ability check (no dashing with the flag).
+                        Flag = new FlagServer(Combat, hostWorld, hostEvents, flagSeed, Heroes.Progression);
+                        Flag.Attach(Session.Host);
+                    }
                 }
                 attached = true;
             }

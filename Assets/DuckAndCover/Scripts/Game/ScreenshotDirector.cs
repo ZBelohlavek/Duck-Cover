@@ -50,7 +50,87 @@ namespace DuckAndCover.Game
             new Shot("10-abilities", DummiesUseAbilities, 1.6f),
             new Shot("11-gate", DummyRaisesGate, 1.0f),
             new Shot("12-hero-hud", LevelUpAndLook, 1.2f),
+            // Flag Rush (WP21): a new match against two dummies; the flag, a dummy carrying it, then the player.
+            new Shot("13-flag-spawn", StartFlagMatch, 6f),
+            new Shot("14-flag-up", WatchTheFlag, 0.6f),
+            new Shot("15-flag-carrier", DummyTakesTheFlag, 1.0f),
+            new Shot("16-flag-mine", PlayerTakesTheFlag, 1.2f),
         };
+
+        /// <summary>Host Flag Rush alone against two practice dummies, with the first flag up a second into play.</summary>
+        static void StartFlagMatch()
+        {
+            var rules = Ruleset.Default;
+            rules.heroPickSeconds = 1.5f;
+            rules.deploySeconds = 1.5f;
+            rules.flagFirstSpawnSeconds = 1f;
+            rules.flagDropResetSeconds = 60f; // the dropped flag stays put for the last shot
+            var runner = SessionRunner.Ensure();
+            runner.Host("flag_rush", "Capture", false, 0, false, rules);
+            var session = runner.Session;
+            if (session == null || session.Client == null) { Debug.LogError("Duck and Cover: the capture could not host Flag Rush."); return; }
+            var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
+            if (local != null) { local.scripted = true; local.freeCamera = false; }
+            session.Client.Welcomed += welcome =>
+            {
+                for (int i = 0; i < 2; i++) session.Client.Send(new AddDummyCommand { team = TeamId.B });
+                session.Client.Send(new PickHeroCommand { heroId = "lancer" });
+                session.Client.Send(new StartMatchCommand());
+            };
+        }
+
+        static FlagState ServerFlag()
+        {
+            var runner = SessionRunner.Instance;
+            if (runner == null || runner.Flag == null) { Debug.LogError("Duck and Cover: the capture has no Flag Rush match."); return null; }
+            return runner.Flag.State;
+        }
+
+        /// <summary>From above and behind team A's half, looking at the flag where it appeared.</summary>
+        static void WatchTheFlag()
+        {
+            var f = ServerFlag();
+            if (f == null) return;
+            if (f.status != FlagStatus.AtSpot) Debug.LogError("Duck and Cover: the capture expected the flag at its spot, it is " + f.status + ".");
+            var at = f.position.ToVector3();
+            WatchFrom(at + new Vector3(-9f, 9f, -14f), at + Vector3.up);
+        }
+
+        /// <summary>The first dummy steps onto the flag (a server teleport) and carries it.</summary>
+        static void DummyTakesTheFlag()
+        {
+            var runner = SessionRunner.Instance;
+            var f = ServerFlag();
+            if (f == null) return;
+            int dummy = CombatServer.FirstDummyId;
+            var at = f.position;
+            runner.Combat.Movement.Teleport(dummy, at, 200f);
+            WatchFrom(at.ToVector3() + new Vector3(-6f, 4f, -7f), at.ToVector3() + Vector3.up * 1.5f);
+            CombatView.Instance.StartCoroutine(Expect(() => f.IsCarrier(dummy), 0.5f, "a practice dummy to carry the flag"));
+        }
+
+        /// <summary>The carrier goes down, and the player picks the dropped flag up: back to first person, facing the enemy base.</summary>
+        static void PlayerTakesTheFlag()
+        {
+            var runner = SessionRunner.Instance;
+            var f = ServerFlag();
+            var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
+            if (f == null || local == null) return;
+            int me = runner.Client.PlayerId;
+            runner.Match.EliminatePlayer(CombatServer.FirstDummyId, me);
+            var at = f.position;
+            runner.Combat.Movement.Teleport(me, at, 0f);
+            local.freeCamera = false;
+            local.LookAt(0f, 4f);
+            CombatView.Instance.StartCoroutine(Expect(() => f.IsCarrier(me), 0.6f, "the player to carry the flag"));
+        }
+
+        /// <summary>Log an error if <paramref name="ok"/> doesn't hold after <paramref name="seconds"/>.</summary>
+        static IEnumerator Expect(Func<bool> ok, float seconds, string what)
+        {
+            yield return new WaitForSecondsRealtime(seconds);
+            if (!ok()) Debug.LogError("Duck and Cover: the capture expected " + what + ".");
+        }
 
         static readonly string[] DummyHeroes = { "bulwark", "rigger", "mender" };
 

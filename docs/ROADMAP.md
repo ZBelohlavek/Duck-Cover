@@ -34,7 +34,7 @@ https://claude.ai/artifact/7qbJG2ukrZDQ6ZTfX3nXGs
 | WP12 Progression and hero UI | Scripts | WP6, WP8 | Screenshots, netsmoke | Waiting |
 | WP13 Balance pass and playtest build | Scripts | All above | Simulation report, a played match | Waiting |
 | WP14 Units (combat contract moves to unit ids) | Core | Merged combat and abilities | Weapons, abilities and statuses hit a test unit as they hit a hero; hero kit tests pass | Ready, start first |
-| WP21 Flag Rush | Core, map data, Unity | Merged match rules, Gantry Yard | Flag rules tested; fair flag spots pass the validator; netsmoke flag match; capture | Ready, start first |
+| WP21 Flag Rush | Core, map data, Unity | Merged match rules, Gantry Yard | Flag rules tested; fair flag spots pass the validator; netsmoke flag match; capture | Built, waiting on real Unity runs |
 | WP15 Lanes, waves and camps | Core | WP14 | Cloud wave report; all four camp kinds tested | Waiting |
 | WP18 Breakwater greybox, launch pads and ledges | Layout and Core | WP14's lane fields | Validator (mirror symmetry, lane, one-way ledges and drop, jungle joins the lane at both ends); map plan | Waiting |
 | WP20 Hero kits against waves | Data and tests | WP14 | Each hero has a tested way to clear or protect a wave | Waiting |
