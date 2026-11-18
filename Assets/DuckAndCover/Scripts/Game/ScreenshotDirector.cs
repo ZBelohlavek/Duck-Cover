@@ -60,9 +60,9 @@ namespace DuckAndCover.Game
             new Shot("18-flag-carrier", DummyTakesTheFlag, 1.0f),
             new Shot("19-flag-mine", PlayerTakesTheFlag, 1.2f),
             // Breakwater (WP18), the Overrun map, built far off to the other side. No HUD over these.
-            new Shot("20-bw-above", () => BreakwaterShot(new Vector3(-95f, 120f, -5f), new Vector3(0f, 0f, 0f)), 1.2f),
+            new Shot("20-bw-above", () => BreakwaterShot(new Vector3(-72f, 92f, -2f), new Vector3(2f, 0f, 0f)), 1.2f),
             new Shot("21-bw-base", () => BreakwaterShot(new Vector3(-30f, 40f, -112f), new Vector3(-8f, 0f, -70f)), 0.6f),
-            new Shot("22-bw-lane", () => BreakwaterShot(new Vector3(-12f, 1.8f, -70f), new Vector3(-8f, 1.4f, -40f)), 0.6f),
+            new Shot("22-bw-lane", () => BreakwaterShot(new Vector3(-9f, 1.8f, -55f), new Vector3(-1f, 1.4f, -36f)), 0.6f),
             new Shot("23-bw-ledge", () => BreakwaterShot(new Vector3(-25f, 4.7f, -57f), new Vector3(-6f, 0.5f, -42f)), 0.6f),
             new Shot("24-bw-gap", () => BreakwaterShot(new Vector3(4f, 1.8f, -40f), new Vector3(-14f, 1.4f, -29f)), 0.6f),
             new Shot("25-bw-shelf", () => BreakwaterShot(new Vector3(-22f, 5.7f, 5f), new Vector3(6f, 0.5f, -1f)), 0.6f),

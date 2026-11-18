@@ -323,7 +323,8 @@ namespace DuckAndCover.Game
             Paths(c);
             Cliffs(c, hx, hz);
             if (t.mushroomTrees) Trees(c, hx, hz);
-            if (t.overheadGantries) Gantries(c, hx, hz);
+            // Freight gantries suit a yard, not a jungle lane: lane maps leave the sky over the lane open.
+            if (t.overheadGantries && !c.map.IsLaneMap) Gantries(c, hx, hz);
         }
 
         static void Lighting(Context c, Light sun)
