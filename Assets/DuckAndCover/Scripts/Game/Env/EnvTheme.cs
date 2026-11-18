@@ -128,7 +128,7 @@ namespace DuckAndCover.Game
             mountainFar = C(0x9A86C0), mountainNear = C(0x5A3E78), canopyFar = C(0x3E8A4A),
             sun = C(0xFFE2B8), sunEuler = new Vector3(36f, -140f, 0f),
             ambientSky = C(0x9AD6C8), ambientEquator = C(0xD2C49A), ambientGround = C(0x4A4A5A),
-            fog = C(0xE6DCB4), fogStart = 30f, fogEnd = 420f,
+            fog = C(0xE6DCB4), fogStart = 60f, fogEnd = 560f,
         };
 
         /// <summary>

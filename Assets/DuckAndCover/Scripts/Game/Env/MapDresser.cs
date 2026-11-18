@@ -143,20 +143,9 @@ namespace DuckAndCover.Game
                     var hedge = Mat(c, PaintedTextures.Kind.Leaf, Shade(Pick(t.canopy, b), 0.72f), Shade(Pick(t.canopy, b), 0.72f));
                     if (renderer != null) renderer.sharedMaterial = hedge;
                     // A lumpy hedge that rounds off at the top and edges, always inside the block's box.
-                    if (filter != null) filter.sharedMesh = EnvMesh.LumpyBox(size, centre, 2.5f, 0.6f, 1.25f, t.seed + 31, SealedFaces(c, b));
-                    // Leafy lumps on the hedge, inside its box, so it reads as bushes rather than a block.
-                    var leaf = Mat(c, PaintedTextures.Kind.Leaf, Pick(t.canopy, b), Pick(t.canopy, b));
-                    int lumps = 2 + c.rng.Next(2);
-                    for (int i = 0; i < lumps; i++)
-                    {
-                        float sx = size.x * Range(c, 0.6f, 0.95f), sz = size.z * Range(c, 0.6f, 0.95f), sy = size.y * Range(c, 0.35f, 0.5f);
-                        float px = b.center.x + Range(c, -1f, 1f) * (size.x - sx) * 0.5f;
-                        float pz = b.center.z + Range(c, -1f, 1f) * (size.z - sz) * 0.5f;
-                        float py = b.Min.y + Range(c, sy * 0.5f, size.y - sy * 0.5f);
-                        Shape(c, PrimitiveType.Sphere, "Bush", new Vector3(px, py, pz), new Vector3(sx, sy, sz), leaf);
-                    }
+                    if (filter != null) filter.sharedMesh = EnvMesh.LumpyBox(size, centre, 2.5f, 0.75f, 0.9f, t.seed + 31, SealedFaces(c, b));
                     // Now and then a tree grows out of the hedge: trunk through the top, canopy well overhead.
-                    if (c.rng.NextDouble() < 0.55) Tree(c, new Vector3(b.center.x, b.Max.y - 1f, b.center.z), Range(c, 3.5f, 7f), Range(c, 2.4f, 4.2f));
+                    if (c.rng.NextDouble() < 0.55) Tree(c, new Vector3(b.center.x, b.Max.y - 1f, b.center.z), Range(c, 3.5f, 6f), Range(c, 2.4f, 3.6f));
                     return true;
                 }
                 case "rocks":
@@ -493,7 +482,7 @@ namespace DuckAndCover.Game
             var t = c.theme;
             var rock = Mat(c, PaintedTextures.Kind.Rock, t.rock, t.rockCrack);
             var hill = Mat(c, PaintedTextures.Kind.Leaf, Shade(t.canopy != null && t.canopy.Length > 0 ? t.canopy[0] : t.leaf, 0.8f), Shade(t.leaf, 0.8f));
-            float rx = hx + 40f, rz = hz + 40f;
+            float rx = hx + 75f, rz = hz + 75f;
             // Rolling hills: flattened domes on an oval ring 40 to 110 m out.
             for (int ring = 0; ring < 2; ring++)
             {
@@ -506,8 +495,8 @@ namespace DuckAndCover.Game
                     float w = Range(c, 40f, 70f) * (1f + ring * 0.4f), h = Range(c, 14f, 26f) * (1f + ring * 0.5f);
                     var dome = Shape(c, PrimitiveType.Sphere, "Hill", p + new Vector3(0f, -h * 0.25f, 0f), new Vector3(w, h, w * Range(c, 0.7f, 1.1f)), Mat(c, PaintedTextures.Kind.Leaf, Pick(t.canopy, c), Shade(t.leaf, 0.85f)));
                     dome.transform.rotation = Quaternion.Euler(0f, Range(c, 0f, 360f), 0f);
-                    // A few giant trees standing on the hill.
-                    if (t.mushroomTrees)
+                    // Giant trees on the outer ring of hills only, so cameras over the map aren't buried in canopy.
+                    if (t.mushroomTrees && ring == 1)
                         for (int k = 0; k < 1; k++)
                             Tree(c, p + new Vector3(Range(c, -w, w) * 0.25f, h * 0.15f, Range(c, -w, w) * 0.25f), Range(c, 18f, 30f), Range(c, 8f, 13f));
                 }
@@ -517,7 +506,7 @@ namespace DuckAndCover.Game
             for (int i = 0; i < mesas; i++)
             {
                 float a = (i + Range(c, -0.35f, 0.35f)) / mesas * Mathf.PI * 2f;
-                float dist = Range(c, 170f, 260f);
+                float dist = Range(c, 150f, 230f);
                 var p = new Vector3(Mathf.Sin(a) * (hx + dist), 0f, Mathf.Cos(a) * (hz + dist));
                 float w = Range(c, 35f, 70f), h = Range(c, 45f, 90f);
                 Lumpy(c, "Mesa", p + new Vector3(0f, h * 0.5f - 2f, 0f), new Vector3(w, h, w * Range(c, 0.7f, 1.2f)), rock, 6f, 8f, 18f);

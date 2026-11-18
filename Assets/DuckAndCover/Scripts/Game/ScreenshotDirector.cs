@@ -68,7 +68,7 @@ namespace DuckAndCover.Game
             new Shot("24-bw-gap", () => BreakwaterShot(new Vector3(6f, 1.8f, -40f), new Vector3(-21f, 1.4f, -29f)), 0.6f),
             new Shot("25-bw-shelf", () => BreakwaterShot(new Vector3(-33f, 5.7f, 5f), new Vector3(9f, 0.5f, -1f)), 0.6f),
             new Shot("26-bw-mid", () => BreakwaterShot(new Vector3(24f, 1.8f, -26f), new Vector3(9f, 2.5f, 4f)), 0.6f),
-            new Shot("27-bw-jungle", () => BreakwaterShot(new Vector3(12f, 1.8f, -87f), new Vector3(39f, 1.2f, -78f)), 0.6f),
+            new Shot("27-bw-jungle", () => { BreakwaterShot(new Vector3(12f, 1.8f, -87f), new Vector3(39f, 1.2f, -78f)); JungleScaleFigures(); }, 0.6f),
             new Shot("28-bw-camps", () => BreakwaterShot(new Vector3(30f, 38f, -104f), new Vector3(36f, 0f, -78f)), 0.6f),
             // Overrun on Breakwater (WP19): a real match, so the map is built in place of Gantry Yard. The
             // HUD with the Bastion cards, the first wave on its way, the waves meeting at mid-lane (match time
@@ -96,6 +96,28 @@ namespace DuckAndCover.Game
             HideHud = true;
             LookAt(position + BreakwaterOffset, target + BreakwaterOffset);
             WatchFrom(position + BreakwaterOffset, target + BreakwaterOffset);
+        }
+
+        /// <summary>
+        /// Two stand-ins on the long jungle trail in shot 27, side by side across it, so the trail's width can be
+        /// judged: one as wide as Bulwark's model (2.4 m at the shoulders, red) and one hero-sized (1 m, navy).
+        /// Art only, no colliders.
+        /// </summary>
+        static bool scaleFigures;
+
+        static void JungleScaleFigures()
+        {
+            if (breakwaterPreview == null || scaleFigures) return;
+            scaleFigures = true;
+            // On the trail from (21, -86) to (39, -76): its midpoint, the direction along it and across it.
+            var mid = new Vector3(30f, 0f, -81f);
+            var along = new Vector3(18f, 0f, 10f).normalized;
+            var across = new Vector3(-along.z, 0f, along.x);
+            float yaw = Mathf.Atan2(along.x, along.z) * Mathf.Rad2Deg;
+            var tank = Paint.Block(breakwaterPreview.transform, "ScaleTank", mid - across * 1.6f + Vector3.up * 1.1f, new Vector3(2.4f, 2.2f, 1.2f), new Color(0.6f, 0.08f, 0.08f), false);
+            tank.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            var hero = Paint.Block(breakwaterPreview.transform, "ScaleHero", mid + across * 1.2f + Vector3.up * 0.925f, new Vector3(1f, 1.85f, 0.6f), new Color(0.12f, 0.18f, 0.35f), false);
+            hero.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
         }
 
         /// <summary>Where the lane mock-up is built: far enough that neither map shows in the other's shots.</summary>
