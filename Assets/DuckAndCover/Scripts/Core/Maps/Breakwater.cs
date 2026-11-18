@@ -237,7 +237,7 @@ namespace DuckAndCover.Core
             PairRaw(m, "LaneRockBendWest", BlockKind.Wall, -10f, -42f, 2.5f, 2.6f, 2.5f, 0f, ShiftRole.None, 0, "rocks");
             PairRaw(m, "LaneStackZig", BlockKind.Crate, 18f, -28f, 1.6f, 2.6f, 1.6f, 0f, ShiftRole.None, 0, "");
             PairRaw(m, "LaneLowZigEast", BlockKind.LowCover, 27f, -23f, 0.5f, CoverHeight, 3f, 0f, ShiftRole.None, 0, "");
-            PairRaw(m, "LaneLowMidEast", BlockKind.LowCover, 26f, -5f, 0.5f, CoverHeight, 3f, 0f, ShiftRole.None, 0, "rocks");
+            PairRaw(m, "LaneLowMidEast", BlockKind.LowCover, 26f, -5f, 1f, CoverHeight, 3f, 0f, ShiftRole.None, 0, "rocks");
             // Tall pieces down the middle of the lane, staggered with the edge cover, so the long look down the
             // centre is broken every 15 to 20 m; minions and three abreast pass either side.
             PairRaw(m, "LaneStackMiddle", BlockKind.Crate, -18f, -70f, 2f, 2.6f, 2f, 0f, ShiftRole.None, 0, "");
@@ -273,9 +273,9 @@ namespace DuckAndCover.Core
             // A few rocks to fight around in the bigger clearings.
             Cover(m, "DamageRock", BlockKind.Wall, 9f, -97f, 2f, 2.4f, 3f, 0f, ShiftRole.None, 0, "rocks");
             // More to fight round in the clearings and where jungle trails meet (placed in metres).
-            PairRaw(m, "DamageLow", BlockKind.LowCover, 26f, -91f, 0.5f, CoverHeight, 3f, 0f, ShiftRole.None, 0, "rocks");
+            PairRaw(m, "DamageLow", BlockKind.LowCover, 26f, -91f, 1f, CoverHeight, 3f, 0f, ShiftRole.None, 0, "rocks");
             PairRaw(m, "ExperienceRock", BlockKind.Wall, 57f, -76f, 2f, 2.4f, 2.5f, 0f, ShiftRole.None, 0, "rocks");
-            PairRaw(m, "SpeedLow", BlockKind.LowCover, 23f, -62f, 2.5f, CoverHeight, 0.5f, 0f, ShiftRole.None, 0, "rocks");
+            PairRaw(m, "SpeedLow", BlockKind.LowCover, 23f, -62f, 2.5f, CoverHeight, 1f, 0f, ShiftRole.None, 0, "rocks");
             PairRaw(m, "SideBendRock", BlockKind.Wall, -57.5f, -65f, 2f, 2.4f, 2f, 0f, ShiftRole.None, 0, "rocks");
             PairRaw(m, "DamageStack", BlockKind.Crate, 17f, -89f, 1.6f, 2.6f, 1.6f, 0f, ShiftRole.None, 0, "");
             PairRaw(m, "SpeedRock", BlockKind.Wall, 15f, -54f, 2f, 2.4f, 2f, 0f, ShiftRole.None, 0, "rocks");

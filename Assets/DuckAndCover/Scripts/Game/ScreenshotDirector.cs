@@ -69,7 +69,7 @@ namespace DuckAndCover.Game
             new Shot("25-bw-shelf", () => BreakwaterShot(new Vector3(-33f, 5.7f, 5f), new Vector3(9f, 0.5f, -1f)), 0.6f),
             new Shot("26-bw-mid", () => BreakwaterShot(new Vector3(24f, 1.8f, -26f), new Vector3(9f, 2.5f, 4f)), 0.6f),
             new Shot("27-bw-jungle", () => { BreakwaterShot(new Vector3(12f, 1.8f, -87f), new Vector3(39f, 1.2f, -78f)); JungleScaleFigures(); }, 0.6f),
-            new Shot("27b-bw-cover", () => { BreakwaterShot(new Vector3(-3f, 2.2f, -55f), new Vector3(-15f, 0.9f, -67f)); CoverScaleFigures(); }, 0.6f),
+            new Shot("27b-bw-cover", () => { BreakwaterShot(new Vector3(-21f, 1.7f, -64f), new Vector3(-20.5f, 0.9f, -76f)); CoverScaleFigures(); }, 0.6f),
             new Shot("28-bw-camps", () => BreakwaterShot(new Vector3(30f, 38f, -104f), new Vector3(36f, 0f, -78f)), 0.6f),
             // Overrun on Breakwater (WP19): a real match, so the map is built in place of Gantry Yard. The
             // HUD with the Bastion cards, the first wave on its way, the waves meeting at mid-lane (match time
@@ -122,10 +122,11 @@ namespace DuckAndCover.Game
         }
 
         /// <summary>
-        /// Hero stand-ins beside lane cover in shot 27b, so cover height can be judged against the body the rules
-        /// use (Ruleset: 1.8 m standing, 1.2 m crouched). Beside the low wall LaneLowFwdEast (1.25 m) one stands and
-        /// one crouches; beside the crate stack LaneStackMiddle (2.6 m) one stands. A yellow mark is the eye
-        /// (1.62 m standing, 1.05 m crouched). Art only, no colliders.
+        /// Shot 27b, what an attacker coming down the lane sees at standing eye height: hero stand-ins at the rules'
+        /// body sizes (Ruleset: 1.8 m standing, 1.2 m crouched, eyes 1.62 / 1.05 m as yellow marks) taking cover
+        /// near the Core. Behind the low wall LaneLowCoreWest (1.25 m) one crouches (hidden) and one stands (head
+        /// and eyes over the wall, ready to shoot); behind the crate stack LaneStackMiddle (2.6 m) one stands (hidden);
+        /// one stands in the open for comparison. Art only, no colliders.
         /// </summary>
         static bool coverFigures;
 
@@ -140,11 +141,13 @@ namespace DuckAndCover.Game
             void Figure(string name, Vector3 feet, float height, float eyeHeight, Color c)
             {
                 Paint.Block(breakwaterPreview.transform, name, feet + Vector3.up * (height * 0.5f), new Vector3(0.7f, height, 0.5f), c, false);
-                Paint.Block(breakwaterPreview.transform, name + "Eye", feet + new Vector3(0.3f, eyeHeight, 0f), new Vector3(0.18f, 0.1f, 0.4f), eye, false);
+                // The eye mark faces the camera (toward +z, up the lane).
+                Paint.Block(breakwaterPreview.transform, name + "Eye", feet + new Vector3(0f, eyeHeight, 0.25f), new Vector3(0.4f, 0.1f, 0.12f), eye, false);
             }
-            Figure("CoverCrouched", new Vector3(-11f, 0f, -61.9f), r.crouchHeight, r.crouchEyeHeight, teal);
-            Figure("CoverStanding", new Vector3(-11f, 0f, -60.6f), r.standHeight, r.eyeHeight, navy);
-            Figure("CoverStandingCrate", new Vector3(-16.6f, 0f, -68.6f), r.standHeight, r.eyeHeight, navy);
+            Figure("CoverCrouched", new Vector3(-24.7f, 0f, -79.75f), r.crouchHeight, r.crouchEyeHeight, teal);
+            Figure("CoverStanding", new Vector3(-23.3f, 0f, -79.75f), r.standHeight, r.eyeHeight, navy);
+            Figure("CoverStandingCrate", new Vector3(-18f, 0f, -71.4f), r.standHeight, r.eyeHeight, navy);
+            Figure("OpenStanding", new Vector3(-19.5f, 0f, -78f), r.standHeight, r.eyeHeight, navy);
         }
 
         /// <summary>Where the lane mock-up is built: far enough that neither map shows in the other's shots.</summary>
