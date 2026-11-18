@@ -239,7 +239,7 @@ namespace DuckAndCover.Core
         }
 
         /// <summary>The top of the highest solid block at a point.</summary>
-        static float SurfaceAt(MapDef map, float x, float z, bool shifted)
+        internal static float SurfaceAt(MapDef map, float x, float z, bool shifted)
         {
             float top = float.NegativeInfinity;
             foreach (var b in map.blocks)

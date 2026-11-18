@@ -258,6 +258,7 @@ namespace DuckAndCover.Core
             layout.spawnsB.AddRange(spawnsB);
             layout.forward.AddRange(forward);
             layout.dummies.AddRange(dummies);
+            foreach (var pad in launchPads) layout.launchPads.Add(pad.Clone());
             return layout;
         }
 
@@ -298,6 +299,7 @@ namespace DuckAndCover.Core
         public static MapDef ById(string id)
         {
             if (id == GantryYard.Id) return GantryYard.Build();
+            if (id == Breakwater.Id) return Breakwater.Build();
             return null;
         }
     }

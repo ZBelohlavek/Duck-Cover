@@ -140,6 +140,10 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
   `dotnet run --project Tests/CoreSim -- report map map.svg` (walk times and a top-down plan); the
   `MapValidator` tests fail on broken symmetry, unreachable zones, spawns that see each other, or a
   shift that opens nothing.
+- Breakwater (`Core/Maps/Breakwater.cs`), the Overrun lane map, is mirrored end to end (east stays east) where Gantry
+  Yard is turned 180°; `LaneMapValidator` checks lane maps. Check a change with
+  `dotnet run --project Tests/CoreSim -- report breakwater plan.svg`. Its jungle is filled with 2 m tiles of tree line
+  and rock wherever no lane, route, plaza or clearing is, so move routes and clearings, not wall blocks.
 - Environment art is a theme laid over the layout by `Game/Env/MapDresser` (`MapDef.theme`, themes in
   `Game/Env/EnvTheme`): painted textures, chamfered meshes, sky and light, all made in code. Dressing works
   by block kind and never adds colliders; see `docs/ENVIRONMENTS.md` for its fair-play rules and sources.

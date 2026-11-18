@@ -26,6 +26,7 @@ static class Program
         { "kitwaves", WaveHarness.Report },
         { "lanestudy", LaneStudyTests.Report },
         { "waves", LaneTests.Report },
+        { "breakwater", BreakwaterTests.Report },
     };
 
     static int Main(string[] args)

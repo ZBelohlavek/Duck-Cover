@@ -66,6 +66,7 @@ namespace DuckAndCover.Game
                 if (b.shift != ShiftRole.None) view.AddShiftBlock(go, b);
             }
             foreach (var z in map.zones) view.AddZone(z, ZoneMarker(t, z));
+            LaneMarkers(t, map);
 
             var cam = Camera.main;
             if (cam != null)
@@ -103,8 +104,62 @@ namespace DuckAndCover.Game
                 }
                 MapDresser.DressBlock(dress, go, b);
             }
+            LaneMarkers(t, map);
             MapDresser.DressWorld(dress, null);
             return root;
+        }
+
+        static readonly Color LaunchColor = new Color(1.00f, 0.86f, 0.25f);
+
+        static Color CampColor(CampKind kind)
+        {
+            switch (kind)
+            {
+                case CampKind.Juggernaut: return new Color(0.30f, 0.62f, 1.00f);
+                case CampKind.Damage: return new Color(1.00f, 0.28f, 0.25f);
+                case CampKind.Experience: return new Color(1.00f, 0.55f, 0.85f);
+                default: return new Color(0.45f, 1.00f, 0.65f);
+            }
+        }
+
+        /// <summary>
+        /// Placeholders for a lane map's Overrun pieces, none with a collider: each Bastion as a team
+        /// coloured pillar (WP19 replaces them with the real units), each camp's pad as a coloured ring,
+        /// and each launch pad as a glowing disc with markers along its arc. Maps without lanes get none.
+        /// </summary>
+        static void LaneMarkers(Transform parent, MapDef map)
+        {
+            if (!map.IsLaneMap) return;
+            foreach (var b in map.bastions)
+            {
+                var c = b.team == TeamId.A ? TeamA : TeamB;
+                float h = b.tier == BastionTier.Core ? 7f : 5f;
+                var p = b.position.ToVector3();
+                // A cylinder primitive is 2 m tall, so a y scale of h/2 stands h high.
+                Paint.Shape(PrimitiveType.Cylinder, parent, "Bastion " + b.team + " " + b.tier, p + new Vector3(0f, h * 0.5f, 0f), new Vector3(b.radius * 1.4f, h * 0.5f, b.radius * 1.4f), c, false);
+                Paint.Shape(PrimitiveType.Cube, parent, "Bastion " + b.team + " " + b.tier + " Crown", p + new Vector3(0f, h + 0.9f, 0f), new Vector3(1.2f, 1.2f, 1.2f), Color.white, false)
+                    .transform.localRotation = Quaternion.Euler(45f, 0f, 45f);
+            }
+            foreach (var camp in map.camps)
+            {
+                var p = camp.pad.ToVector3();
+                Paint.Shape(PrimitiveType.Cylinder, parent, "Camp " + camp.id, p + new Vector3(0f, 0.03f, 0f),
+                    new Vector3(camp.padRadius * 2f, 0.01f, camp.padRadius * 2f), CampColor(camp.kind), false);
+                foreach (var g in camp.guardSpots)
+                    Paint.Shape(PrimitiveType.Cube, parent, "Camp " + camp.id + " Guard", g.ToVector3() + new Vector3(0f, 0.6f, 0f), new Vector3(0.8f, 1.2f, 0.8f), CampColor(camp.kind) * 0.6f, false);
+            }
+            foreach (var pad in map.launchPads)
+            {
+                var p = pad.center.ToVector3();
+                Paint.Shape(PrimitiveType.Cylinder, parent, "Launch " + pad.name, p + new Vector3(0f, 0.05f, 0f),
+                    new Vector3(pad.radius * 2f, 0.04f, pad.radius * 2f), LaunchColor, false);
+                // Small markers along the first part of the arc, so the pad reads as a launcher.
+                for (int k = 1; k <= 6; k++)
+                {
+                    var q = pad.PointAt(pad.seconds * k * 0.035f).ToVector3();
+                    Paint.Shape(PrimitiveType.Sphere, parent, "Launch " + pad.name + " Arc " + k, q + new Vector3(0f, 0.6f, 0f), Vector3.one * 0.35f, LaunchColor, false);
+                }
+            }
         }
 
         static Color ColorOf(MapBlock b)

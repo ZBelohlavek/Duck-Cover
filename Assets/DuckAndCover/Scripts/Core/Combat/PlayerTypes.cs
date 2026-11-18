@@ -117,6 +117,8 @@ namespace DuckAndCover.Core
         public List<SpawnPoint> forward = new List<SpawnPoint>();
         /// <summary>Where practice dummies stand.</summary>
         public List<SpawnPoint> dummies = new List<SpawnPoint>();
+        /// <summary>Launch pads (Overrun maps): the movement check lets a player who steps on one fly its arc.</summary>
+        public List<LaunchPad> launchPads = new List<LaunchPad>();
 
         public List<SpawnPoint> Base(TeamId team) => team == TeamId.B ? spawnsB : spawnsA;
 
