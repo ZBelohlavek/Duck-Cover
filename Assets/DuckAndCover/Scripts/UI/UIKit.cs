@@ -136,10 +136,12 @@ namespace DuckAndCover.UI
         public static VisorGraphic Lines(Transform layer, string name)
         {
             var rect = Rect(layer, name, Vector2.zero, Vector2.zero, new Vector2(1920f, 1080f));
+            // The renderer first: a Graphic draws nothing without one.
+            var renderer = rect.gameObject.AddComponent<CanvasRenderer>();
+            // Glow edges fade to nothing; never let the renderer skip a mesh for its clear corners.
+            renderer.cullTransparentMesh = false;
             var graphic = rect.gameObject.AddComponent<VisorGraphic>();
             graphic.raycastTarget = false;
-            // Glow edges fade to nothing; never let the renderer skip a mesh for its clear corners.
-            graphic.canvasRenderer.cullTransparentMesh = false;
             return graphic;
         }
 

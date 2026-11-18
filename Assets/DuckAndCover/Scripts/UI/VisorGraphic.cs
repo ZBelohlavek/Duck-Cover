@@ -12,6 +12,8 @@ namespace DuckAndCover.UI
     /// <see cref="Clear"/> and <see cref="Commit"/>; <see cref="Graphic.color"/> tints the whole graphic.
     /// Keep moving parts (a bar's fill) on a graphic of their own, so a change rebuilds only a few shapes.
     /// </summary>
+    // Image and Text ask for their CanvasRenderer themselves; Graphic doesn't, and without one nothing draws.
+    [RequireComponent(typeof(CanvasRenderer))]
     public class VisorGraphic : MaskableGraphic
     {
         /// <summary>How far the glow reaches past a line's edge, in layout pixels, and how strong it starts.</summary>

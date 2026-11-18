@@ -80,6 +80,12 @@ namespace UnityEngine
         public static bool visible { get; set; }
     }
 
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)]
+    public sealed class RequireComponent : Attribute
+    {
+        public RequireComponent(Type requiredComponent) { }
+    }
+
     public enum RuntimeInitializeLoadType { AfterSceneLoad = 0, BeforeSceneLoad = 1, AfterAssembliesLoaded = 2, BeforeSplashScreen = 3, SubsystemRegistration = 4 }
 
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
