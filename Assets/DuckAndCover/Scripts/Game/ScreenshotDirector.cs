@@ -69,6 +69,7 @@ namespace DuckAndCover.Game
             new Shot("25-bw-shelf", () => BreakwaterShot(new Vector3(-33f, 5.7f, 5f), new Vector3(9f, 0.5f, -1f)), 0.6f),
             new Shot("26-bw-mid", () => BreakwaterShot(new Vector3(24f, 1.8f, -26f), new Vector3(9f, 2.5f, 4f)), 0.6f),
             new Shot("27-bw-jungle", () => { BreakwaterShot(new Vector3(12f, 1.8f, -87f), new Vector3(39f, 1.2f, -78f)); JungleScaleFigures(); }, 0.6f),
+            new Shot("27b-bw-cover", () => { BreakwaterShot(new Vector3(-3f, 2.2f, -55f), new Vector3(-15f, 0.9f, -67f)); CoverScaleFigures(); }, 0.6f),
             new Shot("28-bw-camps", () => BreakwaterShot(new Vector3(30f, 38f, -104f), new Vector3(36f, 0f, -78f)), 0.6f),
             // Overrun on Breakwater (WP19): a real match, so the map is built in place of Gantry Yard. The
             // HUD with the Bastion cards, the first wave on its way, the waves meeting at mid-lane (match time
@@ -118,6 +119,32 @@ namespace DuckAndCover.Game
             tank.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
             var hero = Paint.Block(breakwaterPreview.transform, "ScaleHero", mid + across * 1.2f + Vector3.up * 0.925f, new Vector3(1f, 1.85f, 0.6f), new Color(0.12f, 0.18f, 0.35f), false);
             hero.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+        }
+
+        /// <summary>
+        /// Hero stand-ins beside lane cover in shot 27b, so cover height can be judged against the body the rules
+        /// use (Ruleset: 1.8 m standing, 1.2 m crouched). Beside the low wall LaneLowFwdEast (1.25 m) one stands and
+        /// one crouches; beside the crate stack LaneStackMiddle (2.6 m) one stands. A yellow mark is the eye
+        /// (1.62 m standing, 1.05 m crouched). Art only, no colliders.
+        /// </summary>
+        static bool coverFigures;
+
+        static void CoverScaleFigures()
+        {
+            if (breakwaterPreview == null || coverFigures) return;
+            coverFigures = true;
+            var r = Ruleset.Default;
+            var navy = new Color(0.12f, 0.18f, 0.35f);
+            var teal = new Color(0.1f, 0.45f, 0.5f);
+            var eye = new Color(1f, 0.85f, 0.1f);
+            void Figure(string name, Vector3 feet, float height, float eyeHeight, Color c)
+            {
+                Paint.Block(breakwaterPreview.transform, name, feet + Vector3.up * (height * 0.5f), new Vector3(0.7f, height, 0.5f), c, false);
+                Paint.Block(breakwaterPreview.transform, name + "Eye", feet + new Vector3(0.3f, eyeHeight, 0f), new Vector3(0.18f, 0.1f, 0.4f), eye, false);
+            }
+            Figure("CoverCrouched", new Vector3(-11f, 0f, -61.9f), r.crouchHeight, r.crouchEyeHeight, teal);
+            Figure("CoverStanding", new Vector3(-11f, 0f, -60.6f), r.standHeight, r.eyeHeight, navy);
+            Figure("CoverStandingCrate", new Vector3(-16.6f, 0f, -68.6f), r.standHeight, r.eyeHeight, navy);
         }
 
         /// <summary>Where the lane mock-up is built: far enough that neither map shows in the other's shots.</summary>

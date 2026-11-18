@@ -152,8 +152,10 @@ namespace DuckAndCover.Game
                 {
                     var rock = Mat(c, PaintedTextures.Kind.Rock, t.rock, t.rockCrack);
                     if (renderer != null) renderer.sharedMaterial = rock;
-                    // A faceted outcrop: coarse lumps pushed in from the box, never out of it.
-                    if (filter != null) filter.sharedMesh = EnvMesh.LumpyBox(size, centre, 6f, 0.45f, 1.1f, t.seed + 57, SealedFaces(c, b));
+                    // A faceted outcrop: coarse lumps pushed in from the box, never out of it. Thin and low pieces
+                    // (rock-style low walls) get shallow lumps so they still look as tall as the cover they give.
+                    float lump = Math.Min(0.45f, Math.Min(Math.Min(size.x, size.z) * 0.25f, size.y * 0.08f));
+                    if (filter != null) filter.sharedMesh = EnvMesh.LumpyBox(size, centre, 6f, lump, 1.1f, t.seed + 57, SealedFaces(c, b));
                     // A boulder on top of wider outcrops, turned a little, kept inside the footprint and just below
                     // the top. Its base sits deeper than the lumpy dents, so it never floats. Thin walls get none, and
                     // there is no flat moss disc: on a dented top it showed as a floating blade.
