@@ -159,8 +159,12 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
   wins): `Core/Overrun/OverrunServer`, built on the host after the `LaneServer`, runs the Bastions (minions always
   hurt them, heroes only with their own minion within 12 m, Cores sealed until their Forward falls), shield
   refills, Bastion fire, side gates, the late push and the time cap tie-break. Hook-ups in other modules:
-  `DamageRules.DamageGate`/`RestoreGate`, `SpawnRules.WaitAdjust`, `MatchRules.TieBreak`. Wiring it into
-  Unity is WP19. `report overrun` plays bot matches.
+  `DamageRules.DamageGate`/`RestoreGate`, `SpawnRules.WaitAdjust`, `MatchRules.TieBreak`. `report overrun` plays
+  bot matches. In Unity (WP19) each mode has its map (`MapCatalog.MapIdForMode`: Overrun plays Breakwater, the rest
+  Gantry Yard); `SessionRunner.EnsureMap` builds it when hosting or on a joiner's first state copy, and an Overrun host
+  also runs `Lanes` and `Overrun`. `Game/UnitView` draws minions and guards, `MapView` the side gates (per base) and
+  fallen Bastions, `Hud` the Bastion cards. `Tools/netsmoke -- 10 overrun` and `Tools/unity.ps1 netsmoke overrun` play
+  it over the network (scripted players join their wave with `ScriptedToLaneCommand`).
 - Heroes (WP11): Bulwark (vanguard), Lancer (striker), Mender (support), Rigger (controller), as data in
   Data/Resources. `HeroServer` (Core/Heroes) gives a pick its kit, runs leveling beside the match and
   applies upgrades; `HeroKitTests` checks every ability and all 80 upgrades. Levels run 1 to 20 (picks on even levels); each hero has two upgrade paths, left and right (`docs/HEROES.md`).

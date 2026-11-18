@@ -19,6 +19,14 @@ namespace DuckAndCover.Core
     {
     }
 
+    /// <summary>
+    /// "I run up behind my team's front minion." Overrun only: puts the player a few metres behind the
+    /// minion of theirs that is furthest toward the enemy base (and on no zone).
+    /// </summary>
+    public sealed class ScriptedToLaneCommand : MatchCommand
+    {
+    }
+
     /// <summary>"I took this enemy down."</summary>
     public sealed class ScriptedEliminateCommand : MatchCommand
     {
@@ -57,23 +65,37 @@ namespace DuckAndCover.Core
 
     public static class ScriptedPlay
     {
+        /// <summary>Metres behind its team's front minion that <see cref="ScriptedToLaneCommand"/> puts a player.</summary>
+        public const float BehindTheWave = 3f;
+
         /// <summary>
         /// Let a host accept the scripted commands, moving players in <paramref name="world"/>, and
         /// give it the combat rules (WP4) with that world as a map with no walls, so scripted players
         /// fight with real shots. With hero data (WP11) the heroes' abilities, leveling and upgrades
         /// run too. In Flag Rush the flag runs (seed 1, so runs repeat) and scripted players reach
-        /// it with <see cref="ScriptedToFlagCommand"/>. Returns the combat rules.
+        /// it with <see cref="ScriptedToFlagCommand"/>. In Overrun (WP19) the lanes, waves, camps and
+        /// Bastions run on Breakwater's data (its spawn rooms, lane, camps and Bastion spots, with open
+        /// ground between them), and scripted players join their wave with <see cref="ScriptedToLaneCommand"/>.
+        /// Returns the combat rules.
         /// </summary>
         public static CombatServer Attach(SessionHost host, ScriptedWorld world, IGameEvents events,
             HeroCatalog heroes = null, AbilityLibrary abilities = null)
         {
             var match = host.Match;
-            var combat = new CombatServer(match, world, events, host.Settings.TickSeconds, abilities: abilities);
+            var laneMap = match.OverrunMode ? MapCatalog.ForMode(match.Mode.id) : null;
+            var combat = new CombatServer(match, world, events, host.Settings.TickSeconds, laneMap == null ? null : laneMap.ToLayout(), abilities: abilities);
             combat.Attach(host);
             HeroServer heroServer = null;
             if (heroes != null) (heroServer = new HeroServer(combat, heroes, world, events)).Attach(host);
+            var progression = heroServer == null ? null : heroServer.Progression;
             FlagServer flag = null;
-            if (match.FlagMode) (flag = new FlagServer(combat, world, events, 1, heroServer == null ? null : heroServer.Progression)).Attach(host);
+            if (match.FlagMode) (flag = new FlagServer(combat, world, events, 1, progression)).Attach(host);
+            LaneServer lanes = null;
+            if (laneMap != null)
+            {
+                (lanes = new LaneServer(match, combat, world, events, laneMap, progression)).Attach(host);
+                new OverrunServer(lanes, events, laneMap, progression).Attach(host);
+            }
             host.AddCommandHandler(cmd =>
             {
                 var state = match.State;
@@ -91,6 +113,18 @@ namespace DuckAndCover.Core
                         world.Clear(cmd.playerId);
                         combat.Movement.Teleport(cmd.playerId, flag.State.position, 0f);
                         return CommandResult.Accepted;
+                    case ScriptedToLaneCommand _:
+                    {
+                        if (lanes == null) return CommandResult.NotHandled;
+                        var player = state.Player(cmd.playerId);
+                        if (player == null || !state.IsAlive(cmd.playerId)) return CommandResult.Reject("only living players move");
+                        var front = FrontMinion(combat, match.Rules, player.team);
+                        if (front == null) return CommandResult.Reject("no minion of yours on the lane");
+                        float back = player.team == TeamId.A ? -BehindTheWave : BehindTheWave;
+                        world.Clear(cmd.playerId);
+                        combat.Movement.Teleport(cmd.playerId, front.position + new Vec3(0f, 0f, back), player.team == TeamId.A ? 0f : 180f);
+                        return CommandResult.Accepted;
+                    }
                     case ScriptedEliminateCommand kill:
                         var me = state.Player(cmd.playerId);
                         var target = state.Player(kill.targetPlayerId);
@@ -109,6 +143,23 @@ namespace DuckAndCover.Core
                 else if (e is PlayerLeftEvent left) world.Clear(left.playerId);
             });
             return combat;
+        }
+
+        /// <summary>
+        /// A team's minion furthest toward the enemy base, or null. Team A pushes toward +z on a lane map
+        /// (Breakwater is mirrored end to end), team B toward -z; lower ids win ties, so runs repeat.
+        /// </summary>
+        static UnitState FrontMinion(CombatServer combat, Ruleset rules, TeamId team)
+        {
+            UnitState best = null;
+            foreach (var u in combat.Units.Living())
+            {
+                if (u.team != team || rules.overrun == null || !rules.overrun.IsMinion(u.typeId)) continue;
+                float ahead = team == TeamId.A ? u.position.z : -u.position.z;
+                float bestAhead = best == null ? float.MinValue : team == TeamId.A ? best.position.z : -best.position.z;
+                if (best == null || ahead > bestAhead + 1e-4f || (Math.Abs(ahead - bestAhead) <= 1e-4f && u.id < best.id)) best = u;
+            }
+            return best;
         }
 
         /// <summary>A stand-in objective layout for scripted play: three points, four hills, and Flag Rush's two bases and three flag spots.</summary>
@@ -260,7 +311,9 @@ namespace DuckAndCover.Core
                 carryingSince = -1f;
             }
             var flag = client.Snapshot == null ? null : client.Snapshot.flag;
+            var overrun = client.Snapshot == null ? null : client.Snapshot.overrun;
             if (flag != null) PlayFlag(state, me, flag, plan); // shooting and abilities below run as in the other modes
+            else if (overrun != null) PlayOverrun(state, me, overrun, plan);
             else if (plan != lastPlan)
             {
                 lastPlan = plan;
@@ -324,6 +377,44 @@ namespace DuckAndCover.Core
             Send(new ScriptedToFlagCommand());
         }
 
+        int lanePlan = -1;
+
+        /// <summary>
+        /// Overrun: once a plan, run up behind the team's front minion (team B only one plan in three, and
+        /// it holds fire in the others, so team A's waves get the help and push), and shoot the nearest enemy minion in reach, or an enemy
+        /// Bastion its minions have opened to heroes. Real shots, so unit hits and Bastion damage go
+        /// through the server's checks.
+        /// </summary>
+        void PlayOverrun(MatchState state, PlayerState me, OverrunState overrun, int plan)
+        {
+            if (plan != lanePlan && (me.team == TeamId.A || (plan + me.id) % 3 == 0))
+            {
+                lanePlan = plan;
+                Send(new ScriptedToLaneCommand());
+            }
+            // Team B fights only in the plans it goes to the lane, so team A's push lands.
+            if (me.team == TeamId.B && (plan + me.id) % 3 != 0) return;
+            var snap = client.Snapshot;
+            var mine = snap.Motion(client.PlayerId);
+            if (mine == null || snap.units == null) return;
+            UnitSnapshot best = null;
+            float bestDistance = float.MaxValue;
+            foreach (var u in snap.units)
+            {
+                if (u.team == me.team || u.team == TeamId.None) continue;
+                var bastion = overrun.ByUnit(u.id);
+                if (bastion != null && !bastion.openToHeroes) continue;
+                bool minion = rules.overrun.IsMinion(u.typeId);
+                if (!minion && bastion == null) continue;
+                // Minions first: a Bastion counts as a little further off than it is.
+                float d = Vec3.Distance(mine.position, u.position) + (minion ? 0f : 15f);
+                if (d < bestDistance - 1e-4f || (Math.Abs(d - bestDistance) <= 1e-4f && u.id < best.id)) { best = u; bestDistance = d; }
+            }
+            if (best == null) return;
+            var kind = rules.UnitKind(best.typeId);
+            ShootAtPoint(Hitboxes.Chest(rules, new BodyPose(best.position, false, true, kind == null ? 1f : kind.size)));
+        }
+
         /// <summary>The capture zone in the other team's base: the zone whose startOwner is the enemy.</summary>
         static ZoneId EnemyBase(MatchState state, TeamId team)
         {
@@ -375,13 +466,19 @@ namespace DuckAndCover.Core
         void ShootAt(int enemyId)
         {
             var snap = client.Snapshot;
-            var me = snap == null ? null : snap.Motion(client.PlayerId);
             var them = snap == null ? null : snap.Motion(enemyId);
+            if (them != null) ShootAtPoint(Hitboxes.Chest(rules, them.Pose(true)));
+        }
+
+        /// <summary>One shot at a point (a chest), with a weapon that reaches, once the server has every earlier shot.</summary>
+        void ShootAtPoint(Vec3 chest)
+        {
+            var snap = client.Snapshot;
+            var me = snap == null ? null : snap.Motion(client.PlayerId);
             var arms = snap == null ? null : snap.Weapons(client.PlayerId);
-            if (me == null || them == null || arms == null || me.placement != stepPlacement) return;
+            if (me == null || arms == null || me.placement != stepPlacement) return;
             if (arms.shotsFired != firesSent) return; // a shot still on its way
             Vec3 eye = me.position + Vec3.Up * Hitboxes.EyeHeight(rules, me.crouched);
-            Vec3 chest = Hitboxes.Chest(rules, them.Pose(true));
             float distance = Vec3.Distance(eye, chest);
 
             var w = weapons.Weapon(arms.CurrentId);
@@ -442,7 +539,10 @@ namespace DuckAndCover.Core
     /// </summary>
     public static class SessionDigest
     {
-        public static string Of(MatchState s)
+        public static string Of(MatchState s) => Of(s, null);
+
+        /// <summary>With Overrun's Bastions and side gates (which Bastions stand, which gates are open) when <paramref name="overrun"/> is given.</summary>
+        public static string Of(MatchState s, OverrunState overrun)
         {
             if (s == null) return "(no state)";
             var sb = new StringBuilder();
@@ -460,6 +560,13 @@ namespace DuckAndCover.Core
                 sb.Append("player ").Append(p.id).Append(" team=").Append(p.team).Append(" hero=").Append(p.heroId)
                   .Append(" level=").Append(p.level).Append(" elims=").Append(p.eliminations).Append(" deaths=").Append(p.deaths)
                   .Append(" connected=").Append(p.connected).Append('\n');
+            if (overrun != null)
+            {
+                var bastions = new List<BastionState>(overrun.bastions);
+                bastions.Sort((a, b) => a.team != b.team ? a.team.CompareTo(b.team) : a.tier.CompareTo(b.tier));
+                foreach (var b in bastions) sb.Append("bastion ").Append(b.team).Append(' ').Append(b.tier).Append(" alive=").Append(b.alive).Append('\n');
+                sb.Append("gates A=").Append(overrun.gateOpenA).Append(" B=").Append(overrun.gateOpenB).Append(" latePush=").Append(overrun.latePush).Append('\n');
+            }
             return sb.ToString();
         }
     }

@@ -39,7 +39,7 @@ https://claude.ai/artifact/7qbJG2ukrZDQ6ZTfX3nXGs
 | WP18 Breakwater greybox, launch pads and ledges | Layout and Core | WP14's lane fields | Validator (mirror symmetry, lane, one-way ledges and drop, jungle joins the lane at both ends); map plan | In review |
 | WP20 Hero kits against waves | Data and tests | WP14 | Each hero has a tested way to clear or protect a wave | Done |
 | WP16 Overrun rules | Core | WP15 | Overrun from data; bot matches end inside 15 minutes | Done |
-| WP19 Overrun in Unity | Scripts | WP16, WP18 | Two players over the network; netsmoke with 40 units; capture | Waiting |
+| WP19 Overrun in Unity | Scripts | WP16, WP18 | Two players over the network; netsmoke with 40 units; capture | In review |
 
 WP17 (Salvage and build pads) was dropped on Nov 18.
 
@@ -90,6 +90,11 @@ WP17 (Salvage and build pads) was dropped on Nov 18.
   launch pads in the movement check (`Core/Combat/LaunchPad.cs`, `MovementRules.Launch.cs`) and flown by `LocalPlayer`;
   markers for Bastions, camps and pads in `Game/MapScene`. Tests and the plan (`report breakwater out.svg`) in
   `BreakwaterTests.cs`. Choosing Breakwater for a match comes with WP19.
+- WP19: the mode picks the map (`MapCatalog.MapIdForMode`, `SessionRunner.EnsureMap`); the Overrun host builds the
+  `LaneServer` and `OverrunServer` after the hero server; `Game/UnitView` (minions, guards, Bastion bars), `MapView`
+  (per-base side gates, fallen Bastions, crowns that show who may hurt a Bastion), the HUD's Bastion cards, the panel's
+  Overrun button, practice dummy spots on Breakwater, Overrun netsmoke (`ScriptedToLaneCommand`) and capture shots
+  29 to 33. Tests in `OverrunSessionTests.cs`.
 - WP14 to WP21: units, lanes, waves, camps and Bastions in Core folders of their own (`Core/Units`,
   `Core/Lanes`, `Core/Overrun`, `Core/Flag`), Breakwater beside Gantry Yard in `Core/Maps`, mode data in
   `Data/Modes`; the Unity side in `Game` and `UI`.

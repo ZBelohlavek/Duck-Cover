@@ -72,6 +72,8 @@ namespace DuckAndCover.Game
             if (GUILayout.Button("King of the Hill")) modeId = "king_of_the_hill";
             if (GUILayout.Button("Flag Rush")) modeId = "flag_rush";
             GUILayout.EndHorizontal();
+            if (GUILayout.Button("Overrun (on Breakwater)")) modeId = "overrun";
+            GUILayout.Label("Map: " + MapCatalog.DisplayName(MapCatalog.MapIdForMode(modeId)));
 
             GUILayout.Space(8f);
             GUILayout.Label("Port (blank = " + runner.Settings.defaultPort + ")");
@@ -118,6 +120,13 @@ namespace DuckAndCover.Game
                             (state.phaseTimeLeft > 0f ? "   " + Mathf.CeilToInt(state.phaseTimeLeft) + " s" : "") +
                             "   Score " + state.scoreA + " : " + state.scoreB);
             if (state.phase == MatchPhase.MatchEnd) GUILayout.Label("Team " + state.winner + " wins (" + state.endReason + ")");
+
+            var overrun = client.Snapshot == null ? null : client.Snapshot.overrun;
+            if (overrun != null)
+                foreach (var b in overrun.bastions)
+                    GUILayout.Label("  " + b.team + " " + b.tier + " Bastion  " + (b.alive ? Mathf.CeilToInt(b.health) + " hp, " + Mathf.CeilToInt(b.shield) + " shield" + (b.sealedOff ? ", sealed" : b.openToHeroes ? ", open to heroes" : "") : "down"));
+            if (client.Snapshot != null && client.Snapshot.units != null && client.Snapshot.units.Count > 0)
+                GUILayout.Label("  Units on the map: " + client.Snapshot.units.Count);
 
             foreach (var z in state.zones)
                 if (z.active)

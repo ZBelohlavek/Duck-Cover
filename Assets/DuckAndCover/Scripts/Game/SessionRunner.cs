@@ -14,6 +14,10 @@ namespace DuckAndCover.Game
     /// A hosted match also runs the combat rules (movement checks, weapons, health) against the
     /// scene's physics, on the first map (WP9): its zones, spawn spots and the zone cylinders that
     /// say who stands where, and in Flag Rush the flag (WP21) with its spots and base zones.
+    /// In Overrun (WP19) the match plays on Breakwater: the host also runs the lanes, waves and camps
+    /// (<see cref="LaneServer"/>) and the Bastions (<see cref="OverrunServer"/>).
+    /// Each mode has its map (<see cref="MapCatalog.MapIdForMode"/>): the host builds it before hosting,
+    /// and a machine that joins builds it once the first state copy says which mode is on.
     /// Scripted runs (the smoke test) keep their stand-in layout.
     /// </summary>
     public class SessionRunner : MonoBehaviour
@@ -26,6 +30,8 @@ namespace DuckAndCover.Game
         public NetSettings Settings = NetSettings.Default;
         /// <summary>Match time multiplier on the host. Above 1 only for the smoke test.</summary>
         public float Speed = 1f;
+        /// <summary>Build the mode's map when a match starts or is joined. The smoke test draws nothing, so it turns this off.</summary>
+        public bool BuildMaps = true;
 
         public NetSession Session { get; private set; }
         public SessionClient Client => Session == null ? null : Session.Client;
@@ -38,13 +44,18 @@ namespace DuckAndCover.Game
         public HeroServer Heroes { get; private set; }
         /// <summary>The Flag Rush flag on the server (WP21); on a Flag Rush host only, once the session is up.</summary>
         public FlagServer Flag { get; private set; }
+        /// <summary>Lanes, waves and camps (WP15); on an Overrun host only, once the session is up.</summary>
+        public LaneServer Lanes { get; private set; }
+        /// <summary>The Bastions and the rest of Overrun's rules (WP16); on an Overrun host only, once the session is up.</summary>
+        public OverrunServer Overrun { get; private set; }
         /// <summary>
         /// The numbers this machine moves and draws by. Clients aren't sent the host's ruleset yet, so
         /// everyone uses the defaults; a host with changed movement numbers would correct its guests.
         /// </summary>
         public Ruleset ClientRules { get; private set; } = Ruleset.Default;
-        /// <summary>The map every machine builds and plays (only one so far).</summary>
-        public MapDef Map { get; } = MapCatalog.Default;
+        /// <summary>The map this machine has built and plays: the match's mode picks it.</summary>
+        public MapDef Map => MapScene.Current != null ? MapScene.Current : fallbackMap;
+        readonly MapDef fallbackMap = MapCatalog.Default;
         /// <summary>The weapon table, the same on every machine.</summary>
         public WeaponLibrary Weapons { get; } = StarterWeapons.Library();
 
@@ -58,13 +69,35 @@ namespace DuckAndCover.Game
         }
 
         public static ModeDef ModeById(string id) =>
-            id == "king_of_the_hill" ? ModeDef.KingOfTheHill() : id == "flag_rush" ? ModeDef.FlagRush() : ModeDef.CaptureAndHold();
+            id == "king_of_the_hill" ? ModeDef.KingOfTheHill() : id == "flag_rush" ? ModeDef.FlagRush()
+            : id == "overrun" ? ModeDef.Overrun() : ModeDef.CaptureAndHold();
+
+        /// <summary>
+        /// Make sure the scene shows the map <paramref name="modeId"/> plays on, building it in place of
+        /// the one there now if it differs. The old map is switched off at once (so no ray meets it again)
+        /// and destroyed at the end of the frame. A scene laid out by hand (no map built from data) is left alone.
+        /// </summary>
+        public static void EnsureMap(string modeId)
+        {
+            string want = MapCatalog.MapIdForMode(modeId);
+            var current = MapScene.Current;
+            if (MapScene.Root == null || (current != null && current.id == want)) return;
+            var next = MapCatalog.ById(want);
+            if (next == null) return;
+            var old = MapScene.Root;
+            old.SetActive(false);
+            Destroy(old);
+            MapScene.Build(next);
+            Physics.SyncTransforms(); // the new map's colliders answer rays this frame
+            Debug.Log("Duck and Cover: built " + next.displayName + " for " + modeId + ".");
+        }
 
         /// <summary>Host a match. With <paramref name="useJoinCode"/> it goes through Unity Relay.</summary>
         /// <param name="rules">Other numbers than the defaults (the screenshot run shortens the waits).</param>
         public NetSession Host(string modeId, string playerName, bool useJoinCode, int port = 0, bool scripted = false, Ruleset rules = null)
         {
             Leave();
+            if (!scripted && BuildMaps) EnsureMap(modeId);
             var events = new GameEventBus();
             flagSeed = Environment.TickCount; // a different run of flag spots every match
             if (rules == null) rules = scripted ? ScriptedPlay.SmokeRuleset() : Ruleset.Default;
@@ -101,6 +134,10 @@ namespace DuckAndCover.Game
         {
             if (Session != null) Session.Shutdown();
             Session = null;
+            if (Overrun != null) Overrun.Dispose();
+            Overrun = null;
+            if (Lanes != null) Lanes.Dispose();
+            Lanes = null;
             if (Flag != null) Flag.Dispose();
             Flag = null;
             if (Heroes != null) Heroes.Dispose();
@@ -139,9 +176,19 @@ namespace DuckAndCover.Game
                         Flag = new FlagServer(Combat, hostWorld, hostEvents, flagSeed, Heroes.Progression);
                         Flag.Attach(Session.Host);
                     }
+                    if (Match.OverrunMode && Map.IsLaneMap)
+                    {
+                        // Lanes first: the Overrun rules stand on its unit kinds and act after its tick.
+                        Lanes = new LaneServer(Match, Combat, hostWorld, hostEvents, Map, Heroes.Progression);
+                        Lanes.Attach(Session.Host);
+                        Overrun = new OverrunServer(Lanes, hostEvents, Map, Heroes.Progression);
+                        Overrun.Attach(Session.Host);
+                    }
                 }
                 attached = true;
             }
+            // A machine that joined learns the mode from the first state copy, and builds its map then.
+            if (BuildMaps && Match == null && Client != null && Client.State != null && !string.IsNullOrEmpty(Client.State.modeId)) EnsureMap(Client.State.modeId);
             Session.Update(Time.unscaledDeltaTime, Speed);
         }
 

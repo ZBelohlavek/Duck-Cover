@@ -69,6 +69,7 @@ namespace UnityEngine
     {
         public static bool Raycast(Vector3 origin, Vector3 direction, out RaycastHit hitInfo, float maxDistance, int layerMask, QueryTriggerInteraction queryTriggerInteraction) { hitInfo = default; return false; }
         public static bool CheckCapsule(Vector3 start, Vector3 end, float radius, int layerMask, QueryTriggerInteraction queryTriggerInteraction) => false;
+        public static void SyncTransforms() { }
     }
 
     public enum CursorLockMode { None = 0, Locked = 1, Confined = 2 }

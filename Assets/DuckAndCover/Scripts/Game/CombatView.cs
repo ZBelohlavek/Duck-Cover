@@ -76,6 +76,7 @@ namespace DuckAndCover.Game
             local.transform.SetParent(transform, false);
             gameObject.AddComponent<AbilityView>(); // what abilities do (WP11)
             gameObject.AddComponent<FlagView>(); // the Flag Rush flag (WP21)
+            gameObject.AddComponent<UnitView>(); // minions, camp guards and Bastion bars (WP19)
         }
 
         void OnDestroy()
@@ -247,6 +248,7 @@ namespace DuckAndCover.Game
                     var pose = new BodyPose(Vector3.Lerp(b.from, b.to, k).ToVec3(), b.crouched);
                     if (Hitboxes.Raycast(rules, pose, origin, d, reach, out float hit, out _)) reach = hit;
                 }
+                if (UnitView.Instance != null && UnitView.Instance.Raycast(rules, client.Team, origin, d, reach, out float unitHit)) reach = unitHit;
                 Tracer(muzzle, (origin + d * reach).ToVector3());
             }
         }

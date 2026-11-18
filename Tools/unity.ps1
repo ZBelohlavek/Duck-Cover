@@ -7,7 +7,7 @@
   ./Tools/unity.ps1 capture    # play the Boot scene and save screenshots + log.txt to Screenshots/
   ./Tools/unity.ps1 scenes     # rebuild the generated scenes in Assets/DuckAndCover/Scenes
   ./Tools/unity.ps1 netsmoke   # build a player, run it twice (host + client, no graphics), compare the results
-  ./Tools/unity.ps1 netsmoke flag_rush   # the same with another mode (king_of_the_hill, capture_hold, flag_rush)
+  ./Tools/unity.ps1 netsmoke flag_rush   # the same with another mode (king_of_the_hill, capture_hold, flag_rush, overrun)
 
 .NOTES
   Close the Unity editor first: Unity can't open a project that's already open.
@@ -15,7 +15,7 @@
 #>
 param(
     [Parameter(Mandatory = $true)][ValidateSet("check", "capture", "scenes", "netsmoke")][string]$Command,
-    [ValidateSet("king_of_the_hill", "capture_hold", "flag_rush")][string]$Mode = "king_of_the_hill"
+    [ValidateSet("king_of_the_hill", "capture_hold", "flag_rush", "overrun")][string]$Mode = "king_of_the_hill"
 )
 
 $ErrorActionPreference = "Stop"

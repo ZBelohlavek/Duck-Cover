@@ -19,6 +19,7 @@ using DuckAndCover.Core;
 ///   dotnet run --project Tools/netsmoke                       2 players, king of the hill
 ///   dotnet run --project Tools/netsmoke -- 10 capture_hold    10 players, capture and hold
 ///   dotnet run --project Tools/netsmoke -- 4 flag_rush        4 players, Flag Rush
+///   dotnet run --project Tools/netsmoke -- 10 overrun         10 players, Overrun on Breakwater's lane (waves, camps, Bastions)
 ///
 /// This checks the session code, the wire format and the rules across processes. It does not check
 /// Netcode for GameObjects: that is Tools/unity netsmoke, which needs Unity.
@@ -217,7 +218,8 @@ static class Program
     {
         var world = new ScriptedWorld();
         var events = new GameEventBus();
-        var mode = modeId == "capture_hold" ? ModeDef.CaptureAndHold() : modeId == "flag_rush" ? ModeDef.FlagRush() : ModeDef.KingOfTheHill();
+        var mode = modeId == "capture_hold" ? ModeDef.CaptureAndHold() : modeId == "flag_rush" ? ModeDef.FlagRush()
+            : modeId == "overrun" ? ModeDef.Overrun() : ModeDef.KingOfTheHill();
         var match = new MatchRules(ScriptedPlay.SmokeRuleset(), mode, ScriptedPlay.PlaceholderMap(), world, events);
         var tcp = new TcpServer();
         var transport = new HostTransport { tcp = tcp };
@@ -237,6 +239,7 @@ static class Program
         tcp.Listen(port);
         var clock = Stopwatch.StartNew();
         double last = 0, endedAt = -1;
+        int mostUnits = 0;
         while (clock.Elapsed.TotalSeconds < 150)
         {
             while (tcp.inbox.TryDequeue(out var m))
@@ -258,6 +261,7 @@ static class Program
             double now = clock.Elapsed.TotalSeconds;
             host.Update((float)(now - last), Speed);
             last = now;
+            if (me.Snapshot != null && me.Snapshot.units != null && me.Snapshot.units.Count > mostUnits) mostUnits = me.Snapshot.units.Count;
 
             if (match.State.phase == MatchPhase.MatchEnd)
             {
@@ -267,7 +271,8 @@ static class Program
             }
             Thread.Sleep(1);
         }
-        File.WriteAllText(outFile, SessionDigest.Of(match.State));
+        File.WriteAllText(outFile, SessionDigest.Of(match.State, me.Snapshot == null ? null : me.Snapshot.overrun));
+        if (match.OverrunMode) Console.WriteLine("netsmoke host: most units in one state copy " + mostUnits + ", match time " + match.State.elapsed.ToString("0") + " s");
         return match.State.phase == MatchPhase.MatchEnd ? 0 : 1;
     }
 
@@ -315,7 +320,7 @@ static class Program
             client.Receive(message);
             if (client.RefusedReason != null) { Console.Error.WriteLine(name + " refused: " + client.RefusedReason); return 1; }
         }
-        File.WriteAllText(outFile, SessionDigest.Of(client.State));
+        File.WriteAllText(outFile, SessionDigest.Of(client.State, client.Snapshot == null ? null : client.Snapshot.overrun));
         return script.Finished && script.CommandsSent > 0 ? 0 : 1;
     }
 }

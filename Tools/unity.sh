@@ -5,7 +5,7 @@
 #   Tools/unity.sh capture    play the Boot scene and save screenshots + log.txt to Screenshots/
 #   Tools/unity.sh scenes     rebuild the generated scenes in Assets/DuckAndCover/Scenes
 #   Tools/unity.sh netsmoke   build a player, run it twice (host + client, no graphics), compare the results
-#   Tools/unity.sh netsmoke flag_rush   the same with another mode (king_of_the_hill, capture_hold, flag_rush)
+#   Tools/unity.sh netsmoke flag_rush   the same with another mode (king_of_the_hill, capture_hold, flag_rush, overrun)
 #
 # Close the Unity editor first: Unity can't open a project that's already open.
 # Set UNITY_PATH to the Unity executable if it isn't in the default Unity Hub folder.
@@ -13,7 +13,7 @@ set -u
 
 command="${1:-}"
 mode="${2:-king_of_the_hill}"
-case "$mode" in king_of_the_hill|capture_hold|flag_rush) ;; *) echo "Unknown mode $mode"; exit 2 ;; esac
+case "$mode" in king_of_the_hill|capture_hold|flag_rush|overrun) ;; *) echo "Unknown mode $mode"; exit 2 ;; esac
 case "$command" in check|capture|scenes|netsmoke) ;; *) sed -n '2,10p' "$0"; exit 2 ;; esac
 
 project="$(cd "$(dirname "$0")/.." && pwd)"

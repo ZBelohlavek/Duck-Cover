@@ -62,17 +62,28 @@ namespace DuckAndCover.Game
             // Breakwater (WP18), the Overrun map, built far off to the other side. No HUD over these.
             new Shot("20-bw-above", () => BreakwaterShot(new Vector3(-72f, 92f, -2f), new Vector3(2f, 0f, 0f)), 1.2f),
             new Shot("21-bw-base", () => BreakwaterShot(new Vector3(-30f, 40f, -112f), new Vector3(-8f, 0f, -70f)), 0.6f),
-            new Shot("22-bw-lane", () => BreakwaterShot(new Vector3(-9f, 1.8f, -55f), new Vector3(-1f, 1.4f, -36f)), 0.6f),
+            new Shot("22-bw-lane", () => BreakwaterShot(new Vector3(-13f, 2f, -50f), new Vector3(6f, 1.2f, -31.5f)), 0.6f),
             new Shot("23-bw-ledge", () => BreakwaterShot(new Vector3(-25f, 4.7f, -57f), new Vector3(-6f, 0.5f, -42f)), 0.6f),
             new Shot("24-bw-gap", () => BreakwaterShot(new Vector3(4f, 1.8f, -40f), new Vector3(-14f, 1.4f, -29f)), 0.6f),
             new Shot("25-bw-shelf", () => BreakwaterShot(new Vector3(-22f, 5.7f, 5f), new Vector3(6f, 0.5f, -1f)), 0.6f),
             new Shot("26-bw-mid", () => BreakwaterShot(new Vector3(16f, 1.8f, -24f), new Vector3(6f, 2.5f, 4f)), 0.6f),
             new Shot("27-bw-jungle", () => BreakwaterShot(new Vector3(8f, 1.8f, -87f), new Vector3(26f, 1.2f, -78f)), 0.6f),
-            new Shot("28-bw-camps", () => BreakwaterShot(new Vector3(30f, 28f, -112f), new Vector3(24f, 0f, -80f)), 0.6f),
+            new Shot("28-bw-camps", () => BreakwaterShot(new Vector3(20f, 36f, -100f), new Vector3(24f, 0f, -78f)), 0.6f),
+            // Overrun on Breakwater (WP19): a real match, so the map is built in place of Gantry Yard. The
+            // HUD with the Bastion cards, the first wave on its way, the waves meeting at mid-lane (match time
+            // runs five times faster while it waits), the player behind their wave, and team B's Forward
+            // Bastion knocked down so its side gate opens.
+            new Shot("29-ov-hud", StartOverrunMatch, 6f),
+            new Shot("30-ov-wave", WatchTheWave, 0.8f),
+            new Shot("31-ov-clash", WatchTheClash, 5.5f),
+            new Shot("32-ov-lane", PlayerJoinsTheWave, 1.2f),
+            new Shot("33-ov-gate", KnockDownForwardB, MapView.ShiftSeconds + 1f),
         };
 
         /// <summary>True while a shot wants the world without the HUD over it (the UI reads it).</summary>
         public static bool HideHud;
+        /// <summary>True while a shot wants the HUD without the upgrade (trait) panel, which would cover the scene.</summary>
+        public static bool HideTraits;
 
         /// <summary>Where Breakwater is built for its shots: away from the real map and the lane mock-up.</summary>
         static readonly Vector3 BreakwaterOffset = new Vector3(3000f, 0f, 0f);
@@ -175,7 +186,118 @@ namespace DuckAndCover.Game
             runner.Combat.Movement.Teleport(me, at, 0f);
             local.freeCamera = false;
             local.LookAt(0f, 4f);
+            HideTraits = true; // the levels from the flag would put an upgrade offer over the view
             CombatView.Instance.StartCoroutine(Expect(() => f.IsCarrier(me), 0.6f, "the player to carry the flag"));
+        }
+
+        // ---- Overrun (WP19) ----
+
+        /// <summary>Host Overrun alone against two practice dummies on Breakwater; the first wave walks at the start of play.</summary>
+        static void StartOverrunMatch()
+        {
+            var rules = Ruleset.Default;
+            rules.heroPickSeconds = 1.5f;
+            rules.deploySeconds = 1.5f;
+            var runner = SessionRunner.Ensure();
+            runner.Speed = 1f;
+            // As for Flag Rush: let the last match's socket go, and host on a port of its own.
+            runner.Leave();
+            runner.StartCoroutine(HostOverrunSoon(runner, rules));
+        }
+
+        static IEnumerator HostOverrunSoon(SessionRunner runner, Ruleset rules)
+        {
+            yield return null;
+            yield return null;
+            yield return new WaitForSecondsRealtime(0.25f);
+            runner.Host("overrun", "Capture", false, runner.Settings.defaultPort + 2, false, rules);
+            var session = runner.Session;
+            if (session == null || session.Client == null) { Debug.LogError("Duck and Cover: the capture could not host Overrun."); yield break; }
+            if (MapScene.Current == null || MapScene.Current.id != Breakwater.Id) Debug.LogError("Duck and Cover: Overrun did not build Breakwater.");
+            var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
+            if (local != null) { local.scripted = true; local.freeCamera = false; }
+            session.Client.Welcomed += welcome =>
+            {
+                for (int i = 0; i < 2; i++) session.Client.Send(new AddDummyCommand { team = TeamId.B });
+                session.Client.Send(new PickHeroCommand { heroId = "lancer" });
+                session.Client.Send(new StartMatchCommand());
+            };
+            HideTraits = true;
+        }
+
+        static bool OverrunRunning(out SessionRunner runner)
+        {
+            runner = SessionRunner.Instance;
+            if (runner != null && runner.Overrun != null && runner.Lanes != null && runner.Combat != null) return true;
+            Debug.LogError("Duck and Cover: the capture has no Overrun match running.");
+            return false;
+        }
+
+        /// <summary>The living minion of a team furthest toward the enemy base (team A pushes toward +z), or null.</summary>
+        static UnitState FrontMinion(SessionRunner runner, TeamId team)
+        {
+            UnitState best = null;
+            foreach (var u in runner.Combat.Units.Living())
+            {
+                if (u.team != team || !runner.Overrun.Rules.IsMinion(u.typeId)) continue;
+                float ahead = team == TeamId.A ? u.position.z : -u.position.z;
+                if (best == null || ahead > (team == TeamId.A ? best.position.z : -best.position.z)) best = u;
+            }
+            return best;
+        }
+
+        /// <summary>From behind and above team A's first wave, looking down the lane ahead of it.</summary>
+        static void WatchTheWave()
+        {
+            if (!OverrunRunning(out var runner)) return;
+            HideHud = true;
+            var front = FrontMinion(runner, TeamId.A);
+            if (front == null) { Debug.LogError("Duck and Cover: the capture found no minions on the lane."); return; }
+            var at = front.position.ToVector3();
+            WatchFrom(at + new Vector3(-3f, 3.5f, -9f), at + new Vector3(0f, 0.8f, 4f));
+        }
+
+        /// <summary>Match time runs faster until the waves meet at mid-lane; watched from above the lane on A's side.</summary>
+        static void WatchTheClash()
+        {
+            if (!OverrunRunning(out var runner)) return;
+            HideHud = true;
+            runner.Speed = 5f;
+            WatchFrom(new Vector3(13f, 10f, -22f), new Vector3(10f, 0f, 0f));
+            CombatView.Instance.StartCoroutine(Expect(() => runner.Combat.Units.Living().Count >= 12, 5f, "both waves on the lane (12 or more units)"));
+        }
+
+        /// <summary>Back to normal speed, and the player stands behind team A's front minion, facing down the lane, HUD up.</summary>
+        static void PlayerJoinsTheWave()
+        {
+            if (!OverrunRunning(out var runner)) return;
+            runner.Speed = 1f;
+            HideTraits = true;
+            var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
+            var front = FrontMinion(runner, TeamId.A);
+            if (local == null || front == null) { Debug.LogError("Duck and Cover: the capture could not put the player on the lane."); return; }
+            var feet = front.position + new Vec3(-1.5f, 0f, -5f);
+            runner.Combat.Movement.Teleport(runner.Client.PlayerId, feet, 0f);
+            local.freeCamera = false;
+            local.LookAt(0f, 6f);
+        }
+
+        /// <summary>
+        /// Team B's Forward Bastion falls (a server-side hit from one of A's minions, which may always hurt
+        /// it), so A scores and B's side gate rolls up; watched from the side route outside that gate.
+        /// </summary>
+        static void KnockDownForwardB()
+        {
+            if (!OverrunRunning(out var runner)) return;
+            HideTraits = true;
+            var b = runner.Overrun.State.Bastion(TeamId.B, BastionTier.Forward);
+            var minion = FrontMinion(runner, TeamId.A);
+            if (b == null || minion == null) { Debug.LogError("Duck and Cover: the capture could not find B's Forward Bastion and an A minion."); return; }
+            for (int i = 0; i < 10 && runner.Combat.Units.IsAlive(b.unitId); i++)
+                runner.Combat.Damage.Damage(minion.id, b.unitId, 10000f, LaneRuleset.AttackId);
+            WatchFrom(new Vector3(-36f, 2.4f, 84f), new Vector3(-12f, 2f, 84f));
+            CombatView.Instance.StartCoroutine(Expect(() => !b.alive && runner.Overrun.State.gateOpenB && runner.Match.State.scoreA == 1, 1f,
+                "B's Forward Bastion down, B's side gate open and team A on 1"));
         }
 
         /// <summary>Log an error if <paramref name="ok"/> doesn't hold after <paramref name="seconds"/>.</summary>
@@ -381,6 +503,7 @@ namespace DuckAndCover.Game
             foreach (var shot in Shots())
             {
                 HideHud = false; // each shot that wants the bare world asks again
+                HideTraits = false;
                 try { shot.setup?.Invoke(); }
                 catch (Exception ex) { Debug.LogException(ex); }
                 yield return new WaitForSecondsRealtime(shot.wait);

@@ -16,7 +16,7 @@ namespace DuckAndCover.Game
     ///   -duckSmoke host|join      which side this instance plays
     ///   -duckSmokeOut file        where to write the result
     ///   -duckPlayers n            the host starts the match once n players are connected (default 2)
-    ///   -duckMode id              capture_hold, king_of_the_hill or flag_rush
+    ///   -duckMode id              capture_hold, king_of_the_hill, flag_rush or overrun (Breakwater's lane, waves, camps and Bastions)
     ///   -duckAddress a, -duckPort p, -duckSpeed x
     /// </summary>
     public class NetSmoke : MonoBehaviour
@@ -70,6 +70,7 @@ namespace DuckAndCover.Game
             started = Time.realtimeSinceStartup;
             Application.targetFrameRate = 120;
             var runner = SessionRunner.Ensure();
+            runner.BuildMaps = false; // scripted play has its own stand-in layout, and nothing is drawn
             int port = IntArg("-duckPort", runner.Settings.defaultPort);
             if (role == "host")
             {
@@ -125,7 +126,8 @@ namespace DuckAndCover.Game
             var runner = SessionRunner.Instance;
             // The host reports the rules' own state; a client reports what it was sent.
             MatchState state = runner == null ? null : runner.Match != null ? runner.Match.State : runner.Client == null ? null : runner.Client.State;
-            string text = SessionDigest.Of(state);
+            var overrun = runner == null || runner.Client == null || runner.Client.Snapshot == null ? null : runner.Client.Snapshot.overrun;
+            string text = SessionDigest.Of(state, overrun);
             if (script != null && script.CommandsSent == 0) errors.Add("[Error] The scripted player never sent a command.");
             foreach (var e in errors) text += e + "\n";
             try { File.WriteAllText(outFile, text); }
