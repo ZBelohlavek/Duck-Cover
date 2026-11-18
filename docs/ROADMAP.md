@@ -36,7 +36,7 @@ https://claude.ai/artifact/7qbJG2ukrZDQ6ZTfX3nXGs
 | WP14 Units (combat contract moves to unit ids) | Core | Merged combat and abilities | Weapons, abilities and statuses hit a test unit as they hit a hero; hero kit tests pass | In review |
 | WP21 Flag Rush | Core, map data, Unity | Merged match rules, Gantry Yard | Flag rules tested; fair flag spots pass the validator; netsmoke flag match; capture | Ready, start first |
 | WP15 Lanes, waves and camps | Core | WP14 | Cloud wave report; all four camp kinds tested | Waiting |
-| WP18 Breakwater greybox, launch pads and ledges | Layout and Core | WP14's lane fields | Validator (mirror symmetry, lane, one-way ledges and drop, jungle joins the lane at both ends); map plan | Waiting |
+| WP18 Breakwater greybox, launch pads and ledges | Layout and Core | WP14's lane fields | Validator (mirror symmetry, lane, one-way ledges and drop, jungle joins the lane at both ends); map plan | In review |
 | WP20 Hero kits against waves | Data and tests | WP14 | Each hero has a tested way to clear or protect a wave | Waiting |
 | WP16 Overrun rules | Core | WP15 | Overrun from data; bot matches end inside 15 minutes | Waiting |
 | WP19 Overrun in Unity | Scripts | WP16, WP18 | Two players over the network; netsmoke with 40 units; capture | Waiting |
@@ -70,6 +70,11 @@ WP17 (Salvage and build pads) was dropped on Nov 18.
   remove them, the compact `MatchSnapshot.units` list); `CombatServer.Units`. Units ride the hit history under
   their ids, so shots, areas, splash and objects find them; `DamageRules` answers who is alive and on which team.
   Tests in `UnitTests.cs`, including every starter kit and both upgrade paths compared on a hero and on a unit.
+- WP18: Breakwater as data in `Core/Maps/Breakwater.cs` (lane and camps in WP15's `LaneDef`/`CampDef`; Bastions,
+  launch pads, one-way drops, jungle routes and base entrances in `MapDef.Overrun.cs`), checked by `LaneMapValidator`;
+  launch pads in the movement check (`Core/Combat/LaunchPad.cs`, `MovementRules.Launch.cs`) and flown by `LocalPlayer`;
+  markers for Bastions, camps and pads in `Game/MapScene`. Tests and the plan (`report breakwater out.svg`) in
+  `BreakwaterTests.cs`. Choosing Breakwater for a match comes with WP19.
 - WP14 to WP21: units, lanes, waves, camps and Bastions in Core folders of their own (`Core/Units`,
   `Core/Lanes`, `Core/Overrun`, `Core/Flag`), Breakwater beside Gantry Yard in `Core/Maps`, mode data in
   `Data/Modes`; the Unity side in `Game` and `UI`.

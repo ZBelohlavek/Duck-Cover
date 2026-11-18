@@ -54,7 +54,32 @@ namespace DuckAndCover.Game
             new Shot("13-lane", () => LaneShot(new Vector3(0f, 1.8f, -50f), new Vector3(0f, 1.2f, -38f)), 1.0f),
             new Shot("14-lane-gap", () => LaneShot(new Vector3(1.5f, 1.8f, -41f), new Vector3(-16f, 1.2f, -50f)), 0.6f),
             new Shot("15-lane-above", () => LaneShot(new Vector3(0f, 55f, -62f), new Vector3(0f, 0f, -10f)), 0.6f),
+            // Breakwater (WP18), the Overrun map, built far off to the other side. No HUD over these.
+            new Shot("20-bw-above", () => BreakwaterShot(new Vector3(-95f, 120f, -5f), new Vector3(0f, 0f, 0f)), 1.2f),
+            new Shot("21-bw-base", () => BreakwaterShot(new Vector3(-30f, 40f, -112f), new Vector3(-8f, 0f, -70f)), 0.6f),
+            new Shot("22-bw-lane", () => BreakwaterShot(new Vector3(-12f, 1.8f, -70f), new Vector3(-8f, 1.4f, -40f)), 0.6f),
+            new Shot("23-bw-ledge", () => BreakwaterShot(new Vector3(-25f, 4.7f, -57f), new Vector3(-6f, 0.5f, -42f)), 0.6f),
+            new Shot("24-bw-gap", () => BreakwaterShot(new Vector3(4f, 1.8f, -40f), new Vector3(-14f, 1.4f, -29f)), 0.6f),
+            new Shot("25-bw-shelf", () => BreakwaterShot(new Vector3(-22f, 5.7f, 5f), new Vector3(6f, 0.5f, -1f)), 0.6f),
+            new Shot("26-bw-mid", () => BreakwaterShot(new Vector3(16f, 1.8f, -24f), new Vector3(6f, 2.5f, 4f)), 0.6f),
+            new Shot("27-bw-jungle", () => BreakwaterShot(new Vector3(8f, 1.8f, -87f), new Vector3(26f, 1.2f, -78f)), 0.6f),
+            new Shot("28-bw-camps", () => BreakwaterShot(new Vector3(30f, 28f, -112f), new Vector3(24f, 0f, -80f)), 0.6f),
         };
+
+        /// <summary>True while a shot wants the world without the HUD over it (the UI reads it).</summary>
+        public static bool HideHud;
+
+        /// <summary>Where Breakwater is built for its shots: away from the real map and the lane mock-up.</summary>
+        static readonly Vector3 BreakwaterOffset = new Vector3(3000f, 0f, 0f);
+        static GameObject breakwaterPreview;
+
+        static void BreakwaterShot(Vector3 position, Vector3 target)
+        {
+            if (breakwaterPreview == null) breakwaterPreview = MapScene.BuildPreview(Breakwater.Build(), BreakwaterOffset);
+            HideHud = true;
+            LookAt(position + BreakwaterOffset, target + BreakwaterOffset);
+            WatchFrom(position + BreakwaterOffset, target + BreakwaterOffset);
+        }
 
         /// <summary>Where the lane mock-up is built: far enough that neither map shows in the other's shots.</summary>
         static readonly Vector3 LaneOffset = new Vector3(0f, 0f, 1500f);
@@ -63,6 +88,7 @@ namespace DuckAndCover.Game
         static void LaneShot(Vector3 position, Vector3 target)
         {
             if (lanePreview == null) lanePreview = MapScene.BuildPreview(LaneStudy.Build(), LaneOffset);
+            HideHud = true;
             LookAt(position + LaneOffset, target + LaneOffset);
             WatchFrom(position + LaneOffset, target + LaneOffset);
         }
@@ -262,6 +288,7 @@ namespace DuckAndCover.Game
 
             foreach (var shot in Shots())
             {
+                HideHud = false; // each shot that wants the bare world asks again
                 try { shot.setup?.Invoke(); }
                 catch (Exception ex) { Debug.LogException(ex); }
                 yield return new WaitForSecondsRealtime(shot.wait);

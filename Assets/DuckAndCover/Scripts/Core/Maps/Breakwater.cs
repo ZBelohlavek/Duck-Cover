@@ -35,6 +35,8 @@ namespace DuckAndCover.Core
         public const float LedgeHeight = 3f;
         public const float ShelfHeight = 4f;
         const float Tile = 2f;
+        /// <summary>Longest run of fill tiles merged into one block (8 m), so the dressing spreads its trees along the walls.</summary>
+        const int MaxRun = 4;
         const float RoomHeight = 4f;
         const float OuterHeight = 9f;
 
@@ -113,7 +115,7 @@ namespace DuckAndCover.Core
                 return false;
             }
 
-            // ---- The jungle fill: 2 m tiles of tree line and rock, merged into runs along x ----
+            // ---- The jungle fill: 2 m tiles of tree line and rock, merged into runs of up to 8 m along x ----
             int cols = (int)Math.Round(HalfX * 2f / Tile);
             int rows = (int)Math.Round(HalfZ * 2f / Tile); // odd: the middle row sits on the mirror line
             int mid = rows / 2;
@@ -128,7 +130,7 @@ namespace DuckAndCover.Core
                     if (TileOpen(Open, x0, z)) { i++; continue; }
                     string style = StyleAt(x0 + Tile * 0.5f, z);
                     int k = i + 1;
-                    while (k < cols && !TileOpen(Open, -HalfX + k * Tile, z) && StyleAt(-HalfX + (k + 0.5f) * Tile, z) == style) k++;
+                    while (k < cols && k - i < MaxRun && !TileOpen(Open, -HalfX + k * Tile, z) && StyleAt(-HalfX + (k + 0.5f) * Tile, z) == style) k++;
                     float sx = (k - i) * Tile;
                     var b = new MapBlock("Jungle" + j + "_" + (run++), BlockKind.Wall, new Vec3(x0 + sx * 0.5f, FillHeight * 0.5f, z), new Vec3(sx, FillHeight, Tile)) { style = style };
                     if (j == mid) m.blocks.Add(b);

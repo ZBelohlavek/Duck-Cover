@@ -68,6 +68,10 @@ namespace DuckAndCover.Game
         float vaultTime = -1f;
         Vector3 vaultFrom, vaultTo;
 
+        /// <summary>The launch pad whose arc the body is flying, or null (WP18).</summary>
+        LaunchPad flightPad;
+        float flightTime;
+
         Vector3 pushVelocity;
         float pushLeft;
         float choiceHeldFor;
@@ -153,6 +157,7 @@ namespace DuckAndCover.Game
             velocity = Vector3.zero;
             vaultTime = -1f;
             pushLeft = 0f;
+            flightPad = null;
             if (!correction) { yaw = newYaw; pitch = 0f; }
         }
 
@@ -326,6 +331,12 @@ namespace DuckAndCover.Game
             controller.stepOffset = Mathf.Min(0.35f, rules.vaultMinHeight);
             eyeHeight = Mathf.MoveTowards(eyeHeight <= 0f ? rules.eyeHeight : eyeHeight, Hitboxes.EyeHeight(rules, Crouched), 6f * dt);
 
+            if (flightPad != null)
+            {
+                FlyLaunch(dt);
+                return;
+            }
+
             if (pushLeft > 0f)
             {
                 float step = Mathf.Min(dt, pushLeft);
@@ -360,6 +371,43 @@ namespace DuckAndCover.Game
             Sprinting = grounded && MoveMath.IsSprinting(rules, input) && speedScale > 0f;
             var flags = controller.Move(velocity * dt);
             if ((flags & CollisionFlags.Above) != 0 && velocity.y > 0f) velocity.y = 0f;
+            TryLaunch();
+        }
+
+        /// <summary>
+        /// Standing on one of the map's launch pads starts its flight. This frame's position (on the pad)
+        /// goes to the server at once, so the server launches the player too and checks the arc.
+        /// </summary>
+        void TryLaunch()
+        {
+            var map = MapScene.Current;
+            if (map == null || map.launchPads.Count == 0 || !controller.isGrounded) return;
+            var feet = transform.position.ToVec3();
+            foreach (var pad in map.launchPads)
+                if (pad.Contains(feet))
+                {
+                    flightPad = pad;
+                    flightTime = 0f;
+                    sendTimer = 0f;
+                    return;
+                }
+        }
+
+        /// <summary>Follow the pad's arc (the same one the server checks), then land running.</summary>
+        void FlyLaunch(float dt)
+        {
+            flightTime += dt;
+            Vector3 at = flightPad.PointAt(flightTime).ToVector3();
+            controller.enabled = false;
+            transform.position = at;
+            controller.enabled = true;
+            velocity = flightPad.VelocityAt(flightTime).ToVector3();
+            Sprinting = false;
+            if (flightTime >= flightPad.seconds)
+            {
+                velocity = Vector3.zero;
+                flightPad = null;
+            }
         }
 
         bool HasHeadroom()
