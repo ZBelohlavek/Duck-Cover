@@ -183,7 +183,7 @@ namespace DuckAndCover.Core
     /// team A's half is at -z, team B's is the same half turned around.
     /// </summary>
     [Serializable]
-    public class MapDef
+    public partial class MapDef
     {
         public string id = "";
         public string displayName = "";
