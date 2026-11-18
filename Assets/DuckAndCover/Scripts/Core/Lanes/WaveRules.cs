@@ -137,6 +137,14 @@ namespace DuckAndCover.Core
             {
                 StepUnit(s.minion.unitId, s.to, s.yaw);
                 s.minion.progress = s.along;
+                // Stopped short (a wall, Bastion Panel, Lockout Gate): progress is where it actually stands,
+                // so a held wave doesn't run its place along the lane on ahead of itself.
+                var moved = Units.Unit(s.minion.unitId);
+                if (moved != null && Vec3.Distance(moved.position, s.to) > 1e-3f)
+                {
+                    float window = Rules.lookAhead + 1f;
+                    s.minion.progress = lanes[s.minion.lane].Project(moved.position, s.along - window, s.along + window, out _);
+                }
             }
             PulseWardens(dt);
             Fire(shots);
@@ -272,36 +280,26 @@ namespace DuckAndCover.Core
             foreach (var s in shots) combat.Damage.Damage(s.from, s.to, s.damage, LaneRuleset.AttackId);
         }
 
-        // ---- The two places units meet the world (the hero kits package may route these through barriers and gates) ----
+        // ---- The two places units meet the world ----
 
-        /// <summary>Can this unit's shot reach the target? A ray from chest to chest that map geometry doesn't stop.</summary>
+        /// <summary>Can this unit's shot reach the target? A ray from chest to chest (<see cref="UnitRules.LineOfFire"/>).</summary>
         public bool CanHit(int unitId, int targetId)
         {
             var u = Units.Unit(unitId);
             if (u == null || !u.alive || !combat.Damage.IsAlive(targetId)) return false;
-            Vec3 from = Hitboxes.Chest(combat.Rules, u.Pose());
-            Vec3 to = ChestOf(targetId);
-            Vec3 d = to - from;
-            float len = d.Magnitude;
-            if (len < 1e-4f) return true;
-            return !(geometry.Raycast(from, d / len, len, M.tick, out var hit) && hit.kind != HitKind.Nothing && hit.kind != HitKind.Player);
+            // Map geometry and enemy barriers and gates block the shot; the unit's own team's let it through (WP20).
+            return Units.LineOfFire(unitId, targetId);
         }
 
-        /// <summary>Move a unit one step (the server's walking; minions never move faster than <see cref="UnitRules.Speed"/>).</summary>
+        /// <summary>
+        /// Move a unit one step (the server's walking; minions never move faster than <see cref="UnitRules.Speed"/>).
+        /// It stops short of walls and of Bastion Panels and Lockout Gates (<see cref="UnitRules.Walk"/>).
+        /// </summary>
         public void StepUnit(int unitId, Vec3 to, float yaw)
         {
             var u = Units.Unit(unitId);
             if (u == null) return;
-            Vec3 step = to - u.position;
-            float len = step.Magnitude;
-            if (len > 1e-5f)
-            {
-                Vec3 chest = Hitboxes.Chest(combat.Rules, u.Pose());
-                float radius = combat.Rules.torsoRadius * u.size;
-                if (geometry.Raycast(chest, step / len, len + radius, M.tick, out var hit) && hit.kind != HitKind.Nothing && hit.kind != HitKind.Player)
-                    return; // a wall in the way: stay put this tick
-            }
-            Units.Move(unitId, to, yaw);
+            Units.Walk(unitId, to - u.position, yaw);
         }
 
         // ---- Bodies ----
