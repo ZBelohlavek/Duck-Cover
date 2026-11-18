@@ -192,6 +192,32 @@ namespace DuckAndCover.UI
         }
 
         /// <summary>
+        /// A bar of fixed-size cells, one for every <paramref name="perCell"/> points up to <paramref name="max"/>
+        /// (the last one only as wide as the points it holds), filled to <paramref name="value"/>. A hero with
+        /// more health gets a longer bar. Empty cells show as a faint outline unless <paramref name="showEmpty"/>
+        /// is off. Returns the right edge of the bar's top.
+        /// </summary>
+        public float PointCells(float x, float y, float cellWidth, float height, float slant, float gap, float value, float max, float perCell,
+                                Color fill, Color empty, bool showEmpty = true)
+        {
+            if (max <= 0f || perCell <= 0f) return x;
+            int cells = Mathf.Max(1, Mathf.CeilToInt(max / perCell - 0.001f));
+            float right = x;
+            for (int i = 0; i < cells; i++)
+            {
+                float holds = Mathf.Min(perCell, max - i * perCell);
+                if (holds <= 0f) break;
+                float width = cellWidth * holds / perCell;
+                float left = x + i * (cellWidth + gap);
+                float part = Mathf.Clamp01((value - i * perCell) / holds);
+                if (showEmpty && part < 1f) Line(Slanted(left, y, width, height, slant), 1f, empty, true, 0f);
+                if (part > 0f) Fill(Slanted(left, y, width * part, height, slant), fill, part >= 1f ? 4f : 0f);
+                right = left + width + slant;
+            }
+            return right;
+        }
+
+        /// <summary>
         /// A slanted bar cut into <paramref name="segments"/> cells with gaps between them, filled to
         /// <paramref name="share"/> (0 to 1) from the left, or from the right with <paramref name="fromRight"/>.
         /// Filled cells glow; empty cells show as a faint outline.

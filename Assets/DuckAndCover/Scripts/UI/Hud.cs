@@ -25,7 +25,9 @@ namespace DuckAndCover.UI
         static readonly string[] AbilityKeys = { "E", "F", "X" };
 
         // Layout, in the visor's 1920 x 1080 pixels from the bottom left.
-        const float BarX = 196f, HealthY = 100f, BarWidth = 380f;
+        const float BarX = 196f, HealthY = 100f;
+        /// <summary>Each health cell is this many points, so heroes with more health get a longer bar.</summary>
+        const float HealthPerCell = 25f, CellWidth = 20f, CellGap = 3f;
         static readonly Vector2 Badge = new Vector2(118f, 118f);
         const float SlotY = 60f;
         const float HeaderY = 1012f;
@@ -34,7 +36,7 @@ namespace DuckAndCover.UI
         Canvas canvas;
         GameObject fight;
         VisorGraphic frame, crosshair, vitals, badge, ammoRow, hitMarker, choiceLines, headerLines, centreLines;
-        Text healthText, levelText, xpText, heroText, stanceText, ammoText, magazineText, weaponText, reloadText;
+        Text healthTag, healthText, levelText, xpText, heroText, stanceText, ammoText, magazineText, weaponText, reloadText;
         Text centerText, feedText;
         string frameHero;
         float fightingSince = -1f;
@@ -144,8 +146,8 @@ namespace DuckAndCover.UI
             xpText = UIKit.Readout(f, "Xp", new Vector2(BarX + 150f, 74f), new Vector2(300f, 24f), "", 19, UITheme.TextDim, TextAnchor.MiddleLeft);
             heroText = UIKit.Readout(f, "Hero", new Vector2(BarX + 150f, 176f), new Vector2(300f, 30f), "", 24, UITheme.Text, TextAnchor.MiddleLeft, true);
             stanceText = UIKit.Readout(f, "Stance", new Vector2(BarX + 200f, 208f), new Vector2(400f, 26f), "", 18, UITheme.TextDim, TextAnchor.MiddleLeft);
-            UIKit.Readout(f, "HealthTag", new Vector2(BarX + BarWidth + 64f, HealthY + 44f), new Vector2(100f, 18f), "HEALTH", 15, UITheme.TextDim, TextAnchor.MiddleLeft);
-            healthText = UIKit.Readout(f, "HealthText", new Vector2(BarX + BarWidth + 74f, HealthY + 12f), new Vector2(120f, 50f), "", 42, UITheme.Text, TextAnchor.MiddleLeft, true);
+            healthTag = UIKit.Readout(f, "HealthTag", new Vector2(BarX + 400f, HealthY + 44f), new Vector2(100f, 18f), "HEALTH", 15, UITheme.TextDim, TextAnchor.MiddleLeft);
+            healthText = UIKit.Readout(f, "HealthText", new Vector2(BarX + 400f, HealthY + 12f), new Vector2(120f, 50f), "", 42, UITheme.Text, TextAnchor.MiddleLeft, true);
         }
 
         void BuildWeapon(Transform f)
@@ -437,9 +439,12 @@ namespace DuckAndCover.UI
 
             var g = vitals;
             g.Clear();
-            g.SegmentedBar(BarX, HealthY, BarWidth, 26f, 9f, 10, 5f, health / maxHealth, low ? UITheme.Danger : UITheme.Health, UITheme.VisorFaint);
-            g.SegmentedBar(BarX + 12f, HealthY + 34f, BarWidth, 8f, 3f, 10, 5f, shield / Mathf.Max(1f, runner.ClientRules.maxShield), UITheme.Shield, UITheme.WithAlpha(UITheme.Visor, 0.18f));
+            float right = g.PointCells(BarX, HealthY, CellWidth, 26f, 9f, CellGap, health, maxHealth, HealthPerCell, low ? UITheme.Danger : UITheme.Health, UITheme.VisorFaint);
+            // Shield sits above health in the same 25-point cells, only as long as the shield is.
+            if (shield > 0.5f) g.PointCells(BarX + 12f, HealthY + 34f, CellWidth, 8f, 3f, CellGap, shield, shield, HealthPerCell, UITheme.Shield, UITheme.VisorFaint, false);
             g.Commit();
+            healthText.rectTransform.anchoredPosition = new Vector2(right + 72f, HealthY + 12f);
+            healthTag.rectTransform.anchoredPosition = new Vector2(right + 64f, HealthY + 44f);
             healthText.text = Mathf.CeilToInt(health).ToString();
             healthText.color = low ? UITheme.Danger : UITheme.Text;
 
