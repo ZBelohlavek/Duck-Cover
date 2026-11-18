@@ -153,19 +153,7 @@ namespace DuckAndCover.Game
                 if (client.IsHostPlayer && GUILayout.Button("Start match")) client.Send(new StartMatchCommand());
             }
             if (state.phase == MatchPhase.Lobby || state.phase == MatchPhase.HeroPick)
-            {
-                GUILayout.BeginHorizontal();
-                foreach (var hero in HeroData.Pickable())
-                {
-                    string role = Roles.Label(hero.role);
-                    if (GUILayout.Button(hero.displayName + (role != "" ? " (" + role + ")" : "") + (me.heroId == hero.id ? " *" : "")))
-                        client.Send(new PickHeroCommand { heroId = hero.id });
-                }
-                GUILayout.EndHorizontal();
-                // 4v4 lineup advice (tank, healer, DPS, utility or flex): a hint, never a lock.
-                string hint = Roles.Hint(state, me.team, HeroData.Catalog);
-                if (hint != "") GUILayout.Label(hint);
-            }
+                GUILayout.Label("Pick a hero on the pick screen: keys 1 to 4 or click a card.");
             if (state.IsPlaying || state.phase == MatchPhase.Deploy)
                 GUILayout.Label("Click the game to take the mouse, Esc frees it. WASD, Shift sprint, Ctrl crouch, Space jump or vault, R reload, 1/2 weapons, E and F abilities, X ultimate, hold Z or V to take the left or right upgrade.");
             if (lastRejection != "") GUILayout.Label("Refused: " + lastRejection);

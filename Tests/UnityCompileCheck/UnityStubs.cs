@@ -106,7 +106,30 @@ namespace UnityEngine
         public static string ToJson(object obj) => null;
     }
 
-    public sealed class Font : Object { }
+    public sealed class Font : Object
+    {
+        public static string[] GetOSInstalledFontNames() => new string[0];
+        public static Font CreateDynamicFontFromOSFont(string fontname, int size) => null;
+    }
+
+    public enum FontStyle { Normal = 0, Bold = 1, Italic = 2, BoldAndItalic = 3 }
+
+    public struct Vector4
+    {
+        public float x, y, z, w;
+        public Vector4(float x, float y, float z, float w) { this.x = x; this.y = y; this.z = z; this.w = w; }
+        public static Vector4 zero => default;
+    }
+
+    public class GUIUtility
+    {
+        public static int keyboardControl { get; set; }
+    }
+
+    public sealed class RectTransformUtility
+    {
+        public static bool RectangleContainsScreenPoint(RectTransform rect, Vector2 screenPoint, Camera cam) => false;
+    }
 
     public sealed class Shader : Object
     {
@@ -497,7 +520,30 @@ namespace UnityEngine.UI
         public virtual Color color { get; set; }
         public virtual bool raycastTarget { get; set; }
         public RectTransform rectTransform => null;
+        public virtual void SetVerticesDirty() { }
+        protected virtual void OnPopulateMesh(VertexHelper vh) { }
     }
+
+    public abstract class MaskableGraphic : Graphic { }
+
+    public class VertexHelper : IDisposable
+    {
+        public int currentVertCount => 0;
+        public void Clear() { }
+        public void AddVert(Vector3 position, Color32 color, Vector4 uv0) { }
+        public void AddTriangle(int idx0, int idx1, int idx2) { }
+        public void Dispose() { }
+    }
+
+    public abstract class BaseMeshEffect : MonoBehaviour { }
+
+    public class Shadow : BaseMeshEffect
+    {
+        public Color effectColor { get; set; }
+        public Vector2 effectDistance { get; set; }
+    }
+
+    public class Outline : Shadow { }
 
     public class Image : Graphic { }
 
@@ -506,6 +552,7 @@ namespace UnityEngine.UI
         public virtual string text { get; set; }
         public Font font { get; set; }
         public int fontSize { get; set; }
+        public FontStyle fontStyle { get; set; }
         public TextAnchor alignment { get; set; }
         public HorizontalWrapMode horizontalOverflow { get; set; }
         public VerticalWrapMode verticalOverflow { get; set; }
@@ -693,6 +740,7 @@ namespace UnityEngine.InputSystem
         public Controls.KeyControl digit1Key => null;
         public Controls.KeyControl digit2Key => null;
         public Controls.KeyControl digit3Key => null;
+        public Controls.KeyControl digit4Key => null;
         public Controls.KeyControl eKey => null;
         public Controls.KeyControl fKey => null;
         public Controls.KeyControl xKey => null;

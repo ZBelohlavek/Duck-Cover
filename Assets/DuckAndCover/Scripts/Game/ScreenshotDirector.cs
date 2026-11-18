@@ -42,6 +42,7 @@ namespace DuckAndCover.Game
             new Shot("04-hall-inside", () => LookAt(new Vector3(-14f, 1.7f, -21f), new Vector3(-14f, 1.4f, -6f)), 0.4f),
             new Shot("05-middle", () => { MapView.PreviewShift = false; LookAt(new Vector3(-22f, 4.3f, 2f), new Vector3(0f, 0.5f, 0f)); }, MapView.ShiftSeconds + 0.6f),
             // Host a match alone with three practice dummies on the other team, and wait for play to start.
+            new Shot("05b-pick", HostPracticeMatch, 1.5f),
             new Shot("06-spawn", StartPracticeMatch, 5.5f),
             new Shot("07-dummies", () => Stand(new Vec3(-4f, 0f, -8.5f)), 1.2f),
             new Shot("08-after-shots", () => Shoot(12), 1.6f),
@@ -378,7 +379,8 @@ namespace DuckAndCover.Game
             if (cam != null) cam.transform.SetPositionAndRotation(position, Quaternion.LookRotation(target - position));
         }
 
-        static void StartPracticeMatch()
+        /// <summary>Host the practice match and pick Lancer, but stay in the lobby so the pick screen shows.</summary>
+        static void HostPracticeMatch()
         {
             var rules = Ruleset.Default;
             rules.heroPickSeconds = 1.5f;
@@ -392,8 +394,16 @@ namespace DuckAndCover.Game
             {
                 for (int i = 0; i < 3; i++) session.Client.Send(new AddDummyCommand { team = TeamId.B });
                 session.Client.Send(new PickHeroCommand { heroId = "lancer" });
-                session.Client.Send(new StartMatchCommand());
             };
+        }
+
+        static void StartPracticeMatch()
+        {
+            var runner = SessionRunner.Instance;
+            var client = runner == null || runner.Session == null ? null : runner.Session.Client;
+            if (client == null || client.State == null) { Debug.LogError("Duck and Cover: the capture's practice match was not hosted."); return; }
+            if (client.State.phase != MatchPhase.Lobby) Debug.LogError("Duck and Cover: the capture expected the practice match in its lobby, it is " + client.State.phase + ".");
+            client.Send(new StartMatchCommand());
         }
 
         /// <summary>Put the local player somewhere (through the server, as a teleport), facing the first practice dummy.</summary>
