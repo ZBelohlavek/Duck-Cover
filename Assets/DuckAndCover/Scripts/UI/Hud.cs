@@ -149,7 +149,9 @@ namespace DuckAndCover.UI
                 card.health = UIKit.Bar(op, name + "Health", tm, new Vector2(x, -56f), new Vector2(BastionBarWidth, 14f), HealthColor);
                 bastionCards.Add(card);
             }
-            overrunStatus = UIKit.Label(op, "OverrunStatus", tm, new Vector2(0f, -100f), new Vector2(1300f, 36f), "", 24, UITheme.Text, TextAnchor.MiddleCenter);
+            // A dark strip behind the status line, so it reads against a bright sky.
+            UIKit.Box(op, "OverrunStatusBack", tm, new Vector2(0f, -98f), new Vector2(1040f, 40f), UITheme.Panel);
+            overrunStatus = UIKit.Label(op, "OverrunStatus", tm, new Vector2(0f, -100f), new Vector2(1300f, 36f), "", 22, UITheme.Text, TextAnchor.MiddleCenter);
             overrunPanel.SetActive(false);
 
             // Messages in the middle, and the feed top right. These show outside the fight too.
@@ -465,7 +467,7 @@ namespace DuckAndCover.UI
                 {
                     float next = snapshot.lanes == null ? 0f : snapshot.lanes.nextWaveIn;
                     line = "Next wave in " + Mathf.Max(0, Mathf.CeilToInt(next)) + "   Heroes hurt a Bastion only with their own minions near it";
-                    color = UITheme.TextDim;
+                    color = UITheme.Text;
                 }
             }
             overrunStatus.text = line;
