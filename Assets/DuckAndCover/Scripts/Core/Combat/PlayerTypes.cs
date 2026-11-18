@@ -116,8 +116,9 @@ namespace DuckAndCover.Core
         public List<SpawnPoint> Base(TeamId team) => team == TeamId.B ? spawnsB : spawnsA;
 
         /// <summary>
-        /// The boot room test arena: 48 m long, team A's spawn at the -z end facing +z, team B's at
-        /// +z facing back. BootRoom builds the geometry around these spots.
+        /// The old boot room test arena: 48 m long, team A's spawn at the -z end facing +z, team B's
+        /// at +z facing back. Tests and scripted runs still use it; the game uses the map's layout
+        /// (<see cref="MapDef.ToLayout"/>).
         /// </summary>
         public static ArenaLayout Placeholder()
         {

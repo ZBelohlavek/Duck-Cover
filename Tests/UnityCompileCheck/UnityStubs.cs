@@ -249,6 +249,10 @@ namespace UnityEngine
         public static Color white => new Color(1, 1, 1);
         public static Color black => new Color(0, 0, 0);
         public static Color Lerp(Color a, Color b, float t) => a;
+        public static bool operator ==(Color lhs, Color rhs) => lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a;
+        public static bool operator !=(Color lhs, Color rhs) => !(lhs == rhs);
+        public override bool Equals(object other) => other is Color c && this == c;
+        public override int GetHashCode() => 0;
     }
 
     public struct Rect
@@ -389,6 +393,11 @@ namespace UnityEngine
         public static float Repeat(float t, float length) => t;
         public static float Atan2(float y, float x) => 0f;
         public static float Asin(float f) => 0f;
+        public static float Sin(float f) => 0f;
+        public static float Cos(float f) => 0f;
+        public static float Sqrt(float f) => 0f;
+        public static float SmoothStep(float from, float to, float t) => from;
+        public static bool Approximately(float a, float b) => a == b;
     }
 
     public class GUIStyle

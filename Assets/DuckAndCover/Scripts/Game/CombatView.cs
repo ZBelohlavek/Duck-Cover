@@ -92,7 +92,7 @@ namespace DuckAndCover.Game
         static void ResetCamera()
         {
             var cam = Camera.main;
-            if (cam != null) cam.transform.SetPositionAndRotation(BootRoom.OverviewPosition, BootRoom.OverviewRotation);
+            if (cam != null) cam.transform.SetPositionAndRotation(MapScene.OverviewPosition, MapScene.OverviewRotation);
         }
 
         void Update()
