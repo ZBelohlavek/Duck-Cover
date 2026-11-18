@@ -10,7 +10,8 @@ static class SpawnTests
     {
         var h = new MatchHarness(rules: NoWaves());
         Check.Near(8f, h.Match.Spawn.WaitFor(1), "level 1");
-        Check.Near(17f, h.Match.Spawn.WaitFor(10), "level 10");
+        Check.Near(12.5f, h.Match.Spawn.WaitFor(10), "level 10");
+        Check.Near(17.5f, h.Match.Spawn.WaitFor(20), "level 20");
 
         int p = h.A[0];
         Check.True(h.Match.EliminatePlayer(p, h.B[0]), "eliminated");
@@ -21,10 +22,10 @@ static class SpawnTests
         Check.Equal(1, h.S.Player(h.B[0]).eliminations, "killer credited");
         Check.Equal(1, h.S.Player(p).deaths, "death counted");
 
-        h.S.Player(p).level = 10; // Progression sets this
+        h.S.Player(p).level = 20; // Progression sets this
         h.Match.EliminatePlayer(p);
         t = h.RunUntil(() => h.S.IsAlive(p), 30f);
-        Check.Near(17f, t, "level 10 waits 17 s", 0.06f);
+        Check.Near(17.5f, t, "level 20 waits 17.5 s", 0.06f);
         Check.False(h.Match.EliminatePlayer(999), "unknown player");
     }
 

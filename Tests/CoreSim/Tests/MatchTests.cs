@@ -16,7 +16,7 @@ static class MatchTests
         Check.Near(10f, r.matchEndSeconds, "match end");
         Check.Near(6f, r.captureSeconds, "capture");
         Check.Near(8f, r.respawnBaseSeconds, "respawn at level 1");
-        Check.Near(17f, r.respawnBaseSeconds + 9 * r.respawnPerLevelSeconds, "respawn at level 10");
+        Check.Near(17.5f, r.respawnBaseSeconds + 19 * r.respawnPerLevelSeconds, "respawn at level 20");
         Check.Equal(3, r.captureSpeedByPlayers.Length, "capture speed counts up to three players");
 
         r.captureSeconds = 0f;

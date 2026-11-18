@@ -9,7 +9,7 @@
         "bulwark_rush"
     ],
     "ultimateId": "bulwark_hold",
-    "passiveId": "bulwark_braced",
+    "passiveId": "",
     "levels": [
         {
             "level": 2,
@@ -19,56 +19,63 @@
             ]
         },
         {
-            "level": 3,
+            "level": 4,
             "options": [
                 "bulwark_reinforced_panel",
                 "bulwark_double_rush"
             ]
         },
         {
-            "level": 4,
+            "level": 6,
             "options": [
                 "bulwark_close_quarters",
                 "bulwark_quick_load"
             ]
         },
         {
-            "level": 5,
+            "level": 8,
             "options": [
                 "bulwark_iron_ring",
                 "bulwark_lockdown"
             ]
         },
         {
-            "level": 6,
+            "level": 10,
             "options": [
-                "bulwark_last_bastion",
+                "bulwark_braced",
                 "bulwark_second_wind"
             ]
         },
         {
-            "level": 7,
+            "level": 12,
             "options": [
                 "bulwark_shockwave",
                 "bulwark_rapid_panel"
             ]
         },
         {
-            "level": 8,
+            "level": 14,
             "options": [
                 "bulwark_relentless",
                 "bulwark_point_warden"
             ]
         },
         {
-            "level": 9,
+            "level": 16,
             "options": [
                 "bulwark_long_rush",
                 "bulwark_rallying_rush"
             ]
         },
         {
-            "level": 10,
+            "level": 18,
+            "options": [
+                "bulwark_quick_panel",
+                "bulwark_quick_rush"
+            ]
+        },
+        {
+            "level": 20,
             "options": [
                 "bulwark_unbreakable",
                 "bulwark_siege_breaker"
@@ -216,16 +223,16 @@
             "scriptId": ""
         },
         {
-            "id": "bulwark_last_bastion",
-            "displayName": "Last Bastion",
-            "description": "Take 15% less damage while at half health or less.",
-            "kind": "trait",
+            "id": "bulwark_braced",
+            "displayName": "Braced",
+            "description": "Passive. Take 15% less damage while standing on a point.",
+            "kind": "passive",
             "stats": [
                 {
                     "stat": "damageTaken",
                     "op": "multiply",
                     "value": 0.85,
-                    "when": "lowHealth"
+                    "when": "onPoint"
                 }
             ],
             "abilityChanges": [],
@@ -234,8 +241,8 @@
         {
             "id": "bulwark_second_wind",
             "displayName": "Second Wind",
-            "description": "Regain 8 health a second when you haven't been hit for a while.",
-            "kind": "trait",
+            "description": "Passive. Regain 8 health a second when you haven't been hit for a while.",
+            "kind": "passive",
             "stats": [
                 {
                     "stat": "healthRegen",
@@ -395,6 +402,40 @@
                     "param": "cooldown",
                     "op": "multiply",
                     "value": 0.75,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bulwark_quick_panel",
+            "displayName": "Quick Panel",
+            "description": "Bastion Panel recovers 20% sooner.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bulwark_panel",
+                    "param": "cooldown",
+                    "op": "multiply",
+                    "value": 0.8,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bulwark_quick_rush",
+            "displayName": "Quick Rush",
+            "description": "Breach Rush recovers 20% sooner.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bulwark_rush",
+                    "param": "cooldown",
+                    "op": "multiply",
+                    "value": 0.8,
                     "text": ""
                 }
             ],

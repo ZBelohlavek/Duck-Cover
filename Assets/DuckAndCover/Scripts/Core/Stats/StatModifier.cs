@@ -100,6 +100,8 @@ namespace DuckAndCover.Core
         public const string FireRate = "fireRate";
         public const string ReloadSpeed = "reloadSpeed";
         public const string WeaponDamage = "weaponDamage";
+        /// <summary>Multiplier on hitscan reach: the weapon's range and the distances its damage falls off over.</summary>
+        public const string WeaponRange = "weaponRange";
         /// <summary>Multiplier on magazine size (1.25 = a quarter more rounds).</summary>
         public const string MagazineSize = "magazineSize";
         /// <summary>Share of weapon damage dealt to enemies that heals the shooter (0.1 = 10%).</summary>
@@ -133,6 +135,7 @@ namespace DuckAndCover.Core
                 case ReloadSpeed:
                 case WeaponDamage:
                 case MagazineSize:
+                case WeaponRange:
                 case CaptureSpeed:
                     return 1f;
                 default:

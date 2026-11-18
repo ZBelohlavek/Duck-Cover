@@ -9,7 +9,8 @@
       "targeting": { "shape": "self" },
       "effects": [
         { "kind": "push", "amount": 6, "duration": 0.25, "direction": "aim" },
-        { "kind": "spawn", "objectId": "test_heal_trail", "tag": "healTrail" }
+        { "kind": "spawn", "objectId": "test_heal_trail", "tag": "healTrail" },
+        { "kind": "reload", "affects": "self", "tag": "dashReload" }
       ]
     },
     {

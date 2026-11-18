@@ -29,7 +29,7 @@ namespace DuckAndCover.Core
         /// <summary>Share of an ultimate's cost given back when a stun or death interrupts its wind-up.</summary>
         public float ultimateInterruptRefund = 0.5f;
         /// <summary>Player level at which ultimates unlock (the plan: level 5).</summary>
-        public int ultimateUnlockLevel = 5;
+        public int ultimateUnlockLevel = 8;
         /// <summary>Ultimate charge gained per second while alive, once unlocked (100 = full for a cost-100 ultimate).</summary>
         public float ultimateChargePerSecond = 0.8f;
         /// <summary>Ultimate charge per point of damage dealt to enemies.</summary>

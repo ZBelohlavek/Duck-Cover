@@ -56,6 +56,7 @@ namespace DuckAndCover.Core
                 return p != null && p.team == o.team && !Rules.friendlyFire;
             };
             Weapons.DamageObject = (objectId, amount, attackerId) => Abilities.DamageObject(objectId, amount, attackerId);
+            Abilities.RegisterEffect(EffectKinds.Reload, new ReloadEffect(Weapons));
             Weapons.Slow = (targetId, sourceId, share, seconds) =>
                 Abilities.ApplyStatus(targetId, AbilityLibrary.SlowStatus, sourceId, share, seconds, 0f, StatIds.WeaponSlow);
             events.Subscribe(OnEvent);
@@ -181,5 +182,13 @@ namespace DuckAndCover.Core
                 s.amount += Math.Min(room, Math.Min(Rules.personalShield - s.amount, Rules.personalShieldRegenPerSecond * dt));
             }
         }
+    }
+
+    /// <summary>Kind "reload": the target's weapon in hand is full again at once.</summary>
+    public sealed class ReloadEffect : IEffect
+    {
+        readonly WeaponRules weapons;
+        public ReloadEffect(WeaponRules weapons) { this.weapons = weapons; }
+        public void Apply(EffectContext ctx, int targetId) => weapons.RefillCurrent(targetId);
     }
 }

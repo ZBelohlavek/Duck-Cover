@@ -283,7 +283,7 @@ namespace DuckAndCover.Core
             if (mine == null) return;
             for (int level = 2; level <= mine.level; level++)
             {
-                if (mine.HasPicked(level) || choicesSent.Contains(level)) continue;
+                if (rules.progression.ChoiceAt(level) == UpgradeKind.None || mine.HasPicked(level) || choicesSent.Contains(level)) continue;
                 choicesSent.Add(level);
                 Send(new ChooseUpgradeCommand { level = level, option = (me.id + level) % 2 });
             }

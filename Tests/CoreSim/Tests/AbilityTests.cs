@@ -33,7 +33,7 @@ static class AbilityTests
 
         Check.Equal("no ability in slot 5", h.Use(A1, 5).reason, "bad slot");
         Check.Equal("unknown player", h.Use(999).reason, "unknown player");
-        Check.Equal("unlocks at level 5", h.Use(A1, 1).reason, "ultimate locked below level 5");
+        Check.Equal("unlocks at level 8", h.Use(A1, 1).reason, "ultimate locked below level 8");
         var wrong = h.Abilities.Apply(new UseAbilityCommand { playerId = A1, slot = 0, abilityId = "test_dash", aimDirection = Vec3.Right });
         Check.Equal("slot 0 holds test_guard", wrong.reason, "the command's ability id must match the slot");
         Check.Equal(CommandStatus.NotHandled, h.Abilities.Apply(new PingCommand { playerId = A1 }).status, "other commands are passed on");
@@ -127,7 +127,7 @@ static class AbilityTests
         h.Give(A1, "test_guard", "test_overdrive");
         h.Run(10f);
         Check.Near(0f, h.Unit(A1).ultimateCharge, "no charge before level 5");
-        h.S.Player(A1).level = 5;
+        h.S.Player(A1).level = h.Match.Rules.ultimateUnlockLevel;
         Check.Equal("ultimate not charged", h.Use(A1, 1).reason, "unlocked but empty");
         h.Run(10f);
         Check.Near(8f, h.Unit(A1).ultimateCharge, "0.8 a second over time", 0.05f);
@@ -172,7 +172,7 @@ static class AbilityTests
             effects = new[] { new EffectDef { kind = EffectKinds.Shield, amount = 100f } },
         }));
         h.Give(A1, "slow_ult");
-        h.S.Player(A1).level = 5;
+        h.S.Player(A1).level = h.Match.Rules.ultimateUnlockLevel;
         h.Abilities.AddUltimateCharge(A1, 80f);
         Check.True(h.Use(A1).IsAccepted, "wind-up starts");
         Check.Near(0f, h.Unit(A1).ultimateCharge, "spent");
@@ -387,7 +387,7 @@ static class AbilityTests
     {
         var h = new AbilityHarness();
         h.Give(A1, "test_overdrive");
-        h.S.Player(A1).level = 5;
+        h.S.Player(A1).level = h.Match.Rules.ultimateUnlockLevel;
         h.Abilities.AddUltimateCharge(A1, 100f);
         h.Abilities.AddModifiers(A1, "power_surge", new[] { new StatModifier(StatIds.AbilityRadius, ModOp.Percent, 0.5f) });
         h.Place(A1, 0); h.Place(A2, 8.5f);

@@ -31,14 +31,16 @@ static class HeroKitTests
             Check.True(h != null, id + " loads");
             if (h == null) continue;
             roles.Add(h.role);
-            Check.Equal(9, h.levels.Length, id + ": nine choices");
-            Check.Equal(18, h.upgrades.Length, id + ": eighteen options");
-            Check.Equal(8, h.upgrades.Count(u => u.Kind == UpgradeKind.Trait), id + ": eight traits");
-            Check.Equal(6, h.upgrades.Count(u => u.Kind == UpgradeKind.Talent), id + ": six talents");
+            Check.Equal(10, h.levels.Length, id + ": ten choices");
+            Check.Equal(20, h.upgrades.Length, id + ": twenty options");
+            Check.Equal(6, h.upgrades.Count(u => u.Kind == UpgradeKind.Trait), id + ": six traits");
+            Check.Equal(2, h.upgrades.Count(u => u.Kind == UpgradeKind.Passive), id + ": two passives");
+            Check.Equal("", h.passiveId, id + ": no passive in the base kit");
+            Check.Equal(8, h.upgrades.Count(u => u.Kind == UpgradeKind.Talent), id + ": eight talents");
             Check.Equal(2, h.upgrades.Count(u => u.Kind == UpgradeKind.Ultimate), id + ": two ultimate forms");
             Check.Equal(2, h.upgrades.Count(u => u.Kind == UpgradeKind.Capstone), id + ": two capstones");
             foreach (var u in h.upgrades) Check.True(!string.IsNullOrEmpty(u.description), id + "." + u.id + " has a description");
-            foreach (var a in HeroServer.Slots(h).Append(h.passiveId))
+            foreach (var a in HeroServer.Slots(h))
                 Check.True(!string.IsNullOrEmpty(lib.Ability(a)?.description), a + " has a description");
         }
         Check.Equal("controller,striker,support,vanguard", string.Join(",", roles.OrderBy(r => r)), "one hero per role");
@@ -51,12 +53,12 @@ static class HeroKitTests
         var lib = DataLibrary();
         var lancer = catalog.Get("lancer");
         lancer.weaponId = "shotgun";
-        lancer.abilities = new[] { "lancer_slip", "lancer_steady" };
-        lancer.Upgrade("lancer_piercing_mark").abilityChanges[0].param = "effect.heal.amount";
+        lancer.abilities = new[] { "lancer_slip", "lancer_firebomb" };
+        lancer.Upgrade("lancer_twin_marks").abilityChanges[0].param = "effect.push.amount";
         var problems = HeroServer.Validate(catalog, lib, StarterWeapons.Library());
         Check.True(problems.Any(p => p.Contains("loadout should start with shotgun")), "a weapon that isn't the loadout's first");
-        Check.True(problems.Any(p => p.Contains("is a passive")), "a passive in an ability slot");
-        Check.True(problems.Any(p => p.Contains("lancer_piercing_mark") && p.Contains("no such parameter")), "a talent changing something the ability lacks");
+        Check.True(problems.Any(p => p.Contains("marked ultimate but sits in an ability slot")), "an ultimate in an ability slot");
+        Check.True(problems.Any(p => p.Contains("lancer_twin_marks") && p.Contains("no such parameter")), "a talent changing something the ability lacks");
     }
 
     [Test]
@@ -87,11 +89,10 @@ static class HeroKitTests
             Check.Near(hero.maxHealth, h.Combat.Damage.MaxHealth(kv.Key), kv.Value + ": max health", 0.01f);
             Check.Equal(hero.weaponId, h.Combat.Weapons.Weapons(kv.Key).weapons[0], kv.Value + ": weapon in hand");
         }
-        Check.Near(1.15f, h.Stat(A2, StatIds.ReloadSpeed), "Lancer's Steady Hands passive");
-        Check.Near(6f, h.Stat(B1, StatIds.HealthRegen), "Mender's Field Kit passive");
-        Check.Near(1.1f, h.Stat(B2, StatIds.CooldownRate), "Rigger's Tinkerer passive");
-        Check.True(h.Unit(A1).stats.modifiers.Any(m => m.mod.stat == StatIds.DamageTaken && m.mod.when == StatConditions.OnPoint), "Bulwark's Braced passive (on a point)");
-        Check.Near(1f, h.Stat(A1, StatIds.DamageTaken), "Braced does nothing off a point");
+        Check.Near(1f, h.Stat(A2, StatIds.ReloadSpeed), "no passive at level 1: Lancer reloads at the base rate");
+        Check.Near(0f, h.Stat(B1, StatIds.HealthRegen), "Mender regains nothing on her own");
+        Check.Near(1f, h.Stat(B2, StatIds.CooldownRate), "Rigger's cooldowns at the base rate");
+        Check.False(h.Unit(A1).stats.modifiers.Any(), "Bulwark has no stat changes");
         Check.Equal(1, h.Unit(A1).slots[0].charges, "abilities start ready");
     }
 
@@ -101,11 +102,11 @@ static class HeroKitTests
         var h = With(A1, "lancer", B1, "bulwark");
         h.Unit(A1).ultimateCharge = 100f;
         Check.False(h.Use(A1, 2, Ahead).IsAccepted, "locked at level 1");
-        h.LevelTo(A1, 5);
+        h.LevelTo(A1, h.Heroes.Progression.Rules.UltimateFormLevel());
         var held = h.Use(A1, 2, Ahead);
         Check.False(held.IsAccepted, "held at level 5 until a form is picked");
         Check.True(held.reason.Contains("form"), "and says why: " + held.reason);
-        Check.True(h.PickForm(A1, "lancer_focused_volley").IsAccepted, "pick Focused Volley");
+        Check.True(h.PickForm(A1, "lancer_thermite").IsAccepted, "pick Thermite");
         Check.True(h.Use(A1, 2, Ahead).IsAccepted, "open once the form is picked");
     }
 
@@ -143,11 +144,15 @@ static class HeroKitTests
         var h = With(A1, "bulwark");
         Check.Near(300f, h.Combat.Damage.MaxHealth(A1), "base");
         Check.False(h.Heroes.Progression.Apply(new ChooseUpgradeCommand { playerId = A1, level = 2, option = 0 }).IsAccepted, "not level 2 yet");
-        h.LevelTo(A1, 3, false);
+        h.LevelTo(A1, 4, false);
+        float boost = 1f + 0.02f * h.Heroes.Progression.Rules.BoostLevels(h.Heroes.Progression.Level(A1));
+        Check.True(boost > 1f, "levels without a choice have passed");
+        Check.Near(300f * boost, h.Combat.Damage.MaxHealth(A1), "each gives 2% max health by itself");
+        Check.Near(boost, h.Stat(A1, StatIds.DamageDealt), "and 2% damage");
         Check.True(h.Heroes.Progression.Apply(new ChooseUpgradeCommand { playerId = A1, level = 2, option = 0 }).IsAccepted, "Thick Hide");
-        Check.Near(350f, h.Combat.Damage.MaxHealth(A1), "+50 max health");
-        Check.Near(350f, h.Health(A1), "given as health at once");
-        Check.True(h.Heroes.Progression.Apply(new ChooseUpgradeCommand { playerId = A1, level = 3, option = 1 }).IsAccepted, "Double Rush");
+        Check.Near(350f * boost, h.Combat.Damage.MaxHealth(A1), "+50 max health");
+        Check.Near(350f * boost, h.Health(A1), "given as health at once");
+        Check.True(h.Heroes.Progression.Apply(new ChooseUpgradeCommand { playerId = A1, level = 4, option = 1 }).IsAccepted, "Double Rush");
         Check.Equal(2, h.Unit(A1).slots[1].charges, "the extra charge comes at once");
     }
 
@@ -245,7 +250,7 @@ static class HeroKitTests
         var h = With(A1, "bulwark", B1, "lancer");
         h.Place(A1, 0f, 0f);
         h.Place(B1, 0f, 5f);
-        h.LevelTo(A1, 5);
+        h.LevelTo(A1, h.Heroes.Progression.Rules.UltimateFormLevel());
         h.PickForm(A1, "bulwark_iron_ring");
         Check.True(h.Use(A1, 2, Ahead).IsAccepted, "ultimate");
         Check.True(h.Shield(A1) >= 100f - 1e-3f, "a 100 shield");
@@ -261,7 +266,7 @@ static class HeroKitTests
         var h = With(A1, "bulwark", B1, "lancer");
         h.Place(A1, 0f, 0f);
         h.Place(B1, 0f, 5f);
-        h.LevelTo(A1, 5);
+        h.LevelTo(A1, h.Heroes.Progression.Rules.UltimateFormLevel());
         Check.True(h.PickForm(A1, "bulwark_lockdown").IsAccepted, "pick Lockdown");
         Check.True(h.Use(A1, 2, Ahead).IsAccepted, "ultimate");
         Check.True(h.Unit(B1).HasStatus(AbilityLibrary.RootStatus), "rooted");
@@ -276,10 +281,8 @@ static class HeroKitTests
         Check.True(h.Use(A1, 0, Ahead).IsAccepted, "slip");
         Check.True(h.Of<PushedEvent>().Any(p => p.targetId == A1 && Math.Abs(p.distance - 6f) < 1e-3f), "6 m dash");
         Check.False(h.Use(A1, 0, Ahead).IsAccepted, "one charge");
-        h.Heroes.ApplyUpgrade(A1, "lancer", "lancer_evasive_slip");
-        h.Run(6.1f / 1f);
-        Check.True(h.Use(A1, 0, Ahead).IsAccepted, "ready again");
-        Check.True(h.Shield(A1) > 0f, "Evasive Slip shields");
+        h.Run(6.1f);
+        Check.True(h.Use(A1, 0, Ahead).IsAccepted, "ready again after 6 seconds");
     }
 
     [Test]
@@ -297,30 +300,115 @@ static class HeroKitTests
         Check.False(h.Unit(B1).HasStatus("lancer_marked"), "for 5 seconds");
     }
 
-    [Test]
-    static void FlareMarkMarksEveryoneNearby()
-    {
-        var h = new HeroHarness(new Dictionary<int, string> { [A1] = "lancer", [B1] = "mender", [B2] = "rigger" });
-        h.Place(A1, 0f, 0f);
-        h.Place(B1, 0f, 20f);
-        h.Place(B2, 1.5f, 20f);
-        h.Heroes.ApplyUpgrade(A1, "lancer", "lancer_flare_mark");
-        Check.True(h.UseAt(A1, 1, B1).IsAccepted, "flare mark");
-        Check.True(h.Unit(B1).HasStatus("lancer_marked") && h.Unit(B2).HasStatus("lancer_marked"), "both marked");
-    }
-
-    [Test]
-    static void LanceVolleyWindsUpThenFires()
+    static HeroHarness Grenadier(string form, params string[] more)
     {
         var h = With(A1, "lancer", B1, "bulwark");
         h.Place(A1, 0f, 0f);
-        h.Place(B1, 0f, 10f);
-        h.LevelTo(A1, 5);
-        h.PickForm(A1, "lancer_storm_volley");
-        Check.True(h.UseAt(A1, 2, B1).IsAccepted, "volley");
-        Check.Near(300f, h.Health(B1), "nothing during the wind-up");
-        h.Run(0.55f);
-        Check.True(h.Health(B1) <= 300f - 120f, "at least two heavy rounds land at 10 m");
+        h.Place(B1, 0f, 15f);
+        h.LevelTo(A1, h.Heroes.Progression.Rules.UltimateFormLevel());
+        Check.True(h.PickForm(A1, form).IsAccepted, "pick " + form);
+        foreach (var u in more) Check.True(h.Heroes.ApplyUpgrade(A1, "lancer", u).IsAccepted, u);
+        h.NoShield(B1);
+        return h;
+    }
+
+    static float[] BurnTicks(HeroHarness h, int target) =>
+        h.Of<DamagedEvent>().Where(d => d.targetId == target && d.abilityId.Contains("lancer_burning")).Select(d => d.amount).ToArray();
+
+    [Test]
+    static void IncendiaryGrenadeBurnsTheGround()
+    {
+        var h = Grenadier("lancer_clinging_fire");
+        Check.Equal("lancer_firebomb", h.Unit(A1).slots[2].abilityId, "the grenade is the ultimate");
+        Check.True(h.UseAt(A1, 2, B1).IsAccepted, "throw");
+        Check.True(h.Health(B1) <= 300f - 40f + 1e-3f, "40 where it lands");
+        h.Run(1f);
+        float inFire = h.Health(B1);
+        Check.True(inFire < 300f - 40f - 15f, "the fire burns while they stand in it (" + inFire + ")");
+        Check.True(h.Unit(B1).HasStatus("lancer_burning"), "Clinging Fire sets them burning");
+
+        h.Place(B1, 0f, 40f); // out of the fire
+        h.Forget();
+        h.Run(1.6f);
+        Check.True(h.Health(B1) < inFire - 10f, "and they keep burning after they leave");
+        var ticks = BurnTicks(h, B1);
+        float dealt = h.Stat(A1, StatIds.DamageDealt); // the level boost
+        Check.True(ticks.Length >= 2 && ticks.All(t => Math.Abs(t - 5f * dealt) < 1e-3f), "5 a tick, twice a second (" + string.Join(",", ticks) + ")");
+        h.Run(2f);
+        float after = h.Health(B1);
+        h.Run(1f);
+        Check.Near(after, h.Health(B1), "for 3 seconds, then it stops");
+    }
+
+    [Test]
+    static void WithoutClingingFireTheBurnStaysInTheFire()
+    {
+        var h = Grenadier("lancer_thermite");
+        Check.True(h.UseAt(A1, 2, B1).IsAccepted, "throw");
+        Check.True(h.Health(B1) <= 300f - 120f + 1e-3f, "Thermite: 120 where it lands");
+        Check.False(h.Unit(B1).HasStatus("lancer_burning"), "no lingering burn");
+        h.Place(B1, 0f, 40f);
+        float out_ = h.Health(B1);
+        h.Run(2f);
+        Check.Near(out_, h.Health(B1), "nothing once they step out");
+    }
+
+    [Test]
+    static void InfernoBurnsHarderAndLonger()
+    {
+        var h = Grenadier("lancer_clinging_fire", "lancer_inferno");
+        var fire = h.ResolvedDef(A1, "lancer_firebomb").objects["lancer_fire"];
+        Check.Near(4f + 1f + 1.5f, fire.radius, "Clinging Fire and Inferno widen the fire");
+        Check.Near(8f, fire.lifetime, "Inferno: 3 seconds longer");
+        h.UseAt(A1, 2, B1);
+        h.Run(0.6f);
+        h.Place(B1, 0f, 40f);
+        h.Forget();
+        h.Run(1.6f);
+        var ticks = BurnTicks(h, B1);
+        float dealt = h.Stat(A1, StatIds.DamageDealt);
+        Check.True(ticks.Length >= 2 && ticks.All(t => Math.Abs(t - 6.5f * dealt) < 1e-3f), "the burn is 30% stronger (" + string.Join(",", ticks) + ")");
+    }
+
+    [Test]
+    static void SlipTalentsGuardTheGroundYouLeave()
+    {
+        var h = With(A1, "lancer", B1, "bulwark");
+        h.Place(A1, 0f, 0f);
+        h.Place(B1, 0f, 3f);
+        h.NoShield(B1);
+        Check.True(h.Use(A1, 0, Ahead).IsAccepted, "plain slip");
+        Check.False(h.Of<PushedEvent>().Any(p => p.targetId == B1), "a plain Slip leaves enemies alone");
+
+        h.Heroes.ApplyUpgrade(A1, "lancer", "lancer_repulse");
+        h.Heroes.ApplyUpgrade(A1, "lancer", "lancer_firewalk");
+        h.Run(6.1f);
+        h.Place(A1, 0f, 0f);
+        h.Place(B1, 0f, 3f);
+        h.Forget();
+        Check.True(h.Use(A1, 0, new Vec3(0f, 0f, -1f)).IsAccepted, "slip away from the enemy");
+        Check.True(h.Of<PushedEvent>().Any(p => p.targetId == A1 && Math.Abs(p.distance - 6f) < 1e-3f), "Lancer still dashes");
+        Check.True(h.Of<PushedEvent>().Any(p => p.targetId == B1 && Math.Abs(p.distance - 4f) < 1e-3f), "Repulse: the close enemy is blasted 4 m");
+        Check.Near(0.6f, h.Combat.Abilities.MoveSpeed(B1), "and slowed 40%");
+        h.Place(B1, 0f, 1f); // chasing back through the spot Lancer left
+        float before = h.Health(B1);
+        h.Run(1f);
+        Check.True(h.Health(B1) < before, "Firewalk: the fire left behind burns them");
+    }
+
+    [Test]
+    static void MarkTalentsSlowAndExpose()
+    {
+        var h = With(A1, "lancer", B1, "bulwark");
+        h.Place(A1, 0f, 0f);
+        h.Place(B1, 0f, 20f);
+        h.Heroes.ApplyUpgrade(A1, "lancer", "lancer_pinning_mark");
+        h.Heroes.ApplyUpgrade(A1, "lancer", "lancer_hunters_mark");
+        Check.True(h.UseAt(A1, 1, B1).IsAccepted, "mark");
+        Check.Near(0.7f, h.Combat.Abilities.MoveSpeed(B1), "Pinning Mark: 30% slower");
+        Check.Near(1.25f, h.Stat(B1, StatIds.DamageTaken), "Hunter's Mark: 25% more damage taken");
+        h.Heroes.ApplyUpgrade(A1, "lancer", "lancer_twin_marks");
+        Check.True(h.UseAt(A1, 1, B1).IsAccepted, "Twin Marks: a second mark right away");
     }
 
     // ---- Mender ----
@@ -372,7 +460,7 @@ static class HeroKitTests
         var h = With(A1, "mender");
         h.Place(A1, 0f, 0f);
         h.Place(A2, 0f, 10f);
-        h.LevelTo(A1, 5);
+        h.LevelTo(A1, h.Heroes.Progression.Rules.UltimateFormLevel());
         h.PickForm(A1, "mender_broad_aegis");
         Check.True(h.Use(A1, 2, Ahead).IsAccepted, "aegis");
         Check.Near(100f, h.Shield(A1), "self");
@@ -424,7 +512,7 @@ static class HeroKitTests
         h.Map.Wall(new Vec3(0f, -0.5f, 0f), new Vec3(200f, 1f, 200f));
         h.Place(A1, 0f, 0f);
         h.Place(B1, 2f, 20f);
-        h.LevelTo(A1, 5);
+        h.LevelTo(A1, h.Heroes.Progression.Rules.UltimateFormLevel());
         h.PickForm(A1, "rigger_snaring_gate");
         Check.True(h.Use(A1, 2, new Vec3(0f, -0.1f, 1f)).IsAccepted, "gate");
         var gate = h.Last<ObjectSpawnedEvent>();
@@ -446,15 +534,33 @@ static class HeroKitTests
         h.Place(B1, 0f, 10f);
         Check.True(h.FireAt(A1, h.ChestOf(B1)).IsAccepted, "plain shot");
         Check.Near(300f - 18f, h.Health(B1), "18 a body shot");
-        h.Heroes.ApplyUpgrade(A1, "lancer", "lancer_hollow_points");
+        h.Unit(A1).health = 100f;
+        h.Heroes.ApplyUpgrade(A1, "lancer", "lancer_bloodthirst");
+        h.Heroes.ApplyUpgrade(A1, "lancer", "lancer_stopping_power");
         h.Run(0.2f);
         Check.True(h.FireAt(A1, h.ChestOf(B1)).IsAccepted, "upgraded shot");
-        Check.Near(300f - 18f - 18f * 1.08f, h.Health(B1), "8% more");
+        Check.Near(100f + 1.8f, h.Health(A1), "Bloodthirst: heal 10% of it");
+        Check.True(h.Of<PushedEvent>().Any(p => p.targetId == B1 && p.sourceId == A1), "Stopping Power: the shot pushes");
 
         var rifle = h.Combat.Weapons.Library.Weapon("rifle");
-        Check.Near(rifle.reloadSeconds / 1.15f, h.Combat.Weapons.ReloadSeconds(A1, rifle), "passive: reload 15% faster");
-        h.Heroes.ApplyUpgrade(A1, "lancer", "lancer_hair_trigger");
-        Check.Near(rifle.fireInterval / 1.1f, h.Combat.Weapons.FireInterval(A1, rifle), "fire 10% faster");
+        Check.Near(rifle.reloadSeconds, h.Combat.Weapons.ReloadSeconds(A1, rifle), "no passive reload bonus any more");
+        h.Heroes.ApplyUpgrade(A1, "lancer", "lancer_extended_mag");
+        Check.Equal((int)Math.Round(rifle.magazine * 1.25f), h.Combat.Weapons.Magazine(A1, rifle), "Extended Mag: a quarter more rounds");
+
+        // Long Barrel: full damage 30% further out.
+        h.Place(B1, 0f, rifle.falloffStart * 1.2f);
+        h.NoShield(B1);
+        h.Run(0.2f);
+        float hp = h.Health(B1);
+        h.FireAt(A1, h.ChestOf(B1));
+        float plain = hp - h.Health(B1);
+        h.Heroes.ApplyUpgrade(A1, "lancer", "lancer_long_barrel");
+        h.NoShield(B1);
+        h.Run(0.2f);
+        hp = h.Health(B1);
+        h.FireAt(A1, h.ChestOf(B1));
+        Check.Near(rifle.damage * 1.08f, hp - h.Health(B1), "Long Barrel: no falloff at 1.2x the old start, and 8% more", 0.01f);
+        Check.True(plain < rifle.damage, "where it fell off before (" + plain + ")");
     }
 
     // ---- Over the network ----

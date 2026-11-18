@@ -136,6 +136,11 @@ sealed class HeroHarness
 
     public List<T> Of<T>() where T : GameEvent => Events.History.OfType<T>().ToList();
     public T Last<T>() where T : GameEvent => Events.History.OfType<T>().LastOrDefault();
+    public void Forget() => Events.History.Clear();
+
+    /// <summary>The ability as the hero has it now, as objects (talents applied).</summary>
+    public ResolvedAbility ResolvedDef(int id, string abilityId) =>
+        AbilityParams.Resolve(Abilities.Library.Ability(abilityId), Unit(id).changes, Abilities.Library, R.minCooldownSeconds);
 
     /// <summary>The ability as the hero has it now (talents applied), objects and enabled tags included, as text.</summary>
     public string Resolved(int id, string abilityId)

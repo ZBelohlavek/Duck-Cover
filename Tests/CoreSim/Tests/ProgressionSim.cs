@@ -163,7 +163,7 @@ static class ProgressionSim
             for (; seen < events.History.Count; seen++)
             {
                 if (!(events.History[seen] is LevelUpEvent up)) continue;
-                if (up.level == 5) l5[up.playerId] = S.elapsed;
+                if (up.level == prog.Rules.UltimateFormLevel()) l5[up.playerId] = S.elapsed;
                 if (up.level == maxLevel) l10[up.playerId] = S.elapsed;
             }
 
@@ -231,6 +231,7 @@ static class ProgressionSim
     {
         public int matches;
         public float medianLength, p10Length, p90Length;
+        /// <summary>Median time to the ultimate's level (medianLevel5) and to the top level (medianLevel10); names kept from the 10-level plan.</summary>
         public float medianLevel5, medianLevel10, p10Level10, p90Level10;
         public float reachedLevel10;      // share of bots
         public float averageFinalLevel;
@@ -290,7 +291,7 @@ static class ProgressionSim
             ("1 point a second (old)", new Options { mode = Rate(1f) }),
         };
         Console.WriteLine("{0,-26}{1,8}{2,14}{3,9}{4,9}{5,16}{6,9}{7,9}{8,10}{9,10}{10,8}{11,8}",
-            "", "length", "(10%-90%)", "level 5", "level 10", "(10%-90%)", "hit 10", "end lvl", "xp lead", "score ld", "gap", "support");
+            "", "length", "(10%-90%)", "ult lvl", "top lvl", "(10%-90%)", "hit top", "end lvl", "xp lead", "score ld", "gap", "support");
         foreach (var (name, o) in rows)
         {
             var s = Run(matches, seed, o);
@@ -301,8 +302,8 @@ static class ProgressionSim
         }
         Console.WriteLine();
         Console.WriteLine("length     median match length, play and overtime");
-        Console.WriteLine("level 5/10 median match time a player reaches the level (plan: near 5:00 and 12:00)");
-        Console.WriteLine("hit 10     share of players who reach level 10 before the match ends");
+        Console.WriteLine("ult/top lvl median match time a player reaches the ultimate's level (8) and the top level (20)");
+        Console.WriteLine("hit top    share of players who reach the top level before the match ends");
         Console.WriteLine("xp lead    how often the team with more experience at 4:00 wins (50% = an early lead means nothing)");
         Console.WriteLine("score ld   the same for the team ahead on score at 4:00");
         Console.WriteLine("gap        largest level difference between any two players, averaged over matches");

@@ -26,6 +26,8 @@ namespace DuckAndCover.Core
 
         /// <summary>The source name an upgrade's stat changes go under on the hero's stat stack.</summary>
         public static string UpgradeSource(string upgradeId) => "upgrade:" + upgradeId;
+        /// <summary>The source name of the automatic boost from levels that offer no choice.</summary>
+        public const string LevelBoostSource = "levelBoost";
 
         public HeroServer(CombatServer combat, HeroCatalog heroes, IWorldQuery world, IGameEvents events)
         {
@@ -62,6 +64,9 @@ namespace DuckAndCover.Core
             {
                 case HeroPickedEvent picked:
                     GiveKit(picked.playerId, picked.heroId);
+                    break;
+                case LevelUpEvent up:
+                    ApplyLevelBoost(up.playerId, up.level);
                     break;
                 case UpgradeChosenEvent chosen:
                     ApplyUpgrade(chosen.playerId, chosen.heroId, chosen.upgradeId);
@@ -115,6 +120,22 @@ namespace DuckAndCover.Core
             return slots.ToArray();
         }
 
+        /// <summary>
+        /// The automatic boost for levels without a choice: a little max health and damage for each one
+        /// reached. Replaces the earlier boost, so it is the same however the levels arrived.
+        /// </summary>
+        public void ApplyLevelBoost(int playerId, int level)
+        {
+            var r = Progression.Rules;
+            int n = r.BoostLevels(level);
+            if (n <= 0) return;
+            Combat.Abilities.AddModifiers(playerId, LevelBoostSource, new[]
+            {
+                new StatModifier(StatIds.MaxHealth, ModOp.Percent, r.levelHealthBonus * n),
+                new StatModifier(StatIds.DamageDealt, ModOp.Percent, r.levelDamageBonus * n),
+            });
+        }
+
         /// <summary>Put an upgrade on a hero: its stats on the stat stack, its changes on their abilities.</summary>
         public CommandResult ApplyUpgrade(int playerId, string heroId, string upgradeId)
         {
@@ -142,7 +163,7 @@ namespace DuckAndCover.Core
                 string who = "hero '" + hero.id + "'";
                 foreach (var id in hero.abilities ?? new string[0]) CheckAbility(abilities, id, who, false, false, errors);
                 CheckAbility(abilities, hero.ultimateId, who, true, false, errors);
-                CheckAbility(abilities, hero.passiveId, who, false, true, errors);
+                if (!string.IsNullOrEmpty(hero.passiveId)) CheckAbility(abilities, hero.passiveId, who, false, true, errors);
                 foreach (var u in hero.upgrades ?? new UpgradeDef[0])
                 {
                     if (u == null || u.abilityChanges == null) continue;

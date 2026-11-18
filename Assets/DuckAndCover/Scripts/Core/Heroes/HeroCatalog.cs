@@ -62,7 +62,6 @@ namespace DuckAndCover.Core
             if (hero.abilities == null || hero.abilities.Length != 2) errors.Add(who + " needs exactly two abilities");
             else foreach (var a in hero.abilities) if (string.IsNullOrEmpty(a)) errors.Add(who + " has an empty ability id");
             if (string.IsNullOrEmpty(hero.ultimateId)) errors.Add(who + " needs an ultimateId");
-            if (string.IsNullOrEmpty(hero.passiveId)) errors.Add(who + " needs a passiveId");
             if (hero.maxHealth < 0f) errors.Add(who + " has a negative maxHealth");
 
             // Upgrades: unique ids, a known kind, something to do, and only the hero's own abilities.
@@ -75,7 +74,7 @@ namespace DuckAndCover.Core
                 else if (!upgradeIds.Add(u.id)) errors.Add(what + " is defined twice");
                 if (string.IsNullOrEmpty(u.displayName)) errors.Add(what + " needs a displayName");
                 var kind = u.Kind;
-                if (kind == UpgradeKind.None) errors.Add(what + " has kind '" + u.kind + "', not trait, talent, ultimate or capstone");
+                if (kind == UpgradeKind.None) errors.Add(what + " has kind '" + u.kind + "', not trait, talent, ultimate, passive or capstone");
                 int stats = u.stats == null ? 0 : u.stats.Length;
                 int changes = u.abilityChanges == null ? 0 : u.abilityChanges.Length;
                 if (stats == 0 && changes == 0 && string.IsNullOrEmpty(u.scriptId)) errors.Add(what + " does nothing (no stats, abilityChanges or scriptId)");
@@ -95,7 +94,8 @@ namespace DuckAndCover.Core
                         if (!hero.OwnsAbility(c.ability)) errors.Add(what + " changes '" + c.ability + "', which is not one of " + hero.id + "'s abilities");
                         else if (kind == UpgradeKind.Ultimate && c.ability != hero.ultimateId) errors.Add(what + " is an ultimate form but changes '" + c.ability + "'");
                     }
-                    if (kind == UpgradeKind.Trait && changes > 0) errors.Add(what + " is a trait: traits change stats, talents change abilities");
+                    if ((kind == UpgradeKind.Trait || kind == UpgradeKind.Passive) && changes > 0)
+                        errors.Add(what + " is a " + u.kind + ": traits change stats (passives too), talents change abilities");
                 }
                 if (kind == UpgradeKind.Talent && changes == 0 && string.IsNullOrEmpty(u.scriptId))
                     errors.Add(what + " is a talent but changes no ability");

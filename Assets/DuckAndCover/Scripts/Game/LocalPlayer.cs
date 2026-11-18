@@ -268,13 +268,16 @@ namespace DuckAndCover.Game
             client.Send(new ChooseUpgradeCommand { level = level, option = key });
         }
 
-        /// <summary>The lowest level whose upgrade the player hasn't chosen yet, or 0.</summary>
+        static readonly ProgressionRuleset Leveling = new ProgressionRuleset();
+
+        /// <summary>The lowest level with a choice whose upgrade the player hasn't chosen yet, or 0.</summary>
         public static int PendingLevel(MatchSnapshot snapshot, int playerId)
         {
             var mine = snapshot == null || snapshot.progression == null ? null : snapshot.progression.Player(playerId);
             if (mine == null) return 0;
+            // Levels without a choice (the automatic boosts) are skipped. Clients use the default numbers.
             for (int level = 2; level <= mine.level; level++)
-                if (!mine.HasPicked(level)) return level;
+                if (Leveling.ChoiceAt(level) != UpgradeKind.None && !mine.HasPicked(level)) return level;
             return 0;
         }
 
