@@ -50,5 +50,7 @@ namespace DuckAndCover.Core
         Support = 5,
         /// <summary>Flag Rush: picking up, carrying, scoring, stopping a carrier, being near a capture.</summary>
         Flag = 6,
+        /// <summary>A neutral camp taken in Overrun (WP15).</summary>
+        Camp = 7,
     }
 }

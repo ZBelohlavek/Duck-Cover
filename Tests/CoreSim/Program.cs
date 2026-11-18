@@ -25,6 +25,7 @@ static class Program
         { "map", MapTests.Report },
         { "waves", WaveHarness.Report },
         { "lanestudy", LaneStudyTests.Report },
+        { "waves", LaneTests.Report },
     };
 
     static int Main(string[] args)
