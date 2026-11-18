@@ -15,7 +15,8 @@ namespace DuckAndCover.Core
         public float minShiftGain = 1.5f;
         /// <summary>The first hill of king of the hill may favour one team by at most this much (seconds).</summary>
         public float firstHillSkew = 2.5f;
-        public int spawnsPerTeam = 5;
+        /// <summary>Spawn spots each team needs: one per player (the maps carry a spare).</summary>
+        public int spawnsPerTeam = Ruleset.Default.maxPlayersPerTeam;
         /// <summary>Flag Rush: each flag spot's walks from the two bases may differ by this share of the longer one.</summary>
         public float flagFairness = 0.05f;
         /// <summary>Flag Rush: at least this many spots, so the flag never appears at the same one twice running.</summary>

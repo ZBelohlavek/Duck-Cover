@@ -61,7 +61,7 @@ sealed class MatchHarness
         flagSpots = { new Vec3(-10f, 0f, 0f), new Vec3(0f, 0f, 0f), new Vec3(10f, 0f, 0f) },
     };
 
-    public MatchHarness(ModeDef mode = null, int perTeam = 5, Ruleset rules = null, bool toPlay = true)
+    public MatchHarness(ModeDef mode = null, int perTeam = 4, Ruleset rules = null, bool toPlay = true)
     {
         Match = new MatchRules(rules ?? Ruleset.Default, mode ?? ModeDef.CaptureAndHold(), TestMap(), World, Events);
         for (int i = 1; i <= perTeam; i++)

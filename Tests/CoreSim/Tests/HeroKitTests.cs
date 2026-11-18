@@ -638,10 +638,10 @@ static class HeroKitTests
     {
         var h = new SessionHarness(ModeDef.CaptureAndHold(), heroes: true);
         var scripts = new List<ScriptedPlayer>();
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 8; i++)
         {
             var c = h.Join();
-            var s = new ScriptedPlayer(c, 10);
+            var s = new ScriptedPlayer(c, 8);
             scripts.Add(s);
             c.SnapshotReceived += s.Step;
         }
@@ -659,7 +659,7 @@ static class HeroKitTests
         for (int i = 0; i < h.Clients.Count; i++)
             Check.Equal(truth, SessionDigest.Of(h.Clients[i].State), "client " + (i + 1) + " agrees with the host");
         var snap = h.Clients[0].Snapshot;
-        Check.True(snap.progression != null && snap.progression.players.Count == 10, "levels reach the clients");
+        Check.True(snap.progression != null && snap.progression.players.Count == 8, "levels reach the clients");
         Check.True(snap.abilities.units.Any(u => u.changes.Count > 0), "talents reach the clients");
     }
 }

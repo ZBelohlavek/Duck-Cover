@@ -156,8 +156,15 @@ namespace DuckAndCover.Game
             {
                 GUILayout.BeginHorizontal();
                 foreach (var hero in HeroData.Pickable())
-                    if (GUILayout.Button(hero.displayName + (me.heroId == hero.id ? " *" : ""))) client.Send(new PickHeroCommand { heroId = hero.id });
+                {
+                    string role = Roles.Label(hero.role);
+                    if (GUILayout.Button(hero.displayName + (role != "" ? " (" + role + ")" : "") + (me.heroId == hero.id ? " *" : "")))
+                        client.Send(new PickHeroCommand { heroId = hero.id });
+                }
                 GUILayout.EndHorizontal();
+                // 4v4 lineup advice (tank, healer, DPS, utility or flex): a hint, never a lock.
+                string hint = Roles.Hint(state, me.team, HeroData.Catalog);
+                if (hint != "") GUILayout.Label(hint);
             }
             if (state.IsPlaying || state.phase == MatchPhase.Deploy)
                 GUILayout.Label("Click the game to take the mouse, Esc frees it. WASD, Shift sprint, Ctrl crouch, Space jump or vault, R reload, 1/2 weapons, E and F abilities, X ultimate, hold Z or V to take the left or right upgrade.");

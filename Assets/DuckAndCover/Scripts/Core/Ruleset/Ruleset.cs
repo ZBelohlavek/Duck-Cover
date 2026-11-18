@@ -17,7 +17,11 @@ namespace DuckAndCover.Core
         // ---- Teams ----
         /// <summary>Smallest team that can start a match. 1 so two people can test.</summary>
         public int minPlayersPerTeam = 1;
-        public int maxPlayersPerTeam = 5;
+        /// <summary>
+        /// 4v4: a tank, a healer, a damage dealer and a utility or flex pick (see <see cref="Roles"/>; a
+        /// recommendation, never a lock).
+        /// </summary>
+        public int maxPlayersPerTeam = 4;
         /// <summary>
         /// When true a hero can be picked by only one player on each team. Off by default: teammates
         /// may play the same hero.

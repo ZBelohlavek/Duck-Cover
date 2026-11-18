@@ -308,7 +308,7 @@ static class SessionTests
     }
 
     [Test]
-    static void FullMatchCaptureAndHold10Players() => FullMatch(ModeDef.CaptureAndHold(), 10);
+    static void FullMatchCaptureAndHold8Players() => FullMatch(ModeDef.CaptureAndHold(), 8);
 
     [Test]
     static void FullMatchKingOfTheHill2Players() => FullMatch(ModeDef.KingOfTheHill(), 2);
@@ -339,9 +339,9 @@ static class SessionTests
     static void SnapshotSizeIsSmall()
     {
         var h = new SessionHarness();
-        for (int i = 0; i < 10; i++) h.Join("Player number " + i);
+        for (int i = 0; i < 8; i++) h.Join("Player number " + i);
         int size = WireCodec.Encode(new SnapshotMessage { snapshot = h.Host.MakeSnapshot() }).Length;
-        // 10 state copies a second to 10 players: keep one well under a network packet's worth.
-        Check.True(size < 1000, "a 10-player state copy is " + size + " bytes");
+        // 10 state copies a second to 8 players: keep one well under a network packet's worth.
+        Check.True(size < 1000, "an 8-player state copy is " + size + " bytes");
     }
 }

@@ -17,9 +17,9 @@ using DuckAndCover.Core;
 /// fails unless they are all identical.
 ///
 ///   dotnet run --project Tools/netsmoke                       2 players, king of the hill
-///   dotnet run --project Tools/netsmoke -- 10 capture_hold    10 players, capture and hold
+///   dotnet run --project Tools/netsmoke -- 8 capture_hold     8 players (4v4), capture and hold
 ///   dotnet run --project Tools/netsmoke -- 4 flag_rush        4 players, Flag Rush
-///   dotnet run --project Tools/netsmoke -- 10 overrun         10 players, Overrun on Breakwater's lane (waves, camps, Bastions)
+///   dotnet run --project Tools/netsmoke -- 8 overrun          8 players (4v4), Overrun on Breakwater's lane (waves, camps, Bastions)
 ///
 /// This checks the session code, the wire format and the rules across processes. It does not check
 /// Netcode for GameObjects: that is Tools/unity netsmoke, which needs Unity.
@@ -47,6 +47,12 @@ static class Program
 
     static int Orchestrate(int players, string mode)
     {
+        int most = 2 * Ruleset.Default.maxPlayersPerTeam;
+        if (players > most)
+        {
+            Console.Error.WriteLine("netsmoke: teams are " + Ruleset.Default.maxPlayersPerTeam + " a side, so at most " + most + " players.");
+            return 2;
+        }
         string dir = Path.Combine(Path.GetTempPath(), "duck-netsmoke-" + Process.GetCurrentProcess().Id);
         Directory.CreateDirectory(dir);
         int port = FreePort();

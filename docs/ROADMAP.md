@@ -1,19 +1,28 @@
 # Roadmap
 
-The game is a 5v5 hero shooter with MOBA-lite modes. The work is split into packages, each sized for one
+The game is a 4v4 hero shooter with MOBA-lite modes. The work is split into packages, each sized for one
 thread and ending in one pull request. The base plan, with every package's scope and "done when":
 https://claude.ai/artifact/JJ4fD74nbDB3AsykT2WWen. The competitive modes plan (Overrun, King of the Hill,
 Flag Rush; the Breakwater map; WP14 to WP21), approved Nov 18:
 https://claude.ai/artifact/7qbJG2ukrZDQ6ZTfX3nXGs
+
+## Teams
+
+Four a side (Nov 18; it was 5v5). The recommended lineup is one tank, one healer, one DPS and one utility or flex
+pick: Bulwark, Mender, Lancer and Rigger. It is a recommendation, not a lock: teams may pick any mix and the same
+hero twice. The pick panel labels each hero's role and names the lineup roles a team hasn't covered yet
+(`Core/Heroes/Roles.cs`). `report teamsize`, `report flagrush` and `report overrun [matches] [seed] [players per team]`
+compare 4v4 with 5v5 bot matches.
 
 ## Modes
 
 - **Overrun:** one-lane push on Breakwater. Scrapper waves every 30 s; destroy the enemy Forward Bastion,
   then the Core Bastion. Minions always damage Bastions; heroes only while their own Scrappers are within
   12 m. Seven jungle camps (one Juggernaut, two damage, two experience, two speed), launch pads, ledges.
-- **King of the Hill:** one moving hill, on Gantry Yard (built in WP1 and WP9).
+- **King of the Hill:** one moving hill, on Gantry Yard (built in WP1 and WP9). First to 1000 at 2.6 points a second
+  (about 13.5 minute bot matches at 4v4; it was first to 500 at 2 a second, under 9 minutes).
 - **Flag Rush:** one flag at a random fair spot, carried into the enemy base; first to 5, no minions.
-- **Capture and Hold:** built, kept as a back-pocket mode (three zones are a lot for 5v5).
+- **Capture and Hold:** built, kept as a back-pocket mode (three zones are a lot for a small team).
 
 ## Packages
 
@@ -84,7 +93,7 @@ WP17 (Salvage and build pads) was dropped on Nov 18.
   (`SpawnRules.WaitAdjust`), the late push and Overrun experience, and scores through `MatchRules.ScoreBastion`;
   `MatchRules.TieBreak` settles the time cap. Numbers in `Ruleset.overrun`, mode in `ModeDef.Overrun()` and
   `Data/Modes/overrun.json`. Tests in `OverrunTests.cs` (helpers in `OverrunHarness.cs`);
-  `dotnet run --project Tests/CoreSim -- report overrun [matches] [seed]` plays 5v5 bot matches on Breakwater's lane.
+  `dotnet run --project Tests/CoreSim -- report overrun [matches] [seed]` plays 4v4 bot matches on Breakwater's lane.
 - WP18: Breakwater as data in `Core/Maps/Breakwater.cs` (lane and camps in WP15's `LaneDef`/`CampDef`; Bastions,
   launch pads, one-way drops, jungle routes and base entrances in `MapDef.Overrun.cs`), checked by `LaneMapValidator`;
   launch pads in the movement check (`Core/Combat/LaunchPad.cs`, `MovementRules.Launch.cs`) and flown by `LocalPlayer`;

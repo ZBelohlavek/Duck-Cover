@@ -1,6 +1,6 @@
 # Duck and Cover: notes for Claude
 
-An original 5v5 attack-and-defend shooter in Unity 6 (6000.3, URP). Attackers plant a defuser on one
+An original 4v4 attack-and-defend shooter in Unity 6 (6000.3, URP). Attackers plant a defuser on one
 of two charges; walls broken in one round stay broken for the whole match, sides swap every round,
 and eliminated players keep helping through the Backline (cameras, scout bots, pings, support
 actions). Heroes with abilities come after the base game. The name, teams, maps, characters and
@@ -106,7 +106,7 @@ Run these in order and fix failures before reporting.
    write. `dotnet run --project Tests/CoreSim -- Match` runs only tests whose name contains "Match".
 2. `dotnet run --project Tools/netsmoke` when you touch `Core/Session`, a command, an event or the
    snapshot: host and client processes play a scripted match over TCP and must end with
-   `NETSMOKE PASSED`. Add `-- 10 capture_hold` for ten processes.
+   `NETSMOKE PASSED`. Add `-- 8 capture_hold` for eight processes (a full 4v4).
 3. `dotnet build Tests/UnityCompileCheck` and `dotnet build Tests/UnityCompileCheck -p:Relay=true` (the
    join-code code). It uses stubs, so if you call a Unity, Editor or Netcode API
    that isn't stubbed yet, add it to `UnityStubs.cs` with the real signature. Don't invent APIs to make
@@ -163,8 +163,10 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
   bot matches. In Unity (WP19) each mode has its map (`MapCatalog.MapIdForMode`: Overrun plays Breakwater, the rest
   Gantry Yard); `SessionRunner.EnsureMap` builds it when hosting or on a joiner's first state copy, and an Overrun host
   also runs `Lanes` and `Overrun`. `Game/UnitView` draws minions and guards, `MapView` the side gates (per base) and
-  fallen Bastions, `Hud` the Bastion cards. `Tools/netsmoke -- 10 overrun` and `Tools/unity.ps1 netsmoke overrun` play
+  fallen Bastions, `Hud` the Bastion cards. `Tools/netsmoke -- 8 overrun` and `Tools/unity.ps1 netsmoke overrun` play
   it over the network (scripted players join their wave with `ScriptedToLaneCommand`).
+- Teams are 4v4 (`Ruleset.maxPlayersPerTeam`). Recommended lineup, never a lock: tank, healer, DPS, utility or flex
+  (`Core/Heroes/Roles.cs` maps them to the role ids in hero data; duplicates stay allowed).
 - Heroes (WP11): Bulwark (vanguard), Lancer (striker), Mender (support), Rigger (controller), as data in
   Data/Resources. `HeroServer` (Core/Heroes) gives a pick its kit, runs leveling beside the match and
   applies upgrades; `HeroKitTests` checks every ability and all 80 upgrades. Levels run 1 to 20 (picks on even levels); each hero has two upgrade paths, left and right (`docs/HEROES.md`).

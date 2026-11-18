@@ -10,7 +10,8 @@ namespace DuckAndCover.Core
         public float symmetryTolerance = 0.01f;
         /// <summary>Matching walks for the two teams may differ by this much (seconds).</summary>
         public float travelTolerance = 0.25f;
-        public int spawnsPerTeam = 5;
+        /// <summary>Spawn spots each team needs: one per player (the maps carry a spare).</summary>
+        public int spawnsPerTeam = Ruleset.Default.maxPlayersPerTeam;
         /// <summary>No straight, clear sight line may join two lane points further apart along the lane than this share of it.</summary>
         public float maxSightShare = 1f / 3f;
         /// <summary>Lane points are sampled this far apart (metres) for the sight line checks.</summary>

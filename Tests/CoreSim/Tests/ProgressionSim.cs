@@ -17,7 +17,7 @@ static class ProgressionSim
 {
     public sealed class Options
     {
-        public int perTeam = 5;
+        public int perTeam = Ruleset.Default.maxPlayersPerTeam;
         public float dt = 0.25f;
         /// <summary>Seconds to walk between neighbouring points (and from base to the nearest point).</summary>
         public float legSeconds = 7f;
@@ -75,7 +75,9 @@ static class ProgressionSim
         var rng = new Rng(seed);
         var world = new FakeWorld();
         var events = new GameEventBus { Record = true };
-        var match = new MatchRules(o.rules, o.mode, MatchHarness.TestMap(), world, events);
+        var rules = o.rules;
+        if (o.perTeam > rules.maxPlayersPerTeam) { rules = rules.Clone(); rules.maxPlayersPerTeam = o.perTeam; } // the old 5v5 rows
+        var match = new MatchRules(rules, o.mode, MatchHarness.TestMap(), world, events);
         var prog = new ProgressionRules(match, ProgressionHarness.DataCatalog(), world, events);
         var S = match.State;
         var bots = new List<Bot>();
@@ -88,6 +90,7 @@ static class ProgressionSim
         match.StartMatch();
         while (S.phase != MatchPhase.Play) match.Tick(o.dt);
 
+        bool koth = o.mode.zoneSet == "hills";
         var res = new Result();
         var l5 = new Dictionary<int, float>();
         var l10 = new Dictionary<int, float>();
@@ -113,7 +116,13 @@ static class ProgressionSim
                     b.pos = b.team == TeamId.A ? 0f : 4f;
                     b.decideAt = 0f;
                 }
-                if (S.elapsed >= b.decideAt)
+                if (koth)
+                {
+                    // King of the hill: everyone chases the live hill (or waits in the middle between hills).
+                    var live = S.zones.FirstOrDefault(z => z.active);
+                    b.target = live == null ? 2 : HillPos(live.id);
+                }
+                else if (S.elapsed >= b.decideAt)
                 {
                     b.target = PickTarget(b, S, rng);
                     b.decideAt = S.elapsed + 12f + 10f * rng.Next();
@@ -121,7 +130,12 @@ static class ProgressionSim
                 float stepSize = o.dt / o.legSeconds;
                 if (Math.Abs(b.target - b.pos) <= stepSize) b.pos = b.target;
                 else b.pos += Math.Sign(b.target - b.pos) * stepSize;
-                if (b.pos == b.target) world.Put(b.id, new ZoneId(b.target));
+                if (b.pos == b.target)
+                {
+                    var live = koth ? S.zones.FirstOrDefault(z => z.active) : null;
+                    if (!koth) world.Put(b.id, new ZoneId(b.target));
+                    else if (live != null && HillPos(live.id) == b.target) world.Put(b.id, live.id);
+                }
             }
 
             // Fights on each point.
@@ -199,6 +213,9 @@ static class ProgressionSim
         prog.Dispose();
         return res;
     }
+
+    /// <summary>The test map's four hills sit on the sim's line: the middle, near A, near B, the middle again.</summary>
+    static int HillPos(ZoneId hill) => hill.value == 12 ? 1 : hill.value == 13 ? 3 : 2;
 
     /// <summary>Where a bot heads next: points its team doesn't hold pull harder, the far point least.</summary>
     static int PickTarget(Bot b, MatchState S, Rng rng)
@@ -278,7 +295,7 @@ static class ProgressionSim
     {
         int matches = args.Length > 0 ? int.Parse(args[0]) : 2000;
         int seed = args.Length > 1 ? int.Parse(args[1]) : 1;
-        Console.WriteLine("Progression simulation: " + matches + " bot matches per row, 5v5 capture and hold, even teams, seed " + seed);
+        Console.WriteLine("Progression simulation: " + matches + " bot matches per row, " + new Options().perTeam + "v" + new Options().perTeam + " capture and hold, even teams, seed " + seed);
         Console.WriteLine();
 
         var rows = new List<(string name, Options o)>
@@ -322,7 +339,7 @@ static class ProgressionSim
         var rates = new List<float>();
         for (int i = 2; i < args.Length; i++) rates.Add(float.Parse(args[i], System.Globalization.CultureInfo.InvariantCulture));
         if (rates.Count == 0) rates.AddRange(new[] { 1f, 0.9f, 0.85f, 0.8f, 0.75f, 0.7f });
-        Console.WriteLine("Point rate: " + matches + " bot matches per row, 5v5 capture and hold, first to " + ModeDef.CaptureAndHold().scoreToWin + ", seed " + seed);
+        Console.WriteLine("Point rate: " + matches + " bot matches per row, " + new Options().perTeam + "v" + new Options().perTeam + " capture and hold, first to " + ModeDef.CaptureAndHold().scoreToWin + ", seed " + seed);
         Console.WriteLine();
         Console.WriteLine("{0,-22}{1,8}{2,14}{3,10}{4,9}{5,9}{6,9}", "points per second", "length", "(10%-90%)", "time cap", "level 10", "hit 10", "end lvl");
         foreach (float rate in rates)
@@ -336,6 +353,46 @@ static class ProgressionSim
         }
         Console.WriteLine();
         Console.WriteLine("time cap   share of matches that end on the time cap instead of the score");
+        return 0;
+    }
+
+    /// <summary>
+    /// The zone modes at 5v5 and 4v4 side by side, for the switch to four a side:
+    ///   dotnet run --project Tests/CoreSim -- report teamsize [matches] [seed] [koth points per second ...]
+    /// Extra numbers try king of the hill at 4v4, first to 1000 (shift at 500), at those point rates.
+    /// </summary>
+    public static int TeamSizeReport(string[] args)
+    {
+        int matches = args.Length > 0 ? int.Parse(args[0]) : 500;
+        int seed = args.Length > 1 ? int.Parse(args[1]) : 1;
+        var rows = new List<(string name, Options o)>();
+        foreach (int n in new[] { 5, 4 })
+        {
+            rows.Add(("Capture and Hold " + n + "v" + n, new Options { perTeam = n }));
+            rows.Add(("King of the Hill " + n + "v" + n, new Options { perTeam = n, mode = ModeDef.KingOfTheHill() }));
+        }
+        for (int i = 2; i < args.Length; i++)
+        {
+            float rate = float.Parse(args[i], System.Globalization.CultureInfo.InvariantCulture);
+            var m = ModeDef.KingOfTheHill();
+            m.scorePerSecond = rate;
+            m.scoreToWin = 1000;
+            m.mapShiftScore = 500;
+            rows.Add(("KotH 4v4 1000 at " + rate.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "/s", new Options { perTeam = 4, mode = m }));
+        }
+        Console.WriteLine("Zone modes by team size: " + matches + " bot matches per row, seed " + seed);
+        Console.WriteLine();
+        Console.WriteLine("{0,-26}{1,8}{2,14}{3,10}{4,9}{5,9}{6,9}{7,9}{8,10}", "", "length", "(10%-90%)", "time cap", "ult lvl", "top lvl", "hit top", "end lvl", "elims/min");
+        foreach (var (name, o) in rows)
+        {
+            var s = Run(matches, seed, o);
+            Console.WriteLine("{0,-26}{1,8}{2,14}{3,10}{4,9}{5,9}{6,9}{7,9}{8,10}", name, Min(s.medianLength), Min(s.p10Length) + "-" + Min(s.p90Length),
+                Share(s.timeCapShare), Min(s.medianLevel5), Min(s.medianLevel10), Share(s.reachedLevel10), s.averageFinalLevel.ToString("F1"),
+                s.eliminationsPerMinute.ToString("F1"));
+        }
+        Console.WriteLine();
+        Console.WriteLine("time cap   share of matches that end on the 15 minute cap instead of the score");
+        Console.WriteLine("ult/top    median match time a player reaches the ultimate's level (8) and the top level (20)");
         return 0;
     }
 
