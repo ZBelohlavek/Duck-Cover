@@ -232,6 +232,28 @@ static class WaveKitTests
         }
     }
 
+    [Test]
+    static void AGateHoldsALaneMinionAndItsFire()
+    {
+        // WP15's real minion walking and shooting (WaveRules.StepUnit and CanHit) against a Lockout Gate.
+        var h = new LaneHarness(waves: false);
+        var gateDef = new ObjectDef { id = "test_gate", lifetime = 6f, health = 1500f, blocksMovement = true, blocksShots = true, width = 8f, height = 4f };
+        var gate = h.H.Combat.Abilities.SpawnObject(gateDef, CombatHarness.B1, new Vec3(0f, 0f, -80f), "", Vec3.Forward);
+        Check.True(gate != null, "team B's gate across the lane, 20 m from team A's end");
+        int id = h.L.Waves.SpawnMinion(LaneRuleset.Scrapper, TeamId.A, 0);
+        Action hold = () => h.H.Place(CombatHarness.B1, 0f, -75f); // a hero just behind the gate, in range
+        h.Run(5.5f, hold);
+        var u = h.H.Combat.Units.Unit(id);
+        Check.True(u.position.z < -80f, "the minion is held at the gate: z " + u.position.z.ToString("0.00"));
+        Check.Equal(0, h.H.Of<DamagedEvent>().Count(d => d.attackerId == id), "and can't shoot the hero behind it");
+        var m = h.L.State.minions.First(x => x.unitId == id);
+        Check.Near(u.position.z + LaneHarness.HalfLength, m.progress, "its place along the lane is where it stands, not where it wanted to be", 0.5f);
+
+        h.Run(3f, hold); // the gate's 6 s run out
+        Check.False(h.H.Combat.Abilities.State.objects.Contains(gate), "the gate is gone");
+        Check.True(h.H.Of<DamagedEvent>().Any(d => d.attackerId == id && d.targetId == CombatHarness.B1), "then the minion shoots the hero");
+    }
+
     // ---- The lane version of point upgrades ----
 
     [Test]

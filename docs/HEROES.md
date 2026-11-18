@@ -116,4 +116,4 @@ Sentries shoot the nearest enemy they can see, so a minion in front of one comes
 Upgrades that work "on a point" (Anchor, Braced, Point Warden) also work within 8 m of your own minions or Bastion
 (`Ruleset.escortRadius`). Damage and healing on units give half the ultimate charge they give on heroes
 (`Ruleset.ultimateChargeUnitShare`), so clearing waves helps ultimates without replacing fights.
-`dotnet run --project Tests/CoreSim -- report waves` shows how long each hero takes to clear one wave alone.
+`dotnet run --project Tests/CoreSim -- report kitwaves` shows how long each hero takes to clear one wave alone.

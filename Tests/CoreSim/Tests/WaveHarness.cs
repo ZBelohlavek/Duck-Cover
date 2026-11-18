@@ -140,7 +140,7 @@ static class WaveHarness
     }
 
     /// <summary>
-    /// dotnet run --project Tests/CoreSim -- report waves: how long each starter hero takes to clear
+    /// dotnet run --project Tests/CoreSim -- report kitwaves: how long each starter hero takes to clear
     /// one stand-in wave alone, at level 1, 8 and 20 down each path, and the ultimate charge it gives.
     /// </summary>
     public static int Report(string[] args)
