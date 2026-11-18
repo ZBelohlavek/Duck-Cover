@@ -31,6 +31,9 @@ namespace DuckAndCover.Game
 
         const float RampThickness = 0.3f;
 
+        /// <summary>Build the bare greybox (layout colours only) instead of the map's environment theme.</summary>
+        public static bool Greybox;
+
         /// <summary>Where the camera sits when nobody is playing.</summary>
         public static Vector3 OverviewPosition => Current == null ? new Vector3(0f, 40f, -40f) : Current.overviewPosition.ToVector3();
         public static Quaternion OverviewRotation => Current == null
@@ -52,10 +55,14 @@ namespace DuckAndCover.Game
             light.intensity = 1.2f;
             light.shadows = LightShadows.Soft;
 
+            // The map's environment theme (null keeps the greybox colours). Set Greybox to see the bare layout.
+            var dress = Greybox ? null : MapDresser.Begin(map, t, EnvTheme.Find(map.theme));
+
             var view = root.AddComponent<MapView>();
             foreach (var b in map.blocks)
             {
                 var go = b.kind == BlockKind.Ramp ? Ramp(t, b) : Paint.Block(t, b.name, b.center.ToVector3(), b.size.ToVector3(), ColorOf(b), b.Solid);
+                MapDresser.DressBlock(dress, go, b);
                 if (b.shift != ShiftRole.None) view.AddShiftBlock(go, b);
             }
             foreach (var z in map.zones) view.AddZone(z, ZoneMarker(t, z));
@@ -69,6 +76,8 @@ namespace DuckAndCover.Game
                 cam.farClipPlane = 400f;
                 cam.transform.SetPositionAndRotation(OverviewPosition, OverviewRotation);
             }
+            // After the camera, since the theme's sky widens its far plane.
+            MapDresser.DressWorld(dress, light);
             return root;
         }
 

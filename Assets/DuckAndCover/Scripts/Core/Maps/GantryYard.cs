@@ -44,6 +44,7 @@ namespace DuckAndCover.Core
                 shiftDescription = "The shutters at the far end of both warehouse halls lift, opening a covered route from each side's point to the middle.",
                 overviewPosition = new Vec3(0f, 70f, -62f),
                 overviewTarget = new Vec3(0f, 0f, -6f),
+                theme = "jungle_moon",
             };
 
             // ---- Floor and outer walls ----
