@@ -13,12 +13,14 @@ sealed class SessionHarness
     public readonly SessionHost Host;
     public readonly List<SessionClient> Clients = new List<SessionClient>();
 
-    public SessionHarness(ModeDef mode = null, Ruleset rules = null, bool scripted = true, NetSettings settings = null)
+    /// <param name="heroes">Give the scripted host the hero data (WP11): abilities, leveling and upgrades.</param>
+    public SessionHarness(ModeDef mode = null, Ruleset rules = null, bool scripted = true, NetSettings settings = null, bool heroes = false)
     {
         Match = new MatchRules(rules ?? ScriptedPlay.SmokeRuleset(), mode ?? ModeDef.CaptureAndHold(), ScriptedPlay.PlaceholderMap(), World, Events);
         Host = new SessionHost(Match, Events, Net, settings);
         Net.Host = Host;
-        if (scripted) ScriptedPlay.Attach(Host, World, Events);
+        if (scripted && heroes) ScriptedPlay.Attach(Host, World, Events, ProgressionHarness.DataCatalog(), HeroHarness.DataLibrary());
+        else if (scripted) ScriptedPlay.Attach(Host, World, Events);
     }
 
     public SessionClient Join(string name = null, TeamId team = TeamId.None, string token = null)

@@ -50,6 +50,11 @@ namespace DuckAndCover.Core
         public float falloffStart = 25f;
         public float falloffEnd = 50f;
         public float falloffMinShare = 0.6f;
+        /// <summary>
+        /// Health a hit gives a teammate (with falloff and body part). Above 0 the weapon's shots stop
+        /// on teammates and heal them instead of passing through: a healing sidearm. Hitscan only.
+        /// </summary>
+        public float allyHeal = 0f;
 
         // ---- Projectile ----
         public float projectileSpeed = 30f;
@@ -97,6 +102,7 @@ namespace DuckAndCover.Core
                 if (spreadDegrees < 0f || spreadDegrees > 45f) e.Add(me + ": spreadDegrees must be 0..45");
                 if (range <= 0f) e.Add(me + ": range must be positive");
                 if (falloffMinShare < 0f || falloffMinShare > 1f) e.Add(me + ": falloffMinShare must be 0..1");
+                if (allyHeal < 0f) e.Add(me + ": allyHeal can't be negative");
             }
             else
             {
@@ -104,6 +110,7 @@ namespace DuckAndCover.Core
                 if (damage < 0f || splashDamage < 0f || splashRadius < 0f) e.Add(me + ": damage numbers can't be negative");
                 if (damage <= 0f && splashDamage <= 0f) e.Add(me + ": a projectile needs damage or splash");
                 if (splashMinShare < 0f || splashMinShare > 1f) e.Add(me + ": splashMinShare must be 0..1");
+                if (allyHeal != 0f) e.Add(me + ": allyHeal works on hitscan weapons only");
             }
             if (headMultiplier < 0f || legsMultiplier < 0f) e.Add(me + ": multipliers can't be negative");
             return e;
@@ -190,9 +197,10 @@ namespace DuckAndCover.Core
     }
 
     /// <summary>
-    /// The placeholder arsenal until the hero kits (WP11): a rifle, an SMG, a shotgun, a pistol and
-    /// a grenade launcher. Data/Weapons/starter_weapons.json is the same table as data; a test keeps
-    /// them equal.
+    /// The weapons and the starter heroes' loadouts (WP11): a rifle, an SMG, a shotgun, a pistol, a
+    /// grenade launcher (no hero carries it yet) and the Mender's healing sidearm. Loadouts are keyed by
+    /// hero id; heroId "" is the default. Data/Weapons/starter_weapons.json is the same table as data; a
+    /// test keeps them equal.
     /// </summary>
     public static class StarterWeapons
     {
@@ -211,14 +219,16 @@ namespace DuckAndCover.Core
                 new WeaponDef { id = "launcher", displayName = "Grenade launcher", kind = WeaponKind.Projectile, automatic = false, fireInterval = 0.75f, magazine = 4, reloadSeconds = 2.4f,
                     damage = 45f, headMultiplier = 1f, legsMultiplier = 1f, projectileSpeed = 32f, projectileGravity = 9f,
                     splashRadius = 3.5f, splashDamage = 70f, splashMinShare = 0.3f },
+                new WeaponDef { id = "mender_sidearm", displayName = "Mending sidearm", automatic = true, fireInterval = 0.16f, magazine = 18, reloadSeconds = 1.4f,
+                    damage = 15f, headMultiplier = 1.5f, legsMultiplier = 0.85f, range = 60f, falloffStart = 15f, falloffEnd = 35f, falloffMinShare = 0.5f, allyHeal = 14f },
             },
             loadouts =
             {
                 new WeaponLoadout { heroId = "", weapons = new[] { "rifle", "pistol" } },
-                new WeaponLoadout { heroId = "striker", weapons = new[] { "rifle", "pistol" } },
-                new WeaponLoadout { heroId = "vanguard", weapons = new[] { "shotgun", "pistol" } },
-                new WeaponLoadout { heroId = "support", weapons = new[] { "smg", "pistol" } },
-                new WeaponLoadout { heroId = "controller", weapons = new[] { "launcher", "pistol" } },
+                new WeaponLoadout { heroId = "bulwark", weapons = new[] { "shotgun", "pistol" } },
+                new WeaponLoadout { heroId = "lancer", weapons = new[] { "rifle", "pistol" } },
+                new WeaponLoadout { heroId = "mender", weapons = new[] { "mender_sidearm" } },
+                new WeaponLoadout { heroId = "rigger", weapons = new[] { "smg", "pistol" } },
             },
         };
 

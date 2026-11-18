@@ -345,10 +345,10 @@ static class WeaponTests
     {
         var h = new CombatHarness(toPlay: false);
         Check.Equal("rifle,pistol", string.Join(",", h.W(A1).weapons), "the default loadout");
-        h.Match.Apply(new PickHeroCommand { playerId = A1, heroId = "vanguard" });
-        Check.Equal("shotgun,pistol", string.Join(",", h.W(A1).weapons), "a vanguard carries a shotgun");
-        h.Match.Apply(new PickHeroCommand { playerId = B1, heroId = "controller" });
-        Check.Equal("launcher,pistol", string.Join(",", h.W(B1).weapons), "a controller a launcher");
+        h.Match.Apply(new PickHeroCommand { playerId = A1, heroId = "bulwark" });
+        Check.Equal("shotgun,pistol", string.Join(",", h.W(A1).weapons), "the Bulwark carries a shotgun");
+        h.Match.Apply(new PickHeroCommand { playerId = B1, heroId = "mender" });
+        Check.Equal("mender_sidearm", string.Join(",", h.W(B1).weapons), "the Mender only a healing sidearm");
         Check.False(h.Combat.Weapons.SetLoadout(A1, new[] { "laser" }).IsAccepted, "unknown weapons are refused");
     }
 

@@ -1,0 +1,103 @@
+{
+  "abilities": [
+    {
+      "id": "lancer_slip",
+      "displayName": "Slip",
+      "description": "Dash 6 m along your aim.",
+      "cooldown": 6,
+      "targeting": {
+        "shape": "self"
+      },
+      "effects": [
+        {
+          "kind": "push",
+          "amount": 6,
+          "duration": 0.2,
+          "direction": "aim"
+        },
+        {
+          "kind": "shield",
+          "amount": 40,
+          "duration": 2,
+          "tag": "slipShield"
+        }
+      ]
+    },
+    {
+      "id": "lancer_mark",
+      "displayName": "Tracer Mark",
+      "description": "Fire a tracer round at the enemy you aim at: 25 damage, and for 5 seconds they take 15% more damage and show through walls to your team.",
+      "cooldown": 10,
+      "targeting": {
+        "shape": "ray",
+        "range": 60,
+        "affects": "enemies"
+      },
+      "effects": [
+        {
+          "kind": "damage",
+          "amount": 25
+        },
+        {
+          "kind": "status",
+          "status": "lancer_marked",
+          "duration": 5
+        }
+      ]
+    },
+    {
+      "id": "lancer_volley",
+      "displayName": "Lance Volley",
+      "description": "Ultimate. After half a second, fire five heavy rounds in a tight fan. Each deals 60 damage.",
+      "ultimate": true,
+      "ultimateCost": 100,
+      "castTime": 0.5,
+      "targeting": {
+        "shape": "ray",
+        "range": 80,
+        "count": 5,
+        "spreadDegrees": 4,
+        "affects": "enemies"
+      },
+      "effects": [
+        {
+          "kind": "damage",
+          "amount": 60
+        }
+      ]
+    },
+    {
+      "id": "lancer_steady",
+      "displayName": "Steady Hands",
+      "description": "Passive. Reload 15% faster.",
+      "passive": true,
+      "stats": [
+        {
+          "stat": "reloadSpeed",
+          "op": "percent",
+          "value": 0.15,
+          "when": ""
+        }
+      ]
+    }
+  ],
+  "statuses": [
+    {
+      "id": "lancer_marked",
+      "displayName": "Marked",
+      "negative": true,
+      "duration": 5,
+      "reveal": true,
+      "stacking": "refresh",
+      "stats": [
+        {
+          "stat": "damageTaken",
+          "op": "percent",
+          "value": 0.15,
+          "when": ""
+        }
+      ]
+    }
+  ],
+  "objects": []
+}

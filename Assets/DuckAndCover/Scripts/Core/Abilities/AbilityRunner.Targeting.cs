@@ -22,6 +22,13 @@ namespace DuckAndCover.Core
             }
         }
 
+        /// <summary>A caster's ray: through their own team's barriers when the world can tell (see <see cref="ICasterQuery"/>).</summary>
+        bool CastRay(int casterId, Vec3 origin, Vec3 dir, float max, int tick, out HitInfo hit)
+        {
+            if (world is ICasterQuery q) return q.RaycastFor(casterId, origin, dir, max, tick, out hit);
+            return world.Raycast(origin, dir, max, tick, out hit);
+        }
+
         List<EffectArea> FindAreas(int casterId, TeamId team, TargetingDef t, Vec3 origin, Vec3 dir, int tick)
         {
             var areas = new List<EffectArea>();
@@ -34,7 +41,7 @@ namespace DuckAndCover.Core
                         float angle = count == 1 ? 0f : -t.spreadDegrees / 2f + t.spreadDegrees * i / (count - 1);
                         Vec3 d = Yaw(dir, angle);
                         var area = new EffectArea { point = origin + d * t.range };
-                        if (world.Raycast(origin, d, t.range, tick, out var hit) && hit.kind != HitKind.Nothing)
+                        if (CastRay(casterId, origin, d, t.range, tick, out var hit) && hit.kind != HitKind.Nothing)
                         {
                             area.point = hit.point;
                             if (hit.kind == HitKind.Player && Match.IsAlive(hit.playerId) && Matches(t.affects, casterId, team, hit.playerId))
@@ -50,7 +57,7 @@ namespace DuckAndCover.Core
                     float radius = t.radius * Math.Max(0f, Combat.Stat(casterId, StatIds.AbilityRadius));
                     Vec3 center = origin;
                     if (t.origin == Origins.AimPoint)
-                        center = world.Raycast(origin, dir, t.range, tick, out var land) && land.kind != HitKind.Nothing ? land.point : origin + dir * t.range;
+                        center = CastRay(casterId, origin, dir, t.range, tick, out var land) && land.kind != HitKind.Nothing ? land.point : origin + dir * t.range;
                     areas.Add(Query(center, radius, t.affects, casterId, team, t.maxTargets, tick));
                     for (int i = 1; i < count; i++)
                     {

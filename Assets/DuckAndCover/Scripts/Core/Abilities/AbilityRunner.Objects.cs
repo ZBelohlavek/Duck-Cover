@@ -9,11 +9,13 @@ namespace DuckAndCover.Core
         /// <summary>
         /// Place an object for a player. If they already have the most allowed of this kind, the
         /// oldest goes. The Game layer builds the model and colliders from ObjectSpawnedEvent.
+        /// <paramref name="facing"/> is turned level; a zero or vertical one faces +z.
         /// </summary>
-        public ObjectState SpawnObject(ObjectDef def, int ownerId, Vec3 position, string abilityId = "")
+        public ObjectState SpawnObject(ObjectDef def, int ownerId, Vec3 position, string abilityId = "", Vec3 facing = default)
         {
             if (def == null || !Match.IsPlaying) return null;
             var owner = Match.Player(ownerId);
+            if (def.width > 0f && def.height > 0f) position = Settle(position);
             if (def.maxPerOwner > 0)
             {
                 var mine = State.objects.FindAll(o => o.ownerId == ownerId && o.defId == def.id);
@@ -27,6 +29,7 @@ namespace DuckAndCover.Core
                 team = owner != null ? owner.team : TeamId.None,
                 abilityId = abilityId ?? "",
                 position = position,
+                facing = Level(facing),
                 health = def.health,
                 timeLeft = def.lifetime,
                 armLeft = def.armTime,
@@ -38,10 +41,30 @@ namespace DuckAndCover.Core
             Publish(new ObjectSpawnedEvent
             {
                 objectId = obj.id, defId = obj.defId, ownerId = ownerId, team = obj.team, abilityId = obj.abilityId,
-                position = position, radius = obj.radius, lifetime = def.lifetime, health = def.health,
-                blocksMovement = def.blocksMovement, blocksShots = def.blocksShots,
+                position = position, facing = obj.facing, radius = obj.radius, lifetime = def.lifetime, health = def.health,
+                blocksMovement = def.blocksMovement, blocksShots = def.blocksShots, width = def.width, height = def.height,
             });
             return obj;
+        }
+
+        /// <summary>
+        /// A wall stands on the ground: drop the spot onto the map below it (up to
+        /// <see cref="SettleDepth"/>), so a gate aimed at the sky doesn't hang in the air.
+        /// </summary>
+        Vec3 Settle(Vec3 position)
+        {
+            if (world.Raycast(position + Vec3.Up * 0.2f, Vec3.Up * -1f, SettleDepth + 0.2f, Match.tick, out var ground) && ground.kind == HitKind.World)
+                return ground.point;
+            return position;
+        }
+
+        /// <summary>How far below where it landed a wall looks for the ground.</summary>
+        public const float SettleDepth = 6f;
+
+        static Vec3 Level(Vec3 dir)
+        {
+            var flat = new Vec3(dir.x, 0f, dir.z);
+            return flat.Magnitude < 1e-4f ? Vec3.Forward : flat.Normalized;
         }
 
         /// <summary>
@@ -135,7 +158,9 @@ namespace DuckAndCover.Core
         {
             var area = Query(obj.position, obj.radius, obj.def.affects, obj.ownerId, obj.team, 0, Match.tick);
             var ids = new List<int>(area.targets);
-            if (obj.def.needsLineOfSight && world is ILineOfSightQuery los)
+            if (obj.def.needsLineOfSight && world is ICasterQuery caster)
+                ids.RemoveAll(id => !caster.HasLineOfSightFor(obj.ownerId, obj.position, id, Match.tick));
+            else if (obj.def.needsLineOfSight && world is ILineOfSightQuery los)
                 ids.RemoveAll(id => !los.HasLineOfSight(obj.position, id, Match.tick));
             if (obj.def.maxTargets > 0 && ids.Count > obj.def.maxTargets) ids.RemoveRange(obj.def.maxTargets, ids.Count - obj.def.maxTargets);
             area.targets = ids.ToArray();

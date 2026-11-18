@@ -33,6 +33,12 @@ namespace DuckAndCover.Core
         Ruleset Rules => match.Rules;
         MatchState Match => match.State;
 
+        /// <summary>
+        /// An extra check before an ability is used, set by whoever knows more than the ability rules
+        /// (HeroServer holds a hero's ultimate until its form is picked): returns why not, or null.
+        /// </summary>
+        public Func<int, string, string> UseCheck;
+
         public AbilityRunner(MatchRules match, AbilityLibrary library, IWorldQuery world, IGameEvents events)
         {
             this.match = match ?? throw new ArgumentNullException(nameof(match));
@@ -220,6 +226,8 @@ namespace DuckAndCover.Core
             var def = Resolved(unit, s.abilityId).def;
             int needLevel = def.ultimate ? Math.Max(def.unlockLevel, Rules.ultimateUnlockLevel) : def.unlockLevel;
             if (p.level < needLevel) return CommandResult.Reject("unlocks at level " + needLevel);
+            string why = UseCheck == null ? null : UseCheck(playerId, def.id);
+            if (!string.IsNullOrEmpty(why)) return CommandResult.Reject(why);
             if (IsSilenced(playerId)) return CommandResult.Reject(IsStunned(playerId) ? "stunned" : "silenced");
             foreach (var other in unit.slots) if (other.casting) return CommandResult.Reject("already casting");
             if (def.ultimate)

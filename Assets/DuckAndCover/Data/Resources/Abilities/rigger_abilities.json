@@ -1,0 +1,146 @@
+{
+  "abilities": [
+    {
+      "id": "rigger_mine",
+      "displayName": "Snare Mine",
+      "description": "Place a mine where you aim (two charges, two out at once). It arms after a second, then the first enemy within 3 m sets it off: 30 damage and slowed by half for 3 seconds.",
+      "cooldown": 9,
+      "charges": 2,
+      "targeting": {
+        "shape": "sphere",
+        "origin": "aimPoint",
+        "range": 10,
+        "radius": 0.5,
+        "affects": "enemies"
+      },
+      "effects": [
+        {
+          "kind": "spawn",
+          "objectId": "rigger_mine"
+        }
+      ]
+    },
+    {
+      "id": "rigger_sentry",
+      "displayName": "Sentry",
+      "description": "Set down a small sentry gun that shoots the nearest enemy it can see within 14 m for 25 seconds.",
+      "cooldown": 18,
+      "targeting": {
+        "shape": "sphere",
+        "origin": "aimPoint",
+        "range": 6,
+        "radius": 0.5,
+        "affects": "enemies"
+      },
+      "effects": [
+        {
+          "kind": "spawn",
+          "objectId": "rigger_sentry"
+        }
+      ]
+    },
+    {
+      "id": "rigger_gate",
+      "displayName": "Lockout Gate",
+      "description": "Ultimate. Raise an 8 m wide, 4 m high gate where you aim that closes the route for 6 seconds. Your team can shoot through it.",
+      "ultimate": true,
+      "ultimateCost": 100,
+      "targeting": {
+        "shape": "sphere",
+        "origin": "aimPoint",
+        "range": 20,
+        "radius": 4,
+        "affects": "enemies"
+      },
+      "effects": [
+        {
+          "kind": "spawn",
+          "objectId": "rigger_gate"
+        },
+        {
+          "kind": "slow",
+          "amount": 0.6,
+          "duration": 3,
+          "tag": "gateSlow"
+        }
+      ]
+    },
+    {
+      "id": "rigger_tinker",
+      "displayName": "Tinkerer",
+      "description": "Passive. Abilities recover 10% faster.",
+      "passive": true,
+      "stats": [
+        {
+          "stat": "cooldownRate",
+          "op": "percent",
+          "value": 0.1,
+          "when": ""
+        }
+      ]
+    }
+  ],
+  "statuses": [],
+  "objects": [
+    {
+      "id": "rigger_mine",
+      "displayName": "Snare Mine",
+      "lifetime": 45,
+      "health": 30,
+      "radius": 3,
+      "trigger": "proximity",
+      "armTime": 1,
+      "affects": "enemies",
+      "consumeOnTrigger": true,
+      "maxPerOwner": 2,
+      "effects": [
+        {
+          "kind": "damage",
+          "amount": 30
+        },
+        {
+          "kind": "slow",
+          "amount": 0.5,
+          "duration": 3
+        },
+        {
+          "kind": "stun",
+          "duration": 0.75,
+          "tag": "mineStun"
+        }
+      ]
+    },
+    {
+      "id": "rigger_sentry",
+      "displayName": "Sentry",
+      "lifetime": 25,
+      "health": 120,
+      "radius": 14,
+      "trigger": "pulse",
+      "interval": 0.4,
+      "armTime": 1,
+      "affects": "enemies",
+      "maxTargets": 1,
+      "needsLineOfSight": true,
+      "maxPerOwner": 1,
+      "effects": [
+        {
+          "kind": "damage",
+          "amount": 9
+        }
+      ]
+    },
+    {
+      "id": "rigger_gate",
+      "displayName": "Lockout Gate",
+      "lifetime": 6,
+      "health": 1500,
+      "trigger": "none",
+      "maxPerOwner": 1,
+      "blocksMovement": true,
+      "blocksShots": true,
+      "width": 8,
+      "height": 4
+    }
+  ]
+}

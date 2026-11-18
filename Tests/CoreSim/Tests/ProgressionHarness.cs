@@ -20,13 +20,13 @@ sealed class ProgressionHarness
     public int[] A => H.A;
     public int[] B => H.B;
 
-    public static string HeroesDir => Path.Combine(Repo.Root, "Assets", "DuckAndCover", "Data", "Heroes");
+    public static string HeroesDir => Path.Combine(Repo.Root, "Assets", "DuckAndCover", "Data", "Resources", "Heroes");
 
     /// <summary>Loads a hero file the way JsonUtility will in Unity: public fields only.</summary>
     public static HeroDef LoadHero(string path) =>
         JsonSerializer.Deserialize<HeroDef>(File.ReadAllText(path), new JsonSerializerOptions { IncludeFields = true });
 
-    /// <summary>Every hero in Data/Heroes, with the test hero as the fallback for unknown hero ids.</summary>
+    /// <summary>Every hero in Data/Resources/Heroes, with the test hero as the fallback for unknown hero ids.</summary>
     public static HeroCatalog DataCatalog() =>
         new HeroCatalog(Directory.GetFiles(HeroesDir, "*.json").OrderBy(f => f, StringComparer.Ordinal).Select(LoadHero), "test_hero");
 

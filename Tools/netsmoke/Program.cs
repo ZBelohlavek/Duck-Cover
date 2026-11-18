@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using DuckAndCover.Core;
 
@@ -219,7 +221,8 @@ static class Program
         var tcp = new TcpServer();
         var transport = new HostTransport { tcp = tcp };
         var host = new SessionHost(match, events, transport);
-        ScriptedPlay.Attach(host, world, events);
+        var (heroes, abilities) = LoadHeroData();
+        ScriptedPlay.Attach(host, world, events, heroes, abilities);
 
         var link = new LocalLink();
         var me = new SessionClient(link, "Host", "host-token");
@@ -265,6 +268,24 @@ static class Program
         }
         File.WriteAllText(outFile, SessionDigest.Of(match.State));
         return match.State.phase == MatchPhase.MatchEnd ? 0 : 1;
+    }
+
+    /// <summary>
+    /// The hero and ability data the game ships (Data/Resources), read the way the tests read it, so
+    /// scripted players use real abilities and upgrades. The test hero is the fallback.
+    /// </summary>
+    static (HeroCatalog, AbilityLibrary) LoadHeroData()
+    {
+        string dir = AppContext.BaseDirectory;
+        while (dir != null && !Directory.Exists(Path.Combine(dir, "Assets", "DuckAndCover"))) dir = Path.GetDirectoryName(dir);
+        if (dir == null) throw new InvalidOperationException("can't find the repository (Assets/DuckAndCover)");
+        string data = Path.Combine(dir, "Assets", "DuckAndCover", "Data", "Resources");
+        var opts = new JsonSerializerOptions { IncludeFields = true };
+        var heroes = Directory.GetFiles(Path.Combine(data, "Heroes"), "*.json").OrderBy(f => f, StringComparer.Ordinal)
+            .Select(f => JsonSerializer.Deserialize<HeroDef>(File.ReadAllText(f), opts));
+        var files = Directory.GetFiles(Path.Combine(data, "Abilities"), "*.json").OrderBy(f => f, StringComparer.Ordinal)
+            .Select(f => JsonSerializer.Deserialize<AbilityDataFile>(File.ReadAllText(f), opts)).ToArray();
+        return (new HeroCatalog(heroes, "test_hero"), AbilityLibrary.From(files));
     }
 
     // ---- Client process ----

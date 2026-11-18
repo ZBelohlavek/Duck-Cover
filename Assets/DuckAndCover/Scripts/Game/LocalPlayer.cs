@@ -13,7 +13,11 @@ namespace DuckAndCover.Game
     ///
     /// Keys: WASD move, mouse look, Shift sprint, Ctrl or C crouch, Space jump (vaults a low wall
     /// when facing one), left mouse fire, R reload, 1/2 or the wheel or Q switch weapon,
-    /// Esc frees the mouse.
+    /// E and F the hero's abilities, X the ultimate, hold Z or V to take the left or right upgrade
+    /// on offer (a stand-in until the level-up prompt, WP12), Esc frees the mouse.
+    ///
+    /// Abilities are requests too: the server decides, and a dash or knockback comes back as a
+    /// PushedEvent that this applies to the player's own movement.
     /// </summary>
     public class LocalPlayer : MonoBehaviour
     {
@@ -40,6 +44,12 @@ namespace DuckAndCover.Game
         public bool LastHitEliminated { get; private set; }
         public float Yaw => yaw;
         public float Pitch => pitch;
+        /// <summary>The upgrade key being held (0 left, 1 right, -1 none) and how far along the hold is, 0..1.</summary>
+        public int ChoiceHeld { get; private set; } = -1;
+        public float ChoiceProgress { get; private set; }
+
+        /// <summary>Seconds a choice key must be held, so a stray tap mid-fight doesn't pick.</summary>
+        public const float ChoiceHoldSeconds = 0.35f;
 
         CharacterController controller;
         Transform viewModel;
@@ -57,6 +67,12 @@ namespace DuckAndCover.Game
 
         float vaultTime = -1f;
         Vector3 vaultFrom, vaultTo;
+
+        Vector3 pushVelocity;
+        float pushLeft;
+        float choiceHeldFor;
+        int choiceSentLevel = -1;
+        float abilityBlockUntil;
 
         float nextFireAt;
         int shotsSent;
@@ -122,6 +138,9 @@ namespace DuckAndCover.Game
                 case CommandRejectedEvent refused when refused.command == nameof(FireCommand):
                     shotsSent = Mathf.Max(0, shotsSent - 1);
                     break;
+                case PushedEvent pushed when pushed.targetId == client.PlayerId:
+                    StartPush(pushed);
+                    break;
             }
         }
 
@@ -133,7 +152,21 @@ namespace DuckAndCover.Game
             controller.enabled = was;
             velocity = Vector3.zero;
             vaultTime = -1f;
+            pushLeft = 0f;
             if (!correction) { yaw = newYaw; pitch = 0f; }
+        }
+
+        /// <summary>A dash (along the aim) or a knockback: moved over its seconds, level with the ground.</summary>
+        void StartPush(PushedEvent pushed)
+        {
+            Vector3 dir = pushed.direction.ToVector3();
+            if (pushed.mode != PushDirections.Aim && dir.sqrMagnitude < 1e-6f) dir = transform.position - pushed.origin.ToVector3();
+            dir.y = 0f;
+            if (dir.sqrMagnitude < 1e-6f || pushed.distance <= 0f) return;
+            float seconds = Mathf.Max(0.05f, pushed.seconds);
+            pushVelocity = dir.normalized * (pushed.distance / seconds);
+            pushLeft = seconds;
+            vaultTime = -1f;
         }
 
         void SetActive(bool on)
@@ -180,7 +213,69 @@ namespace DuckAndCover.Game
             Move(keyboard, focused, speedScale);
             PlaceCamera();
             Report();
-            Weapons(keyboard, mouse, focused, snapshot.Weapons(me.id), unit != null && unit.HasStatus(AbilityLibrary.StunStatus));
+            bool stunned = unit != null && unit.HasStatus(AbilityLibrary.StunStatus);
+            fireRate = unit == null ? 1f : Mathf.Max(0.1f, unit.stats.Get(StatIds.FireRate));
+            Weapons(keyboard, mouse, focused, snapshot.Weapons(me.id), stunned);
+            Abilities(keyboard, focused, unit);
+            Choices(keyboard, focused, snapshot, me);
+        }
+
+        float fireRate = 1f;
+
+        // ---- Abilities ----
+
+        void Abilities(Keyboard keyboard, bool focused, HeroUnit unit)
+        {
+            if (!focused || scripted || keyboard == null || unit == null || Time.time < abilityBlockUntil) return;
+            int slot = -1;
+            if (keyboard.eKey.wasPressedThisFrame) slot = 0;
+            else if (keyboard.fKey.wasPressedThisFrame) slot = 1;
+            else if (keyboard.xKey.wasPressedThisFrame) slot = unit.slots.Count - 1;
+            if (slot < 0 || slot >= unit.slots.Count) return;
+            UseAbility(slot, unit.slots[slot].abilityId);
+        }
+
+        /// <summary>Ask the server to use the ability in a slot, aimed where the camera looks.</summary>
+        public void UseAbility(int slot, string abilityId)
+        {
+            if (client == null) return;
+            abilityBlockUntil = Time.time + 0.15f; // one request per press, even if the state copy is late
+            client.Send(new UseAbilityCommand
+            {
+                slot = slot, abilityId = abilityId ?? "", tick = view != null ? view.RenderTick : 0,
+                aimOrigin = (transform.position + Vector3.up * eyeHeight).ToVec3(), aimDirection = MoveMath.AimDirection(yaw, pitch),
+            });
+        }
+
+        // ---- Upgrade choices (a stand-in until WP12's prompt) ----
+
+        void Choices(Keyboard keyboard, bool focused, MatchSnapshot snapshot, PlayerState me)
+        {
+            int level = PendingLevel(snapshot, me.id);
+            int key = -1;
+            if (focused && !scripted && keyboard != null && level > 0)
+            {
+                if (keyboard.zKey.isPressed) key = 0;
+                else if (keyboard.vKey.isPressed) key = 1;
+            }
+            if (key != ChoiceHeld) choiceHeldFor = 0f;
+            ChoiceHeld = key;
+            if (key < 0) { ChoiceProgress = 0f; return; }
+            choiceHeldFor += Time.deltaTime;
+            ChoiceProgress = Mathf.Clamp01(choiceHeldFor / ChoiceHoldSeconds);
+            if (ChoiceProgress < 1f || choiceSentLevel == level) return;
+            choiceSentLevel = level;
+            client.Send(new ChooseUpgradeCommand { level = level, option = key });
+        }
+
+        /// <summary>The lowest level whose upgrade the player hasn't chosen yet, or 0.</summary>
+        public static int PendingLevel(MatchSnapshot snapshot, int playerId)
+        {
+            var mine = snapshot == null || snapshot.progression == null ? null : snapshot.progression.Player(playerId);
+            if (mine == null) return 0;
+            for (int level = 2; level <= mine.level; level++)
+                if (!mine.HasPicked(level)) return level;
+            return 0;
         }
 
         /// <summary>Click to take the mouse, Esc to give it back. Returns whether the game has it.</summary>
@@ -229,6 +324,16 @@ namespace DuckAndCover.Game
             controller.center = new Vector3(0f, height * 0.5f, 0f);
             controller.stepOffset = Mathf.Min(0.35f, rules.vaultMinHeight);
             eyeHeight = Mathf.MoveTowards(eyeHeight <= 0f ? rules.eyeHeight : eyeHeight, Hitboxes.EyeHeight(rules, Crouched), 6f * dt);
+
+            if (pushLeft > 0f)
+            {
+                float step = Mathf.Min(dt, pushLeft);
+                pushLeft -= step;
+                velocity.y = Mathf.Min(velocity.y, 0f) - rules.gravity * step;
+                controller.Move(pushVelocity * step + Vector3.up * (velocity.y * step));
+                Sprinting = false;
+                return;
+            }
 
             if (vaultTime >= 0f)
             {
@@ -400,7 +505,7 @@ namespace DuckAndCover.Game
             if (Time.time < nextFireAt || Time.time < switchBlockUntil) return false;
             var cam = Camera.main;
             if (cam == null) return false;
-            nextFireAt = Time.time + def.fireInterval;
+            nextFireAt = Time.time + def.fireInterval / fireRate;
             shotsSent++;
 
             Vec3 origin = (transform.position + Vector3.up * eyeHeight).ToVec3();
