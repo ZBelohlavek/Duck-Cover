@@ -1,5 +1,6 @@
 {
     "id": "king_of_the_hill",
+    "objective": "zones",
     "displayName": "King of the Hill",
     "zoneSet": "hills",
     "activeZoneCount": 1,

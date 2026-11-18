@@ -20,6 +20,8 @@ namespace DuckAndCover.Core
         public MatchMap Map { get; }
         public ZoneRules Zones { get; }
         public SpawnRules Spawn { get; }
+        /// <summary>Flag Rush: score is captures, reported by the flag rules (Core/Flag) through <see cref="ScoreFlagCapture"/>.</summary>
+        public bool FlagMode => Mode.IsFlag();
 
         readonly IGameEvents events;
 
@@ -161,7 +163,8 @@ namespace DuckAndCover.Core
                     if (CountDown(dt))
                     {
                         EnterPhase(MatchPhase.Play, 0f);
-                        Zones.Unlock();
+                        if (!FlagMode) Zones.Unlock(); // a flag mode's base zones are only volumes, never points
+
                     }
                     break;
                 case MatchPhase.Play:
@@ -172,6 +175,21 @@ namespace DuckAndCover.Core
                     if (State.phaseTimeLeft > 0f) State.phaseTimeLeft = Math.Max(0f, State.phaseTimeLeft - dt);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Flag Rush: <paramref name="team"/> carried the flag into the enemy base. Adds a point and
+        /// settles the shift and the result on the same tick. False if nothing could score.
+        /// </summary>
+        public bool ScoreFlagCapture(TeamId team)
+        {
+            if (!FlagMode || !State.IsPlaying || (team != TeamId.A && team != TeamId.B)) return false;
+            if (team == TeamId.A) State.scoreA = Math.Min(Mode.scoreToWin, State.scoreA + 1);
+            else State.scoreB = Math.Min(Mode.scoreToWin, State.scoreB + 1);
+            CheckMapShift();
+            if (State.phase == MatchPhase.Play) CheckCaps();
+            else CheckFlagOvertime();
+            return true;
         }
 
         public MatchSnapshot TakeSnapshot() => new MatchSnapshot { tick = State.tick, match = State.Clone() };
@@ -191,6 +209,7 @@ namespace DuckAndCover.Core
             CheckMapShift();
 
             if (State.phase == MatchPhase.Play) CheckCaps();
+            else if (FlagMode) CheckFlagOvertime();
             else CheckOvertime(dt);
         }
 
@@ -241,7 +260,12 @@ namespace DuckAndCover.Core
             else if (State.elapsed >= Mode.timeCapSeconds - Epsilon)
             {
                 leader = State.Leader;
-                if (leader == TeamId.None) return; // level at the time cap: play on until someone scores
+                if (leader == TeamId.None)
+                {
+                    // Level at the time cap: play on until someone scores. Flag Rush calls that overtime.
+                    if (FlagMode && Rules.overtimeEnabled) StartFlagOvertime();
+                    return;
+                }
                 reason = MatchEndReason.TimeCap;
             }
             else return;
@@ -277,6 +301,23 @@ namespace DuckAndCover.Core
             }
             if (Rules.overtimeMaxSeconds > 0f && State.overtimeElapsed >= Rules.overtimeMaxSeconds - Epsilon)
                 EndMatch(HigherOr(leader), MatchEndReason.OvertimeTimeout);
+        }
+
+        void StartFlagOvertime()
+        {
+            State.overtimeLeader = TeamId.None;
+            State.overtimeElapsed = 0f;
+            State.overtimeClearFor = 0f;
+            EnterPhase(MatchPhase.Overtime, 0f);
+            Publish(new OvertimeStartedEvent { leader = TeamId.None });
+        }
+
+        /// <summary>Flag Rush overtime: the next capture wins; past overtimeMaxSeconds (if set) it is a draw.</summary>
+        void CheckFlagOvertime()
+        {
+            if (State.Leader != TeamId.None) { EndMatch(State.Leader, MatchEndReason.OvertimeCapture); return; }
+            if (Rules.overtimeMaxSeconds > 0f && State.overtimeElapsed >= Rules.overtimeMaxSeconds - Epsilon)
+                EndMatch(TeamId.None, MatchEndReason.OvertimeTimeout);
         }
 
         /// <summary>The trailing team has living players on a live zone it doesn't safely hold.</summary>

@@ -196,6 +196,11 @@ namespace DuckAndCover.Core
         public List<SpawnPoint> spawnsB = new List<SpawnPoint>();
         public List<SpawnPoint> forward = new List<SpawnPoint>();
         public List<SpawnPoint> dummies = new List<SpawnPoint>();
+        /// <summary>
+        /// Where a Flag Rush flag may appear (feet height). Each is the same walk from both bases, and
+        /// the list holds every spot's turned twin; <see cref="MapValidator"/> checks both.
+        /// </summary>
+        public List<Vec3> flagSpots = new List<Vec3>();
         /// <summary>What the shift does, for the HUD and the docs.</summary>
         public string shiftDescription = "";
         /// <summary>Where the camera sits when nobody is playing (looks at <see cref="overviewTarget"/>).</summary>
@@ -235,6 +240,7 @@ namespace DuckAndCover.Core
         public MatchMap ToMatchMap()
         {
             var map = new MatchMap { mapId = id };
+            map.flagSpots.AddRange(flagSpots);
             foreach (var z in zones)
             {
                 var set = map.ZoneSet(z.set);
