@@ -23,6 +23,23 @@ the team colours (saturated blue and orange) off anything big.
   blocks, trims (base and cap courses, glowing strips, stripes, container posts, crate bands), vines,
   floor patches and zone paving, then cliffs, trees and gantries outside the play area, and the light.
 
+## Lanes and jungle
+
+Lane maps read like a road through a forest: a lane of packed dirt, walled in by tree lines and rocks,
+with gaps where trails lead off into the jungle.
+
+- `MapDef.paths` (art only): `ArtPath` lines painted flat on the ground. `"lane"` is wide packed dirt
+  with darker verges; `"trail"` is a narrow mossy path that starts with a leafy arch overhead (4.6 m up),
+  marking a jungle entrance.
+- `MapBlock.style` (art only): `"treeline"` draws a wall block as a dense hedge with bushes inside its
+  box and now and then a tree rising out of it; `"rocks"` draws it as an outcrop with a boulder and moss.
+  The block keeps its box collider. Anything that frames a lane must be a real block, because in a
+  shooter what looks like a wall has to stop players and shots.
+- Gaps between styled blocks are the jungle entrances: put a trail through each one.
+- `LaneStudy` (`Core/Maps`) is a mock-up of this, not a playable map: a winding lane with four jungle
+  entrances. The capture builds it beside the real map (shots 13 to 15), and
+  `dotnet run --project Tests/CoreSim -- report lanestudy out.svg` draws its plan.
+
 ## Fair-play rules for dressing
 
 Art must never change how a map plays, so the validator's numbers stay true:
@@ -31,7 +48,8 @@ Art must never change how a map plays, so the validator's numbers stay true:
 - Nothing the dresser adds has a collider.
 - Inside the play area, added pieces lie flat on the floor (at most 2 cm), sit flush on a block (at most
   `MapDresser.MaxProud`, 7 cm, proud of it) or hang high overhead (gantries at 12 m).
-- Tall pieces (cliffs, trees, gantry legs) stand outside the outer walls.
+- Tall pieces (cliffs, trees, gantry legs) stand outside the outer walls, or grow out of a styled block
+  (a tree line's trees), above its top.
 
 ## Sources and licences
 

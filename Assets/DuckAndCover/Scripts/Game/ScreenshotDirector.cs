@@ -50,7 +50,22 @@ namespace DuckAndCover.Game
             new Shot("10-abilities", DummiesUseAbilities, 1.6f),
             new Shot("11-gate", DummyRaisesGate, 1.0f),
             new Shot("12-hero-hud", LevelUpAndLook, 1.2f),
+            // Environment kit: the lane mock-up, built far off to one side of the real map.
+            new Shot("13-lane", () => LaneShot(new Vector3(0f, 1.8f, -50f), new Vector3(0f, 1.2f, -38f)), 1.0f),
+            new Shot("14-lane-gap", () => LaneShot(new Vector3(-8.5f, 1.8f, -30f), new Vector3(-20f, 1.2f, -20f)), 0.6f),
+            new Shot("15-lane-above", () => LaneShot(new Vector3(0f, 55f, -62f), new Vector3(0f, 0f, -10f)), 0.6f),
         };
+
+        /// <summary>Where the lane mock-up is built: far enough that neither map shows in the other's shots.</summary>
+        static readonly Vector3 LaneOffset = new Vector3(0f, 0f, 1500f);
+        static GameObject lanePreview;
+
+        static void LaneShot(Vector3 position, Vector3 target)
+        {
+            if (lanePreview == null) lanePreview = MapScene.BuildPreview(LaneStudy.Build(), LaneOffset);
+            LookAt(position + LaneOffset, target + LaneOffset);
+            WatchFrom(position + LaneOffset, target + LaneOffset);
+        }
 
         static readonly string[] DummyHeroes = { "bulwark", "rigger", "mender" };
 
