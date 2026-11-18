@@ -36,8 +36,10 @@ with gaps where trails lead off into the jungle.
   The block keeps its box collider. Anything that frames a lane must be a real block, because in a
   shooter what looks like a wall has to stop players and shots.
 - Gaps between styled blocks are the jungle entrances: put a trail through each one.
-- `LaneStudy` (`Core/Maps`) is a mock-up of this, not a playable map: a winding lane with four jungle
-  entrances. The capture builds it beside the real map (shots 13 to 15), and
+- Each side's jungle is one through-route: a trail leaves the lane near one end, loops out through
+  the jungle and rejoins the lane near the other end, with camp clearings along it.
+- `LaneStudy` (`Core/Maps`) is a mock-up of this, not a playable map: a winding lane with a jungle loop
+  on each side (four entrances). The capture builds it beside the real map (shots 13 to 15), and
   `dotnet run --project Tests/CoreSim -- report lanestudy out.svg` draws its plan.
 
 ## Fair-play rules for dressing

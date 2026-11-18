@@ -5,7 +5,7 @@ namespace DuckAndCover.Core
 {
     /// <summary>
     /// An art mock-up, not a playable map and not in <see cref="MapCatalog"/>: a winding dirt lane walled in
-    /// by tree lines and rocks, with gaps where trails lead off into jungle pockets. It shows how the
+    /// by tree lines and rocks, with gaps where jungle loops leave the lane and rejoin it further along. It shows how the
     /// environment kit dresses lanes, lane edges and jungle entrances before the lane maps for the new
     /// modes exist. The screenshot run builds it off to one side of the real map.
     ///
@@ -38,11 +38,13 @@ namespace DuckAndCover.Core
             for (int i = half.Length - 2; i >= 0; i--) lane.Add(MapDef.Turn(half[i]));
             m.paths.Add(new ArtPath("lane", LaneWidth, lane.ToArray()));
 
-            // Trails through gaps in the lane walls into jungle pockets (team A's two, then turned).
+            // Jungle loops: on each side a trail leaves the lane near one end, arcs out through the jungle and
+            // rejoins the lane near the other end, so each side's jungle is one through-route. Team A's west
+            // loop, then the same turned about the centre (the east loop).
             var trails = new List<ArtPath>
             {
-                new ArtPath("trail", 3.5f, new Vec3(-14.6f, 0f, -20f), new Vec3(-22f, 0f, -20f), new Vec3(-23f, 0f, -34f)),
-                new ArtPath("trail", 3.5f, new Vec3(4.2f, 0f, -47f), new Vec3(16f, 0f, -45f), new Vec3(19f, 0f, -33f)),
+                new ArtPath("trail", 3.5f, new Vec3(-4.6f, 0f, -50f), new Vec3(-14f, 0f, -50f), new Vec3(-22f, 0f, -41f), new Vec3(-24f, 0f, -22f),
+                    new Vec3(-23f, 0f, -2f), new Vec3(-20f, 0f, 20f), new Vec3(-14f, 0f, 38f), new Vec3(-4.6f, 0f, 48f)),
             };
             foreach (var t in trails.ToArray())
             {
@@ -100,12 +102,13 @@ namespace DuckAndCover.Core
                 Pair(m, "Edge" + (n++), BlockKind.Wall, x, z, Post, bend ? RockHeight : TreeHeight, Post, bend ? "rocks" : "treeline");
             }
 
-            // Jungle pockets at the trail ends: a few rocks to stand behind.
-            Pair(m, "PocketRockWest", BlockKind.Wall, -25f, -38f, 3f, 2.2f, 3f, "rocks");
-            Pair(m, "PocketRockWestLow", BlockKind.LowCover, -20f, -36f, 2.5f, 1f, 1.5f, "rocks");
-            Pair(m, "PocketRockEast", BlockKind.Wall, 22f, -30f, 3f, 2.4f, 3.5f, "rocks");
-            Pair(m, "PocketTreesEast", BlockKind.Wall, 26f, -40f, 3f, TreeHeight, 6f, "treeline");
-            Pair(m, "PocketTreesWest", BlockKind.Wall, -27f, -24f, 3f, TreeHeight, 5f, "treeline");
+            // Camp clearings beside the loops, with rocks to fight around: one near each end of a loop and
+            // one in its middle (where a lane map would put its damage, XP and super-minion camps).
+            Pair(m, "CampEndRock", BlockKind.Wall, -18f, -40f, 3f, 2.4f, 3f, "rocks");
+            Pair(m, "CampEndLow", BlockKind.LowCover, -14f, -45f, 2.5f, 1f, 1.5f, "rocks");
+            Pair(m, "CampMidRock", BlockKind.Wall, -15f, 4f, 3f, 2.4f, 3.5f, "rocks");
+            Pair(m, "CampMidLow", BlockKind.LowCover, -10f, 9f, 2.5f, 1f, 1.5f, "rocks");
+            Pair(m, "CampMidTrees", BlockKind.Wall, -27f, 6f, 3f, TreeHeight, 6f, "treeline");
 
             // Floor and outer walls.
             m.blocks.Add(new MapBlock("Ground", BlockKind.Ground, new Vec3(0f, -0.5f, 0f), new Vec3(m.halfX * 2f, 1f, m.halfZ * 2f)));
