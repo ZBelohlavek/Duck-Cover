@@ -141,6 +141,11 @@ namespace DuckAndCover.Core
         /// <summary>Where the camera sits when nobody is playing (looks at <see cref="overviewTarget"/>).</summary>
         public Vec3 overviewPosition;
         public Vec3 overviewTarget;
+        /// <summary>
+        /// The environment theme the game dresses this layout in (an id the Game assembly knows, such as
+        /// "jungle_moon"). Art only: rules and the validator never read it. Empty keeps the plain greybox.
+        /// </summary>
+        public string theme = "";
 
         public MapZone Zone(ZoneId id)
         {

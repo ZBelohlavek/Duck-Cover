@@ -136,6 +136,9 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
   `dotnet run --project Tests/CoreSim -- report map map.svg` (walk times and a top-down plan); the
   `MapValidator` tests fail on broken symmetry, unreachable zones, spawns that see each other, or a
   shift that opens nothing.
+- Environment art is a theme laid over the layout by `Game/Env/MapDresser` (`MapDef.theme`, themes in
+  `Game/Env/EnvTheme`): painted textures, chamfered meshes, sky and light, all made in code. Dressing works
+  by block kind and never adds colliders; see `docs/ENVIRONMENTS.md` for its fair-play rules and sources.
 - The host can add practice dummies in the lobby. Controls: WASD, mouse, Shift sprint, Ctrl or C crouch,
   Space jump or vault, left mouse fire, R reload, 1/2 or Q or the wheel switch weapon, E and F the
   hero's abilities, X the ultimate, hold Z or V to take the left or right upgrade, Esc frees the mouse.
