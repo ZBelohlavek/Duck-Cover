@@ -20,6 +20,16 @@ namespace DuckAndCover.Core
         /// <summary>Walking speed in metres a second before slows (the moveSpeed stat multiplies it).</summary>
         public float moveSpeed = 4f;
 
+        // ---- Fighting (WP15). A kind with no attackDamage doesn't shoot. ----
+        /// <summary>Damage of one shot, through DamageRules.Damage (so the unit's damageDealt stat scales it).</summary>
+        public float attackDamage;
+        /// <summary>Seconds between shots.</summary>
+        public float attackSeconds = 1f;
+        /// <summary>Shots reach this far, chest to chest, in metres.</summary>
+        public float attackRange = 10f;
+        /// <summary>Enemies closer than this are noticed and chased.</summary>
+        public float sightRange = 14f;
+
         public UnitDef Clone() => (UnitDef)MemberwiseClone();
     }
 
@@ -83,6 +93,9 @@ namespace DuckAndCover.Core
                 if (u.maxHealth <= 0f) e.Add(u.id + ": maxHealth must be positive");
                 if (u.size <= 0f) e.Add(u.id + ": size must be positive");
                 if (u.moveSpeed < 0f) e.Add(u.id + ": moveSpeed can't be negative");
+                if (u.attackDamage < 0f) e.Add(u.id + ": attackDamage can't be negative");
+                if (u.attackDamage > 0f && (u.attackSeconds <= 0f || u.attackRange <= 0f || u.sightRange < u.attackRange))
+                    e.Add(u.id + ": a unit that attacks needs positive attackSeconds and attackRange, and sightRange at least attackRange");
             }
             return e;
         }

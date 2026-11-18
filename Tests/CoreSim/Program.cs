@@ -24,6 +24,7 @@ static class Program
         { "scorerate", ProgressionSim.RateReport },
         { "map", MapTests.Report },
         { "lanestudy", LaneStudyTests.Report },
+        { "waves", LaneTests.Report },
     };
 
     static int Main(string[] args)
