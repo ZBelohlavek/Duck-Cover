@@ -50,6 +50,9 @@ namespace DuckAndCover.Core
         /// <summary>Jungle walls: too tall to see over from the ledges, the shelf or a jump.</summary>
         public const float FillHeight = 6.5f;
         public const float LedgeHeight = 3f;
+        /// <summary>Low walls and rails: a crouched hero (1.2 m, head top about 1.27 m) is hidden, a standing one
+        /// (eyes 1.62 m) shoots over with the torso covered, and it is still at the vault limit (1.25 m).</summary>
+        public const float CoverHeight = 1.25f;
         public const float ShelfHeight = 4f;
         const float Tile = 2f;
         /// <summary>Longest run of fill tiles merged into one block (8 m), so the dressing spreads its trees along the walls.</summary>
@@ -187,8 +190,8 @@ namespace DuckAndCover.Core
 
             // ---- Core plaza: the Core Bastion on the lane, cover, the launch pad, the side gate ----
             m.bastions.Add(new MapBastion { team = TeamId.A, tier = BastionTier.Core, position = P(-12f, 0f, -84f), radius = 2.5f });
-            Cover(m, "PlazaLowWest", BlockKind.LowCover, -20f, -90f, 3f, 1f, 0.5f);
-            Cover(m, "PlazaLowEast", BlockKind.LowCover, -4f, -90f, 3f, 1f, 0.5f);
+            Cover(m, "PlazaLowWest", BlockKind.LowCover, -20f, -90f, 3f, CoverHeight, 0.5f);
+            Cover(m, "PlazaLowEast", BlockKind.LowCover, -4f, -90f, 3f, CoverHeight, 0.5f);
             Cover(m, "PlazaCrate", BlockKind.Crate, -4f, -79f, 1.5f, 1.5f, 1.5f);
             Cover(m, "LaunchPadMark", BlockKind.Decal, -23f, -86f, 3f, 0.02f, 3f);
             var pad = new LaunchPad("LaunchA", TeamId.A, P(-23f, 0f, -86f), P(14f, 0f, -12f), 18f, 3.4f, 1.5f);
@@ -208,8 +211,8 @@ namespace DuckAndCover.Core
             m.bastions.Add(new MapBastion { team = TeamId.A, tier = BastionTier.Forward, position = P(-12f, 0f, -60f), radius = 2.5f });
             Pair(m, "Ledge", BlockKind.Platform, -23f, -52f, 11f, LedgeHeight, 13f);
             Pair(m, "LedgeStairs", BlockKind.Ramp, -26f, -63.5f, 4f, LedgeHeight, 10f, 0f, ShiftRole.None, 0);
-            Pair(m, "LedgeRail", BlockKind.LowCover, -17.75f, -51f, 0.5f, 1f, 9f, LedgeHeight);
-            Pair(m, "LedgeRailNorth", BlockKind.LowCover, -23f, -45.75f, 11f, 1f, 0.5f, LedgeHeight);
+            Pair(m, "LedgeRail", BlockKind.LowCover, -17.75f, -51f, 0.5f, CoverHeight, 9f, LedgeHeight);
+            Pair(m, "LedgeRailNorth", BlockKind.LowCover, -23f, -45.75f, 11f, CoverHeight, 0.5f, LedgeHeight);
             m.drops.Add(new MapDrop { name = "LedgeA", top = P(-19f, LedgeHeight, -52f), bottom = P(-14.5f, 0f, -52f) });
             m.drops.Add(new MapDrop { name = "LedgeB", top = P(-19f, LedgeHeight, 52f), bottom = P(-14.5f, 0f, 52f) });
 
@@ -222,19 +225,19 @@ namespace DuckAndCover.Core
             // A rock spur on the inside of each middle bend, so the two bends either side of mid-lane can't see each other.
             PairRaw(m, "LaneBendSpur", BlockKind.Wall, 13f, -15f, 3f, FillHeight, 4f, 0f, ShiftRole.None, 0, "rocks");
             // More to move between now that the lane is wider (placed in metres).
-            PairRaw(m, "LaneLowFwdEast", BlockKind.LowCover, -11f, -64f, 0.5f, 1f, 3f, 0f, ShiftRole.None, 0, "");
+            PairRaw(m, "LaneLowFwdEast", BlockKind.LowCover, -11f, -64f, 0.5f, CoverHeight, 3f, 0f, ShiftRole.None, 0, "");
             PairRaw(m, "LaneCrateBend", BlockKind.Crate, -23f, -41f, 1.5f, 1.5f, 1.5f, 0f, ShiftRole.None, 0, "");
-            PairRaw(m, "LaneLowZigWest", BlockKind.LowCover, 9f, -24f, 3f, 1f, 0.5f, 0f, ShiftRole.None, 0, "");
+            PairRaw(m, "LaneLowZigWest", BlockKind.LowCover, 9f, -24f, 3f, CoverHeight, 0.5f, 0f, ShiftRole.None, 0, "");
             // Nov 18 (Zach: "pretty open"): a cover-to-cover line down the lane, alternating sides so three abreast
             // still fit between pieces. Low walls to crouch and peek over, tall crate stacks and rocks to hide behind.
             PairRaw(m, "LaneStackCore", BlockKind.Crate, -12.5f, -76f, 1.6f, 2.6f, 1.6f, 0f, ShiftRole.None, 0, "");
-            PairRaw(m, "LaneLowCoreWest", BlockKind.LowCover, -24f, -79f, 3f, 1f, 0.5f, 0f, ShiftRole.None, 0, "");
-            PairRaw(m, "LaneLowFwdWest", BlockKind.LowCover, -24f, -63f, 0.5f, 1f, 3f, 0f, ShiftRole.None, 0, "");
+            PairRaw(m, "LaneLowCoreWest", BlockKind.LowCover, -24f, -79f, 3f, CoverHeight, 0.5f, 0f, ShiftRole.None, 0, "");
+            PairRaw(m, "LaneLowFwdWest", BlockKind.LowCover, -24f, -63f, 0.5f, CoverHeight, 3f, 0f, ShiftRole.None, 0, "");
             PairRaw(m, "LaneStackFwd", BlockKind.Crate, -13f, -55f, 1.6f, 2.6f, 1.6f, 0f, ShiftRole.None, 0, "");
             PairRaw(m, "LaneRockBendWest", BlockKind.Wall, -10f, -42f, 2.5f, 2.6f, 2.5f, 0f, ShiftRole.None, 0, "rocks");
             PairRaw(m, "LaneStackZig", BlockKind.Crate, 18f, -28f, 1.6f, 2.6f, 1.6f, 0f, ShiftRole.None, 0, "");
-            PairRaw(m, "LaneLowZigEast", BlockKind.LowCover, 27f, -23f, 0.5f, 1f, 3f, 0f, ShiftRole.None, 0, "");
-            PairRaw(m, "LaneLowMidEast", BlockKind.LowCover, 26f, -5f, 0.5f, 1f, 3f, 0f, ShiftRole.None, 0, "rocks");
+            PairRaw(m, "LaneLowZigEast", BlockKind.LowCover, 27f, -23f, 0.5f, CoverHeight, 3f, 0f, ShiftRole.None, 0, "");
+            PairRaw(m, "LaneLowMidEast", BlockKind.LowCover, 26f, -5f, 0.5f, CoverHeight, 3f, 0f, ShiftRole.None, 0, "rocks");
             // Tall pieces down the middle of the lane, staggered with the edge cover, so the long look down the
             // centre is broken every 15 to 20 m; minions and three abreast pass either side.
             PairRaw(m, "LaneStackMiddle", BlockKind.Crate, -18f, -70f, 2f, 2.6f, 2f, 0f, ShiftRole.None, 0, "");
@@ -242,18 +245,18 @@ namespace DuckAndCover.Core
             PairRaw(m, "LaneStackBendMid", BlockKind.Crate, -4f, -37f, 2f, 2.6f, 2f, 0f, ShiftRole.None, 0, "");
             PairRaw(m, "LaneWallZig", BlockKind.Wall, 17f, -21f, 1f, 2.4f, 4f, 0f, ShiftRole.None, 0, "rocks");
             PairRaw(m, "LaneStackMidLane", BlockKind.Crate, 9f, -5f, 2f, 2.6f, 2f, 0f, ShiftRole.None, 0, "");
-            Cover(m, "LaneLowPlaza", BlockKind.LowCover, -15f, -69f, 3f, 1f, 0.5f);
-            Cover(m, "LaneLowLedge", BlockKind.LowCover, -9f, -50f, 0.5f, 1f, 3f);
-            Cover(m, "LaneRockBend", BlockKind.LowCover, 1f, -35f, 2f, 1.1f, 2f, 0f, ShiftRole.None, 0, "rocks");
-            Cover(m, "LaneLowZig", BlockKind.LowCover, 15f, -22f, 3f, 1f, 0.5f);
-            Cover(m, "LaneLowMid", BlockKind.LowCover, 10f, -8f, 0.5f, 1f, 3f);
+            Cover(m, "LaneLowPlaza", BlockKind.LowCover, -15f, -69f, 3f, CoverHeight, 0.5f);
+            Cover(m, "LaneLowLedge", BlockKind.LowCover, -9f, -50f, 0.5f, CoverHeight, 3f);
+            Cover(m, "LaneRockBend", BlockKind.LowCover, 1f, -35f, 2f, CoverHeight, 2f, 0f, ShiftRole.None, 0, "rocks");
+            Cover(m, "LaneLowZig", BlockKind.LowCover, 15f, -22f, 3f, CoverHeight, 0.5f);
+            Cover(m, "LaneLowMid", BlockKind.LowCover, 10f, -8f, 0.5f, CoverHeight, 3f);
 
             // ---- The Juggernaut shelf: raised over the middle, stairs up from each half's short jungle ----
             Self(m, "Shelf", BlockKind.Platform, -24f, 0f, 24f, ShelfHeight, 24f);
             Pair(m, "ShelfStairs", BlockKind.Ramp, -21f, -18f, 6f, ShelfHeight, 12f, 0f, ShiftRole.None, 0);
             // The edge over the drop pocket: a waist-high rail (exposed shooters, a vault to drop), with
             // rock walls either side that hide the rest of the shelf from the lane.
-            Self(m, "ShelfRail", BlockKind.LowCover, -12.25f, 0f, 0.5f, 1f, 12f, ShelfHeight);
+            Self(m, "ShelfRail", BlockKind.LowCover, -12.25f, 0f, 0.5f, CoverHeight, 12f, ShelfHeight);
             Pair(m, "ShelfRockEdge", BlockKind.Wall, -12.5f, -9f, 1f, FillHeight, 6f, 0f, ShiftRole.None, 0, "rocks");
             CoverSelf(m, "PocketCover", BlockKind.Crate, -3f, 0f, 2f, 2.6f, 6f);
             m.drops.Add(new MapDrop { name = "JuggernautDrop", top = P(-13f, ShelfHeight, 0f), bottom = P(-9.5f, 0f, 0f) });
@@ -270,13 +273,13 @@ namespace DuckAndCover.Core
             // A few rocks to fight around in the bigger clearings.
             Cover(m, "DamageRock", BlockKind.Wall, 9f, -97f, 2f, 2.4f, 3f, 0f, ShiftRole.None, 0, "rocks");
             // More to fight round in the clearings and where jungle trails meet (placed in metres).
-            PairRaw(m, "DamageLow", BlockKind.LowCover, 26f, -91f, 0.5f, 1f, 3f, 0f, ShiftRole.None, 0, "rocks");
+            PairRaw(m, "DamageLow", BlockKind.LowCover, 26f, -91f, 0.5f, CoverHeight, 3f, 0f, ShiftRole.None, 0, "rocks");
             PairRaw(m, "ExperienceRock", BlockKind.Wall, 57f, -76f, 2f, 2.4f, 2.5f, 0f, ShiftRole.None, 0, "rocks");
-            PairRaw(m, "SpeedLow", BlockKind.LowCover, 23f, -62f, 2.5f, 1f, 0.5f, 0f, ShiftRole.None, 0, "rocks");
+            PairRaw(m, "SpeedLow", BlockKind.LowCover, 23f, -62f, 2.5f, CoverHeight, 0.5f, 0f, ShiftRole.None, 0, "rocks");
             PairRaw(m, "SideBendRock", BlockKind.Wall, -57.5f, -65f, 2f, 2.4f, 2f, 0f, ShiftRole.None, 0, "rocks");
             PairRaw(m, "DamageStack", BlockKind.Crate, 17f, -89f, 1.6f, 2.6f, 1.6f, 0f, ShiftRole.None, 0, "");
             PairRaw(m, "SpeedRock", BlockKind.Wall, 15f, -54f, 2f, 2.4f, 2f, 0f, ShiftRole.None, 0, "rocks");
-            Cover(m, "ExperienceLow", BlockKind.LowCover, 30f, -83f, 2.5f, 1f, 1.5f, 0f, ShiftRole.None, 0, "rocks");
+            Cover(m, "ExperienceLow", BlockKind.LowCover, 30f, -83f, 2.5f, CoverHeight, 1.5f, 0f, ShiftRole.None, 0, "rocks");
             // Broken temple walls at the top of each stair keep the camp out of sight from the lane below.
             PairRaw(m, "ShelfScreen", BlockKind.Wall, -37.5f, -7.5f, 7f, 3f, 1.5f, ShelfHeight, ShiftRole.None, 0, "rocks");
             CoverSelf(m, "JuggernautRock", BlockKind.Wall, -34f, 0f, 2f, 2.2f, 3f, ShelfHeight, "rocks");

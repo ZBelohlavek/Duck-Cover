@@ -56,6 +56,26 @@ static class BreakwaterTests
     }
 
     [Test]
+    static void CoverIsTallEnoughForHeroes()
+    {
+        // Zach, Nov 18: cover pieces must be the right height to cover our heroes.
+        var r = Ruleset.Default;
+        float crouchedHeadTop = r.headHeight * r.crouchHeight / r.standHeight + r.headRadius;
+        foreach (var b in Breakwater.Build().blocks)
+        {
+            float h = b.size.y;
+            if (b.kind == BlockKind.LowCover)
+            {
+                Check.True(h >= r.crouchHeight && h >= crouchedHeadTop - 0.05f, b.name + ": hides a crouched hero (" + h + " m)");
+                Check.True(h < r.eyeHeight - 0.25f, b.name + ": a standing hero can shoot over it");
+                Check.True(MoveMath.CanVault(r, h), b.name + ": can be vaulted");
+            }
+            else if (b.kind == BlockKind.Crate || (b.kind == BlockKind.Wall && b.name.StartsWith("Lane")))
+                Check.True(h >= r.crouchHeight, b.name + ": hides at least a crouched hero (" + h + " m)");
+        }
+    }
+
+    [Test]
     static void FlagRushFitsBreakwater()
     {
         var map = Breakwater.Build();
