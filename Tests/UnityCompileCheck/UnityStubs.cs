@@ -17,6 +17,7 @@ namespace UnityEngine
         public static void DontDestroyOnLoad(Object target) { }
         public static T FindFirstObjectByType<T>() where T : Object => null;
         public static T FindAnyObjectByType<T>() where T : Object => null;
+        public static T[] FindObjectsByType<T>(FindObjectsSortMode sortMode) where T : Object => new T[0];
         public static T Instantiate<T>(T original) where T : Object => original;
         public static bool operator ==(Object x, Object y) => ReferenceEquals(x, y);
         public static bool operator !=(Object x, Object y) => !ReferenceEquals(x, y);
@@ -24,6 +25,8 @@ namespace UnityEngine
         public override bool Equals(object other) => ReferenceEquals(this, other);
         public override int GetHashCode() => 0;
     }
+
+    public enum FindObjectsSortMode { None = 0, InstanceID = 1 }
 
     public class ScriptableObject : Object { }
 
@@ -168,6 +171,8 @@ namespace UnityEngine
         public float planeDistance { get; set; }
         public int sortingOrder { get; set; }
         public bool pixelPerfect { get; set; }
+        public float scaleFactor { get; set; }
+        public bool isRootCanvas => true;
         public static void ForceUpdateCanvases() { }
     }
 
@@ -536,6 +541,7 @@ namespace UnityEngine.UI
         public virtual bool raycastTarget { get; set; }
         public RectTransform rectTransform => null;
         public virtual void SetVerticesDirty() { }
+        public virtual void SetAllDirty() { }
         protected bool useLegacyMeshGeneration { get; set; }
         public CanvasRenderer canvasRenderer => null;
         protected virtual void OnPopulateMesh(VertexHelper vh) { }

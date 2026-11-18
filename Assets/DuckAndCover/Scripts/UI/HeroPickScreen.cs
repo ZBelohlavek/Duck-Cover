@@ -89,7 +89,7 @@ namespace DuckAndCover.UI
                 card.name = UIKit.Readout(layer, "Name" + hero.id, new Vector2(mid, CardBottom + 236f), new Vector2(CardWidth, 46f), hero.displayName.ToUpperInvariant(), 38, UITheme.ForHero(hero.id), TextAnchor.MiddleCenter, true);
                 card.role = UIKit.Readout(layer, "RoleTag" + hero.id, new Vector2(mid, CardBottom + 188f), new Vector2(CardWidth, 24f), Roles.Label(hero.role).ToUpperInvariant(), 18, UITheme.Text, TextAnchor.MiddleCenter, true);
                 UIKit.Readout(layer, "Stats" + hero.id, new Vector2(mid - 4f, CardBottom + 146f), new Vector2(CardWidth, 20f),
-                              "HEALTH " + Mathf.RoundToInt(hero.maxHealth) + "   //   " + hero.weaponId.ToUpperInvariant(), 16, UITheme.TextDim, TextAnchor.MiddleCenter);
+                              "HEALTH " + Mathf.RoundToInt(hero.maxHealth) + "   //   " + hero.weaponId.ToUpperInvariant(), 16, UITheme.Text, TextAnchor.MiddleCenter);
                 var kit = UIKit.Readout(layer, "Kit" + hero.id, new Vector2(mid - 8f, CardBottom + 82f), new Vector2(CardWidth - 30f, 90f), Kit(hero), 17, UITheme.Text, TextAnchor.UpperCenter);
                 kit.horizontalOverflow = HorizontalWrapMode.Wrap;
                 card.others = UIKit.Readout(layer, "Others" + hero.id, new Vector2(mid - 10f, CardBottom + 18f), new Vector2(CardWidth - 20f, 20f), "", 15, UITheme.TextDim, TextAnchor.MiddleCenter);

@@ -145,7 +145,7 @@ namespace DuckAndCover.UI
             levelText = UIKit.Readout(f, "Level", new Vector2(Badge.x, Badge.y - 4f), new Vector2(100f, 56f), "", 44, UITheme.Text, TextAnchor.MiddleCenter, true);
             xpText = UIKit.Readout(f, "Xp", new Vector2(BarX + 150f, 74f), new Vector2(300f, 24f), "", 19, UITheme.TextDim, TextAnchor.MiddleLeft);
             heroText = UIKit.Readout(f, "Hero", new Vector2(BarX + 150f, 176f), new Vector2(300f, 30f), "", 24, UITheme.Text, TextAnchor.MiddleLeft, true);
-            stanceText = UIKit.Readout(f, "Stance", new Vector2(BarX + 200f, 208f), new Vector2(400f, 26f), "", 18, UITheme.TextDim, TextAnchor.MiddleLeft);
+            stanceText = UIKit.Readout(f, "Stance", new Vector2(BarX + 200f, 208f), new Vector2(400f, 26f), "", 19, UITheme.Text, TextAnchor.MiddleLeft);
             healthTag = UIKit.Readout(f, "HealthTag", new Vector2(BarX + 400f, HealthY + 44f), new Vector2(100f, 18f), "HEALTH", 15, UITheme.TextDim, TextAnchor.MiddleLeft);
             healthText = UIKit.Readout(f, "HealthText", new Vector2(BarX + 400f, HealthY + 12f), new Vector2(120f, 50f), "", 42, UITheme.Text, TextAnchor.MiddleLeft, true);
         }
@@ -569,7 +569,7 @@ namespace DuckAndCover.UI
                 }
                 s.status.text = status;
                 s.status.color = text;
-                s.name.color = ready ? UITheme.Text : UITheme.TextDim;
+                s.name.color = UITheme.Text;
                 DrawSlot(s, fill, ready, pips, edge, def.ultimate ? UITheme.Warning : hero);
             }
         }
@@ -669,7 +669,7 @@ namespace DuckAndCover.UI
                 headerClock.color = late ? UITheme.Warning : UITheme.Text;
             }
             headerGoal.text = overrun && snapshot.overrun.latePush ? "LATE PUSH" : (flag || overrun ? "FIRST TO " + toWin : mode.displayName.ToUpperInvariant() + "  //  " + toWin);
-            headerGoal.color = overrun && snapshot.overrun.latePush ? UITheme.Warning : UITheme.TextDim;
+            headerGoal.color = overrun && snapshot.overrun.latePush ? UITheme.Warning : UITheme.Text;
 
             // Team bars meet at the clock: captures and Bastions count in cells, zone points fill smoothly.
             int cells = toWin <= 12 ? toWin : 1;

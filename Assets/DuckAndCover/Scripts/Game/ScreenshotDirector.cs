@@ -532,6 +532,33 @@ namespace DuckAndCover.Game
             Finish("Timed out.");
         }
 
+        bool loggedCanvasScale;
+
+        /// <summary>
+        /// Canvas scalers size the UI, and its text's glyphs, for the window, which in a batch-mode run is
+        /// not the 1920 x 1080 picture being saved: text came out rasterised small and stretched, so soft.
+        /// For the shot, give each root canvas the scale it would have on a 1920 x 1080 screen (the layout
+        /// size, so 1 here) and rebuild the text at it; the scalers set their own again on the next frame.
+        /// In the game the window is the screen, so this only makes the shots show what a player sees.
+        /// </summary>
+        void SizeCanvasesForCapture(string shot)
+        {
+            float scale = Height / 1080f;
+            foreach (var canvas in FindObjectsByType<Canvas>(FindObjectsSortMode.None))
+            {
+                if (!canvas.isRootCanvas) continue;
+                if (!loggedCanvasScale)
+                {
+                    loggedCanvasScale = true;
+                    Debug.Log("Duck and Cover: capture " + shot + " window " + Screen.width + " x " + Screen.height + ", " + canvas.name +
+                              " scale " + canvas.scaleFactor + ", set to " + scale + " for the " + Width + " x " + Height + " shot.");
+                }
+                canvas.scaleFactor = scale;
+            }
+            // Text draws its glyphs at the canvas's scale when it builds its mesh: build it again at this one.
+            foreach (var text in FindObjectsByType<UnityEngine.UI.Text>(FindObjectsSortMode.None)) text.SetAllDirty();
+        }
+
         void Save(string name)
         {
             var cam = Camera.main;
@@ -546,6 +573,7 @@ namespace DuckAndCover.Game
             try
             {
                 cam.targetTexture = target;
+                SizeCanvasesForCapture(name);
                 Canvas.ForceUpdateCanvases(); // the HUD lays itself out for the size being rendered
                 cam.Render();
                 RenderTexture.active = target;
