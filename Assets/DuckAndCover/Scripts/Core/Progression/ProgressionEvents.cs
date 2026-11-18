@@ -48,5 +48,7 @@ namespace DuckAndCover.Core
         Neutralise = 3,
         Elimination = 4,
         Support = 5,
+        /// <summary>A neutral camp taken in Overrun (WP15).</summary>
+        Camp = 6,
     }
 }
