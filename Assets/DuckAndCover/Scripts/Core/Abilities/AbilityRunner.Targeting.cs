@@ -6,16 +6,20 @@ namespace DuckAndCover.Core
     // Targeting shapes, running effects on what they caught, and effects waiting on a delay.
     public sealed partial class AbilityRunner
     {
-        /// <summary>Whether <paramref name="targetId"/> is someone an "affects" rule reaches, seen from the source.</summary>
+        /// <summary>
+        /// Whether <paramref name="targetId"/> (a player or unit) is someone an "affects" rule reaches,
+        /// seen from the source. Neutral units are everyone's enemy and nobody's ally.
+        /// </summary>
         public bool Matches(string affects, int sourceId, TeamId sourceTeam, int targetId)
         {
-            var target = Match.Player(targetId);
-            if (target == null) return false;
+            if (!Combat.IsKnown(targetId)) return false;
+            var team = Combat.TeamOf(targetId);
+            bool ally = team != TeamId.None && team == sourceTeam;
             switch (affects)
             {
-                case Affects.Enemies: return target.team != sourceTeam;
-                case Affects.Allies: return target.team == sourceTeam && targetId != sourceId;
-                case Affects.AlliesAndSelf: return target.team == sourceTeam;
+                case Affects.Enemies: return !ally && targetId != sourceId;
+                case Affects.Allies: return ally && targetId != sourceId;
+                case Affects.AlliesAndSelf: return ally || targetId == sourceId;
                 case Affects.Self: return targetId == sourceId;
                 case Affects.All: return true;
                 default: return false;
@@ -44,7 +48,7 @@ namespace DuckAndCover.Core
                         if (CastRay(casterId, origin, d, t.range, tick, out var hit) && hit.kind != HitKind.Nothing)
                         {
                             area.point = hit.point;
-                            if (hit.kind == HitKind.Player && Match.IsAlive(hit.playerId) && Matches(t.affects, casterId, team, hit.playerId))
+                            if (hit.kind == HitKind.Player && Combat.IsAlive(hit.playerId) && Matches(t.affects, casterId, team, hit.playerId))
                                 area.targets = new[] { hit.playerId };
                             else if (hit.kind == HitKind.Device && CanHitObject(t.affects, team, State.Object(hit.deviceId)))
                                 area.objects = new[] { hit.deviceId };
@@ -75,12 +79,12 @@ namespace DuckAndCover.Core
             return areas;
         }
 
-        /// <summary>Who an area catches: living players the rule reaches (lowest ids first, up to the limit) and enemy objects.</summary>
+        /// <summary>Who an area catches: living players and units the rule reaches (lowest ids first, up to the limit) and enemy objects.</summary>
         EffectArea Query(Vec3 center, float radius, string affects, int sourceId, TeamId team, int maxTargets, int tick)
         {
             var ids = new List<int>();
             foreach (int id in world.PlayersInSphere(center, radius, tick))
-                if (!ids.Contains(id) && Match.IsAlive(id) && Matches(affects, sourceId, team, id)) ids.Add(id);
+                if (!ids.Contains(id) && Combat.IsAlive(id) && Matches(affects, sourceId, team, id)) ids.Add(id);
             ids.Sort();
             if (maxTargets > 0 && ids.Count > maxTargets) ids.RemoveRange(maxTargets, ids.Count - maxTargets);
 
@@ -124,7 +128,7 @@ namespace DuckAndCover.Core
             if (e.affects == Affects.Self)
             {
                 if (areas.Count > 0) ctx.point = areas[0].point;
-                if (Match.IsAlive(sourceId)) fx.Apply(ctx, sourceId);
+                if (Combat.IsAlive(sourceId)) fx.Apply(ctx, sourceId);
                 return;
             }
             foreach (var area in areas)
@@ -132,13 +136,13 @@ namespace DuckAndCover.Core
                 ctx.point = area.point;
                 foreach (int target in area.targets)
                 {
-                    if (!Match.IsAlive(target)) continue;
+                    if (!Combat.IsAlive(target)) continue;
                     if (!string.IsNullOrEmpty(e.affects) && !Matches(e.affects, sourceId, team, target)) continue;
                     fx.Apply(ctx, target);
                 }
                 if (e.kind == EffectKinds.Damage)
                 {
-                    float dealt = e.amount * scale * (Match.Player(sourceId) != null ? Math.Max(0f, Combat.Stat(sourceId, StatIds.DamageDealt)) : 1f);
+                    float dealt = e.amount * scale * (Combat.IsKnown(sourceId) ? Math.Max(0f, Combat.Stat(sourceId, StatIds.DamageDealt)) : 1f);
                     foreach (int obj in area.objects) DamageObject(obj, dealt, sourceId);
                 }
             }

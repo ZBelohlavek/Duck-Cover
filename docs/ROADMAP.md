@@ -33,7 +33,7 @@ https://claude.ai/artifact/7qbJG2ukrZDQ6ZTfX3nXGs
 | WP11 Hero kits | Scripts and data | WP4, WP7, WP8 | Tests per hero, netsmoke | Done (Lancer reworked; other three paths to come) |
 | WP12 Progression and hero UI | Scripts | WP6, WP8 | Screenshots, netsmoke | Waiting |
 | WP13 Balance pass and playtest build | Scripts | All above | Simulation report, a played match | Waiting |
-| WP14 Units (combat contract moves to unit ids) | Core | Merged combat and abilities | Weapons, abilities and statuses hit a test unit as they hit a hero; hero kit tests pass | Ready, start first |
+| WP14 Units (combat contract moves to unit ids) | Core | Merged combat and abilities | Weapons, abilities and statuses hit a test unit as they hit a hero; hero kit tests pass | In review |
 | WP21 Flag Rush | Core, map data, Unity | Merged match rules, Gantry Yard | Flag rules tested; fair flag spots pass the validator; netsmoke flag match; capture | Ready, start first |
 | WP15 Lanes, waves and camps | Core | WP14 | Cloud wave report; all four camp kinds tested | Waiting |
 | WP18 Breakwater greybox, launch pads and ledges | Layout and Core | WP14's lane fields | Validator (mirror symmetry, lane, one-way ledges and drop, jungle joins the lane at both ends); map plan | Waiting |
@@ -65,6 +65,11 @@ WP17 (Salvage and build pads) was dropped on Nov 18.
   the shift; tests and the `report map` plan in `MapTests.cs`.
 - Environments: themes in `Game/Env` (`EnvTheme`, `PaintedTextures`, `EnvMesh`, `SkyPainter`,
   `MapDresser`), chosen per layout by `MapDef.theme`; see `docs/ENVIRONMENTS.md`.
+- WP14: unit ids in `Core/Combat/UnitIds` (players keep their ids; units start at 20000), units in `Core/Units`
+  (`UnitDef` and `UnitLibrary` for kinds, `UnitRoster` and `UnitState`, `UnitRules` to spawn, move, push and
+  remove them, the compact `MatchSnapshot.units` list); `CombatServer.Units`. Units ride the hit history under
+  their ids, so shots, areas, splash and objects find them; `DamageRules` answers who is alive and on which team.
+  Tests in `UnitTests.cs`, including every starter kit and both upgrade paths compared on a hero and on a unit.
 - WP14 to WP21: units, lanes, waves, camps and Bastions in Core folders of their own (`Core/Units`,
   `Core/Lanes`, `Core/Overrun`, `Core/Flag`), Breakwater beside Gantry Yard in `Core/Maps`, mode data in
   `Data/Modes`; the Unity side in `Game` and `UI`.

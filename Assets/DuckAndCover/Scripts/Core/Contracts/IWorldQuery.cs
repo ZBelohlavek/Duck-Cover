@@ -22,8 +22,10 @@ namespace DuckAndCover.Core
         int[] PlayersInZone(ZoneId zone);
 
         /// <summary>
-        /// Players within <paramref name="radius"/> metres of <paramref name="center"/> as they were at
-        /// <paramref name="tick"/> (area abilities, WP7). Never null.
+        /// Bodies within <paramref name="radius"/> metres of <paramref name="center"/> as they were at
+        /// <paramref name="tick"/> (area abilities, WP7). Combat's own world (CombatWorld) answers
+        /// with unit ids from the hit history: players and units that are not players (WP14) alike.
+        /// A map-only implementation may return players only. Never null.
         /// </summary>
         int[] PlayersInSphere(Vec3 center, float radius, int tick);
 
@@ -42,7 +44,10 @@ namespace DuckAndCover.Core
         World = 1,
         /// <summary>A cell of a breakable surface; see <see cref="HitInfo.cell"/>.</summary>
         Surface = 2,
-        /// <summary>A player hitbox; see <see cref="HitInfo.playerId"/>.</summary>
+        /// <summary>
+        /// A body's hitbox: a player's or a unit's (WP14); see <see cref="HitInfo.playerId"/>, which then
+        /// holds a unit id (a player's id, or an id from <see cref="UnitIds.First"/> up).
+        /// </summary>
         Player = 3,
         /// <summary>A camera, scout bot or other team device; see <see cref="HitInfo.deviceId"/>.</summary>
         Device = 4,
@@ -56,7 +61,7 @@ namespace DuckAndCover.Core
         public Vec3 point;
         public Vec3 normal;
         public float distance;
-        /// <summary>Player that was hit, or -1.</summary>
+        /// <summary>The unit id of the body that was hit (a player's id or a unit's), or -1.</summary>
         public int playerId;
         /// <summary>Hitbox region id (head, body, limb) as defined by the Combat module.</summary>
         public int bodyPart;

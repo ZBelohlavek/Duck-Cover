@@ -3,8 +3,9 @@ using System;
 namespace DuckAndCover.Core
 {
     /// <summary>
-    /// Where a player's body is at one moment: feet position and whether they crouch. What the
-    /// hitboxes are built from, live and in the lag compensation history.
+    /// Where a body (a hero or a unit) is at one moment: feet position, whether they crouch, and the
+    /// body's size against a hero's. What the hitboxes are built from, live and in the lag
+    /// compensation history.
     /// </summary>
     [Serializable]
     public struct BodyPose
@@ -12,29 +13,36 @@ namespace DuckAndCover.Core
         public Vec3 position;
         public bool crouched;
         public bool alive;
+        /// <summary>Every hitbox height and radius times this. 0 (the default) means 1: hero sized.</summary>
+        public float size;
 
-        public BodyPose(Vec3 position, bool crouched, bool alive = true)
+        public BodyPose(Vec3 position, bool crouched, bool alive = true, float size = 0f)
         {
             this.position = position;
             this.crouched = crouched;
             this.alive = alive;
+            this.size = size;
         }
+
+        /// <summary>The size multiplier, with 0 read as 1.</summary>
+        public float Scale => size > 0f ? size : 1f;
     }
 
     /// <summary>
     /// The three hitboxes of a hero, from the ruleset: a head sphere, a torso capsule and a legs
     /// capsule, all upright. Crouching squashes the heights by crouchHeight / standHeight. The Game
     /// layer builds the placeholder body from the same numbers, so what you see is what you hit.
+    /// Units (WP14) use the same three hitboxes scaled by their <see cref="BodyPose.size"/>.
     /// </summary>
     public static class Hitboxes
     {
         public static float HeightScale(Ruleset r, bool crouched) => crouched ? r.crouchHeight / r.standHeight : 1f;
 
-        public static Vec3 HeadCenter(Ruleset r, BodyPose p) => p.position + Vec3.Up * (r.headHeight * HeightScale(r, p.crouched));
+        public static Vec3 HeadCenter(Ruleset r, BodyPose p) => p.position + Vec3.Up * (r.headHeight * HeightScale(r, p.crouched) * p.Scale);
 
         /// <summary>The middle of the torso: what area damage and line of sight aim at.</summary>
         public static Vec3 Chest(Ruleset r, BodyPose p) =>
-            p.position + Vec3.Up * ((r.torsoBottom + r.torsoTop) * 0.5f * HeightScale(r, p.crouched));
+            p.position + Vec3.Up * ((r.torsoBottom + r.torsoTop) * 0.5f * HeightScale(r, p.crouched) * p.Scale);
 
         public static float EyeHeight(Ruleset r, bool crouched) => crouched ? r.crouchEyeHeight : r.eyeHeight;
 
@@ -49,12 +57,13 @@ namespace DuckAndCover.Core
             distance = float.MaxValue;
             bodyPart = BodyParts.None;
             if (!p.alive) return false;
-            float s = HeightScale(r, p.crouched);
+            float k = p.Scale;
+            float s = HeightScale(r, p.crouched) * k;
             Vec3 feet = p.position;
             float t;
-            if (RayCapsule(origin, dir, feet + Vec3.Up * (r.torsoBottom * s), feet + Vec3.Up * (r.torsoTop * s), r.torsoRadius, out t) && t <= max && t < distance) { distance = t; bodyPart = BodyParts.Body; }
-            if (RayCapsule(origin, dir, feet + Vec3.Up * (r.legsBottom * s), feet + Vec3.Up * (r.legsTop * s), r.legsRadius, out t) && t <= max && t < distance) { distance = t; bodyPart = BodyParts.Legs; }
-            if (RaySphere(origin, dir, HeadCenter(r, p), r.headRadius, out t) && t <= max) { distance = Math.Min(distance, t); bodyPart = BodyParts.Head; }
+            if (RayCapsule(origin, dir, feet + Vec3.Up * (r.torsoBottom * s), feet + Vec3.Up * (r.torsoTop * s), r.torsoRadius * k, out t) && t <= max && t < distance) { distance = t; bodyPart = BodyParts.Body; }
+            if (RayCapsule(origin, dir, feet + Vec3.Up * (r.legsBottom * s), feet + Vec3.Up * (r.legsTop * s), r.legsRadius * k, out t) && t <= max && t < distance) { distance = t; bodyPart = BodyParts.Legs; }
+            if (RaySphere(origin, dir, HeadCenter(r, p), r.headRadius * k, out t) && t <= max) { distance = Math.Min(distance, t); bodyPart = BodyParts.Head; }
             return bodyPart != BodyParts.None;
         }
 
