@@ -7,17 +7,17 @@ namespace DuckAndCover.Core
     public sealed partial class AbilityRunner
     {
         /// <summary>
-        /// Put a status on a living hero. <paramref name="seconds"/> 0 uses the status's own duration;
+        /// Put a status on a living hero or unit. <paramref name="seconds"/> 0 uses the status's own duration;
         /// the source's statusDuration stat scales it and stuns stop at Ruleset.maxStunSeconds.
         /// Returns false when nothing changed (unknown status, target down, or a weaker repeat).
         /// </summary>
         public bool ApplyStatus(int targetId, string statusId, int sourceId = -1, float strength = 1f, float seconds = 0f, float interval = 0f, string abilityId = "")
         {
             var def = Library.Status(statusId);
-            if (def == null || !Match.IsPlaying || !Match.IsAlive(targetId)) return false;
+            if (def == null || !Match.IsPlaying || !Combat.IsAlive(targetId)) return false;
             var unit = Combat.Unit(targetId);
             if (seconds <= 0f) seconds = def.duration;
-            if (Match.Player(sourceId) != null) seconds *= Math.Max(0f, Combat.Stat(sourceId, StatIds.StatusDuration));
+            if (Combat.IsKnown(sourceId)) seconds *= Math.Max(0f, Combat.Stat(sourceId, StatIds.StatusDuration));
             if (def.stun) seconds = Math.Min(seconds, Rules.maxStunSeconds);
             if (seconds <= 0f) return false;
             float every = interval > 0f ? interval : def.interval;
@@ -129,15 +129,15 @@ namespace DuckAndCover.Core
                     while (s.tickIn <= Epsilon && unit.statuses.Contains(s))
                     {
                         s.tickIn += s.interval;
-                        var source = Match.Player(s.sourceId);
+                        var sourceTeam = Combat.TeamOf(s.sourceId);
                         var one = new List<EffectArea> { new EffectArea { targets = new[] { unit.playerId } } };
                         foreach (var e in def.tickEffects)
                         {
                             if (e == null || !effects.TryGetValue(e.kind, out var fx)) continue;
-                            if (!Match.IsAlive(unit.playerId)) break;
+                            if (!Combat.IsAlive(unit.playerId)) break;
                             fx.Apply(new EffectContext
                             {
-                                runner = this, sourceId = s.sourceId, sourceTeam = source != null ? source.team : TeamId.None,
+                                runner = this, sourceId = s.sourceId, sourceTeam = sourceTeam,
                                 abilityId = StatusSource(s.statusId), effect = e,
                                 scale = s.stacks * (def.scaleWithStrength ? s.strength : 1f),
                             }, unit.playerId);

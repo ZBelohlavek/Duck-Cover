@@ -3,10 +3,13 @@ namespace DuckAndCover.Core
     // Rule events published by the Combat module. Progression reads them for experience (who
     // damaged whom, healing and shielding given); Game and UI draw hit markers and health bars.
 
-    /// <summary>A hero took damage. Published before the elimination it may cause.</summary>
+    /// <summary>
+    /// A hero or unit took damage. Published before the elimination (or UnitDestroyedEvent) it may
+    /// cause. Ids are unit ids: a player's id, or a unit's from <see cref="UnitIds.First"/> up.
+    /// </summary>
     public sealed class DamagedEvent : GameEvent
     {
-        /// <summary>The player credited, or -1 (the world).</summary>
+        /// <summary>The player or unit credited, or -1 (the world).</summary>
         public int attackerId;
         public int targetId;
         /// <summary>Total taken after modifiers: health lost plus <see cref="absorbed"/>.</summary>
@@ -18,7 +21,7 @@ namespace DuckAndCover.Core
         public string abilityId;
         /// <summary>The spawned object that did it (a turret, a mine), or 0.</summary>
         public int objectId;
-        /// <summary>This damage took the hero down.</summary>
+        /// <summary>This damage took the hero down (or destroyed the unit).</summary>
         public bool eliminated;
     }
 

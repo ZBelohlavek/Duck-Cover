@@ -4,10 +4,12 @@ using System.Collections.Generic;
 namespace DuckAndCover.Core
 {
     /// <summary>
-    /// Health, shields and stats for every hero in the match: the one place damage and healing are
+    /// Health, shields and stats for everything that fights: the one place damage and healing are
     /// decided. Abilities use it through the effects; weapons (WP4) call <see cref="Damage"/> with
-    /// their own numbers. A hero at zero health is eliminated through MatchRules, and comes back at
-    /// full health when the Spawn rules return them.
+    /// their own numbers. Every id here is a unit id (<see cref="UnitIds"/>): a player's id for a
+    /// hero, or the id of a unit that is not a player (WP14). A hero at zero health is eliminated
+    /// through MatchRules, and comes back at full health when the Spawn rules return them; a unit at
+    /// zero health is destroyed (<see cref="UnitDestroyedEvent"/>) and does not come back.
     /// </summary>
     public sealed class DamageRules
     {
@@ -18,26 +20,64 @@ namespace DuckAndCover.Core
 
         Ruleset Rules => match.Rules;
 
-        public DamageRules(MatchRules match, IWorldQuery world, IGameEvents events, AbilityState state)
+        /// <summary>The units that are not players (shared with UnitRules).</summary>
+        public UnitRoster Roster { get; }
+
+        public DamageRules(MatchRules match, IWorldQuery world, IGameEvents events, AbilityState state, UnitRoster roster = null)
         {
             this.match = match ?? throw new ArgumentNullException(nameof(match));
             this.world = world ?? throw new ArgumentNullException(nameof(world));
             this.events = events ?? throw new ArgumentNullException(nameof(events));
             this.state = state ?? throw new ArgumentNullException(nameof(state));
+            Roster = roster ?? new UnitRoster();
+        }
+
+        // ---- Who is who ----
+
+        /// <summary>A player in the match or a living unit: someone whose stats count when they act.</summary>
+        public bool IsKnown(int id) => UnitIds.IsUnit(id) ? Roster.IsAlive(id) : match.State.Player(id) != null;
+
+        /// <summary>A connected, living player, or a living unit.</summary>
+        public bool IsAlive(int id) => UnitIds.IsUnit(id) ? Roster.IsAlive(id) : match.State.IsAlive(id);
+
+        /// <summary>The team of a player or unit; None for neutral units and unknown ids.</summary>
+        public TeamId TeamOf(int id)
+        {
+            if (UnitIds.IsUnit(id)) { var u = Roster.Get(id); return u != null ? u.team : TeamId.None; }
+            var p = match.State.Player(id);
+            return p != null ? p.team : TeamId.None;
+        }
+
+        /// <summary>Two known ids on the same team (neutral units are nobody's teammates).</summary>
+        public bool SameTeam(int a, int b)
+        {
+            if (!IsKnown(a) || !IsKnown(b)) return false;
+            var t = TeamOf(a);
+            return t != TeamId.None && t == TeamOf(b);
         }
 
         // ---- Units and stats ----
 
-        /// <summary>The hero state of a player in the match (made on first use, at full health), or null.</summary>
+        /// <summary>
+        /// The fighting state of a player in the match or a living unit (made on first use, at full
+        /// health), or null.
+        /// </summary>
         public HeroUnit Unit(int playerId)
         {
             foreach (var u in state.units) if (u.playerId == playerId) return u;
-            if (match.State.Player(playerId) == null) return null;
-            var unit = new HeroUnit { playerId = playerId };
-            unit.stats.SetBase(StatIds.MaxHealth, Rules.defaultMaxHealth);
-            unit.health = Rules.defaultMaxHealth;
-            state.units.Add(unit);
-            return unit;
+            float max = Rules.defaultMaxHealth;
+            if (UnitIds.IsUnit(playerId))
+            {
+                var unit = Roster.Get(playerId);
+                if (unit == null || !unit.alive) return null;
+                max = unit.maxHealth;
+            }
+            else if (match.State.Player(playerId) == null) return null;
+            var made = new HeroUnit { playerId = playerId };
+            made.stats.SetBase(StatIds.MaxHealth, max);
+            made.health = max;
+            state.units.Add(made);
+            return made;
         }
 
         /// <summary>A stat's value now, with conditional modifiers judged against the live match.</summary>
@@ -123,27 +163,27 @@ namespace DuckAndCover.Core
         void SettleHealth(HeroUnit u, float maxBefore)
         {
             float max = MaxHealth(u.playerId);
-            if (max > maxBefore && match.State.IsAlive(u.playerId)) u.health += max - maxBefore;
+            if (max > maxBefore && IsAlive(u.playerId)) u.health += max - maxBefore;
             if (u.health > max) u.health = max;
         }
 
         // ---- Damage, healing, shields ----
 
         /// <summary>
-        /// Hurt a hero. The amount is scaled by the attacker's damageDealt and the target's
-        /// damageTaken, shields absorb first, and zero health eliminates. Returns what was taken
-        /// (health plus shield), 0 when nothing happened. <paramref name="attackerId"/> -1 = the world.
+        /// Hurt a hero or unit. The amount is scaled by the attacker's damageDealt and the target's
+        /// damageTaken, shields absorb first, and zero health eliminates a hero or destroys a unit.
+        /// Returns what was taken (health plus shield), 0 when nothing happened.
+        /// <paramref name="attackerId"/> is a player or unit id; -1 = the world.
         /// </summary>
         public float Damage(int attackerId, int targetId, float amount, string abilityId = "", int objectId = 0)
         {
-            if (amount <= 0f || !match.State.IsPlaying || !match.State.IsAlive(targetId)) return 0f;
+            if (amount <= 0f || !match.State.IsPlaying || !IsAlive(targetId)) return 0f;
             var target = Unit(targetId);
-            var attacker = match.State.Player(attackerId);
-            var victim = match.State.Player(targetId);
-            if (attacker != null && attackerId != targetId && attacker.team == victim.team && !Rules.friendlyFire) return 0f;
+            bool attacker = IsKnown(attackerId);
+            if (attacker && attackerId != targetId && SameTeam(attackerId, targetId) && !Rules.friendlyFire) return 0f;
 
             float scaled = amount * Math.Max(0f, Stat(targetId, StatIds.DamageTaken));
-            if (attacker != null) scaled *= Math.Max(0f, Stat(attackerId, StatIds.DamageDealt));
+            if (attacker) scaled *= Math.Max(0f, Stat(attackerId, StatIds.DamageDealt));
             if (scaled <= 0f) return 0f;
 
             float left = scaled, absorbed = 0f;
@@ -164,7 +204,7 @@ namespace DuckAndCover.Core
             bool down = target.health <= 0f;
             Publish(new DamagedEvent
             {
-                attackerId = attacker != null ? attackerId : -1,
+                attackerId = attacker ? attackerId : -1,
                 targetId = targetId,
                 amount = lost + absorbed,
                 absorbed = absorbed,
@@ -173,7 +213,12 @@ namespace DuckAndCover.Core
                 objectId = objectId,
                 eliminated = down,
             });
-            if (down) match.EliminatePlayer(targetId, attacker != null && attackerId != targetId ? attackerId : -1);
+            if (down)
+            {
+                int killer = attacker && attackerId != targetId ? attackerId : -1;
+                if (UnitIds.IsUnit(targetId)) DestroyUnit(targetId, killer, "killed");
+                else match.EliminatePlayer(targetId, killer);
+            }
             return lost + absorbed;
         }
 
@@ -184,10 +229,10 @@ namespace DuckAndCover.Core
         /// </summary>
         public float Heal(int healerId, int targetId, float amount, string abilityId = "", int objectId = 0)
         {
-            if (amount <= 0f || !match.State.IsPlaying || !match.State.IsAlive(targetId)) return 0f;
+            if (amount <= 0f || !match.State.IsPlaying || !IsAlive(targetId)) return 0f;
             var target = Unit(targetId);
             float scaled = amount * Math.Max(0f, Stat(targetId, StatIds.HealingTaken));
-            if (match.State.Player(healerId) != null)
+            if (IsKnown(healerId))
             {
                 scaled *= Math.Max(0f, Stat(healerId, StatIds.HealingDone));
                 if (target.health <= Rules.lowHealthShare * MaxHealth(targetId))
@@ -207,11 +252,11 @@ namespace DuckAndCover.Core
         /// </summary>
         public float AddShield(int sourceId, int targetId, float amount, float seconds, string abilityId = "", int objectId = 0)
         {
-            if (amount <= 0f || !match.State.IsPlaying || !match.State.IsAlive(targetId)) return 0f;
+            if (amount <= 0f || !match.State.IsPlaying || !IsAlive(targetId)) return 0f;
             var target = Unit(targetId);
             abilityId = abilityId ?? "";
             if (seconds <= 0f) seconds = Rules.defaultShieldSeconds;
-            if (match.State.Player(sourceId) != null) amount *= Math.Max(0f, Stat(sourceId, StatIds.ShieldStrength));
+            if (IsKnown(sourceId)) amount *= Math.Max(0f, Stat(sourceId, StatIds.ShieldStrength));
             target.shields.RemoveAll(s => s.sourceId == sourceId && s.abilityId == abilityId);
             float added = Math.Min(amount, Rules.maxShield - target.Shield);
             if (added <= 0f) return 0f;
@@ -227,7 +272,7 @@ namespace DuckAndCover.Core
         {
             foreach (var u in state.units)
             {
-                if (!match.State.IsAlive(u.playerId)) continue;
+                if (!IsAlive(u.playerId)) continue;
                 u.sinceDamaged += dt;
                 foreach (var s in u.shields) s.timeLeft -= dt;
                 u.shields.RemoveAll(s => s.timeLeft <= 0f);
@@ -254,6 +299,23 @@ namespace DuckAndCover.Core
             if (u == null) return;
             u.shields.Clear();
             u.health = 0f;
+        }
+
+        /// <summary>
+        /// Take a unit that is not a player out of the fight: marked dead (its body stays in the hit
+        /// history for the lag compensation window), its fighting state dropped, and
+        /// <see cref="UnitDestroyedEvent"/> published. The ability runner ends its statuses on that event.
+        /// </summary>
+        public bool DestroyUnit(int unitId, int killerId, string reason)
+        {
+            var u = Roster.Get(unitId);
+            if (u == null || !u.alive) return false;
+            u.alive = false;
+            u.deadFor = 0f;
+            u.pushLeft = 0f;
+            Publish(new UnitDestroyedEvent { unitId = u.id, typeId = u.typeId, team = u.team, position = u.position, killerId = killerId, reason = reason ?? "" });
+            state.units.RemoveAll(x => x.playerId == unitId);
+            return true;
         }
 
         void Publish(GameEvent e)

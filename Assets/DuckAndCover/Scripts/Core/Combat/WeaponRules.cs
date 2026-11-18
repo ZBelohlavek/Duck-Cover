@@ -226,12 +226,8 @@ namespace DuckAndCover.Core
             else amounts[k] += amount;
         }
 
-        bool IsTeammate(int shooterId, int targetId)
-        {
-            var a = State.Player(shooterId);
-            var b = State.Player(targetId);
-            return a != null && b != null && shooterId != targetId && a.team == b.team;
-        }
+        /// <summary>Someone else on the shooter's team: a player or a unit (neutral units are nobody's).</summary>
+        bool IsTeammate(int shooterId, int targetId) => shooterId != targetId && combat.SameTeam(shooterId, targetId);
 
         /// <summary>Objects take the attacker's damageDealt too, as abilities' damage to objects does.</summary>
         void HurtObjects(int attackerId, List<int> objects, List<float> amounts)
@@ -260,9 +256,8 @@ namespace DuckAndCover.Core
         Func<int, bool> PassThrough(int shooterId)
         {
             if (Rules.friendlyFire) return null;
-            var me = State.Player(shooterId);
-            if (me == null) return null;
-            return id => { var p = State.Player(id); return p != null && p.team == me.team; };
+            if (State.Player(shooterId) == null) return null;
+            return id => id != shooterId && combat.SameTeam(shooterId, id);
         }
 
         public CommandResult Reload(int playerId)
@@ -317,7 +312,7 @@ namespace DuckAndCover.Core
             if (dealt <= 0f || shooterId == targetId || !State.IsAlive(shooterId)) return;
             float steal = combat.Stat(shooterId, StatIds.LifeSteal);
             if (steal > 0f) combat.Heal(shooterId, shooterId, dealt * steal, StatIds.LifeSteal);
-            if (!State.IsAlive(targetId)) return;
+            if (!combat.IsAlive(targetId)) return;
             float push = combat.Stat(shooterId, StatIds.WeaponPush);
             if (push > 0f && direction.Magnitude > 1e-4f)
             {

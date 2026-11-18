@@ -56,11 +56,13 @@ namespace DuckAndCover.Core
 
     /// <summary>
     /// A hero's fighting state for one match: health, shields, stats, statuses, ability slots and the
-    /// talent changes taken. Plain data; DamageRules and AbilityRunner change it.
+    /// talent changes taken. Plain data; DamageRules and AbilityRunner change it. Units that are not
+    /// players (WP14) have one too, with no slots: health, shields, stats and statuses work the same.
     /// </summary>
     [Serializable]
     public class HeroUnit
     {
+        /// <summary>The unit id: a player's id, or a unit's from <see cref="UnitIds.First"/> up.</summary>
         public int playerId;
         public float health;
         /// <summary>Seconds since this hero last took damage (health regen waits on it).</summary>

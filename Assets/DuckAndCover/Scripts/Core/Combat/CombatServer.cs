@@ -6,11 +6,12 @@ namespace DuckAndCover.Core
     /// <summary>
     /// Everything that fights on the server, put together for one match: WP7's ability runner (and
     /// with it health, shields and statuses), personal shields, movement checks, the lag
-    /// compensation history and weapons. The host builds one after MatchRules and attaches it to its
+    /// compensation history, weapons, and units that are not players (WP14). The host builds one after MatchRules and attaches it to its
     /// <see cref="SessionHost"/>; tests drive it directly.
     ///
     /// Each tick runs, in order: match, abilities (health, shields, statuses), personal shields,
-    /// movement (records the history for this tick), weapons (reloads, projectiles).
+    /// movement (records the history for this tick), units (pushes, and their bodies into the history),
+    /// weapons (reloads, projectiles).
     /// </summary>
     public sealed class CombatServer
     {
@@ -24,6 +25,8 @@ namespace DuckAndCover.Core
         public CombatWorld World { get; }
         public MovementRules Movement { get; }
         public WeaponRules Weapons { get; }
+        /// <summary>Units that are not players: spawn, move, and their bodies in the hit history.</summary>
+        public UnitRules Units { get; }
 
         readonly IGameEvents events;
         readonly List<int> dummies = new List<int>();
@@ -34,7 +37,7 @@ namespace DuckAndCover.Core
         /// <param name="geometry">The map: Raycast for walls and floors (players are ignored), PlayersInZone for zones.</param>
         /// <param name="tickSeconds">Seconds per server tick (NetSettings.TickSeconds).</param>
         public CombatServer(MatchRules match, IWorldQuery geometry, IGameEvents events, float tickSeconds,
-            ArenaLayout layout = null, WeaponLibrary weapons = null, AbilityLibrary abilities = null)
+            ArenaLayout layout = null, WeaponLibrary weapons = null, AbilityLibrary abilities = null, UnitLibrary units = null)
         {
             Match = match ?? throw new ArgumentNullException(nameof(match));
             this.events = events ?? throw new ArgumentNullException(nameof(events));
@@ -45,9 +48,11 @@ namespace DuckAndCover.Core
             World = new CombatWorld(geometry ?? throw new ArgumentNullException(nameof(geometry)), History, match.Rules);
             // The ability runner subscribes first, so its respawn reset (full health, shields cleared)
             // happens before the personal shield is given back below.
-            Abilities = new AbilityRunner(match, abilities ?? new AbilityLibrary(), World, events);
+            Abilities = new AbilityRunner(match, abilities ?? new AbilityLibrary(), World, events, new UnitRoster());
             Movement = new MovementRules(match, Damage, History, events, layout);
             Weapons = new WeaponRules(match, Damage, Movement, World, events, weapons ?? StarterWeapons.Library(), tickSeconds);
+            Units = new UnitRules(match, Abilities, History, geometry, events, units);
+            Units.Attach();
             // Placed barriers and gates stop shots and rays; shots hurt placed objects.
             World.Objects = Abilities.State.objects;
             World.PassesObject = (shooterId, o) =>
@@ -66,6 +71,7 @@ namespace DuckAndCover.Core
         public void Dispose()
         {
             events.Unsubscribe(OnEvent);
+            Units.Dispose();
             Abilities.Dispose();
         }
 
@@ -119,6 +125,7 @@ namespace DuckAndCover.Core
             Abilities.Tick(dt);
             TickPersonalShields(dt);
             Movement.Tick(dt);
+            Units.Tick(dt);
             Weapons.Tick(dt);
         }
 
@@ -127,6 +134,7 @@ namespace DuckAndCover.Core
             Abilities.FillSnapshot(s);
             Movement.FillSnapshot(s);
             Weapons.FillSnapshot(s);
+            Units.FillSnapshot(s);
             s.dummies = dummies.ToArray();
         }
 

@@ -76,8 +76,7 @@ namespace DuckAndCover.Core
         {
             var obj = State.Object(objectId);
             if (obj == null || obj.def.health <= 0f || amount <= 0f) return 0f;
-            var attacker = Match.Player(attackerId);
-            if (attacker != null && attacker.team == obj.team && !Rules.friendlyFire) return 0f;
+            if (Combat.IsKnown(attackerId) && Combat.TeamOf(attackerId) == obj.team && obj.team != TeamId.None && !Rules.friendlyFire) return 0f;
             float taken = Math.Min(obj.health, amount);
             obj.health -= taken;
             Publish(new ObjectDamagedEvent { objectId = obj.id, attackerId = attackerId, amount = taken, healthLeft = obj.health });
