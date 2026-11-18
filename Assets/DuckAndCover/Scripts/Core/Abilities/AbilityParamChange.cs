@@ -12,7 +12,7 @@ namespace DuckAndCover.Core
     ///   cooldown, charges, castTime, range, radius, count, spreadDegrees, maxTargets, ultimateCost
     ///   targeting.shape, targeting.origin, targeting.affects   (text, op "set")
     ///   effect.&lt;kind&gt;.amount | duration | delay | interval   (every effect of that kind, e.g. effect.heal.amount)
-    ///   object.lifetime | health | radius | interval | armTime | maxPerOwner   (objects this ability spawns)
+    ///   object.lifetime | health | radius | interval | armTime | maxPerOwner | width | height   (objects this ability spawns)
     ///   enable   (text: turns on the ability's effects tagged with that name, e.g. a healing trail)
     /// </summary>
     [Serializable]

@@ -108,6 +108,10 @@ namespace DuckAndCover.Core
         public const string LifeSteal = "lifeSteal";
         /// <summary>Metres each weapon hit pushes an enemy along the shot (0 = none).</summary>
         public const string WeaponPush = "weaponPush";
+        /// <summary>Extra healing given to someone at low health (Ruleset.lowHealthShare or less), as a share (0.3 = 30% more).</summary>
+        public const string HealingToLowHealth = "healingToLowHealth";
+        /// <summary>Above 0: a healing weapon's hits on teammates also clear their harmful statuses.</summary>
+        public const string WeaponCleanse = "weaponCleanse";
         /// <summary>How much each weapon hit slows an enemy, as a share of speed (0.15 = 15% slower; 0 = none).</summary>
         public const string WeaponSlow = "weaponSlow";
         /// <summary>Capture speed multiplier on points, for the zone rules to read.</summary>

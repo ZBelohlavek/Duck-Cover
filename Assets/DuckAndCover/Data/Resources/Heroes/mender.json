@@ -14,14 +14,14 @@
         {
             "level": 2,
             "options": [
-                "mender_bedside_manner",
-                "mender_nimble"
+                "mender_steady_dose",
+                "mender_wide_reach"
             ]
         },
         {
             "level": 4,
             "options": [
-                "mender_wide_field",
+                "mender_spare_vials",
                 "mender_lasting_field"
             ]
         },
@@ -29,7 +29,7 @@
             "level": 6,
             "options": [
                 "mender_fast_reload",
-                "mender_sturdy"
+                "mender_efficient"
             ]
         },
         {
@@ -49,48 +49,48 @@
         {
             "level": 12,
             "options": [
-                "mender_quickening_purge",
-                "mender_deep_purge"
+                "mender_triage",
+                "mender_quickening_purge"
             ]
         },
         {
             "level": 14,
             "options": [
-                "mender_steadfast",
-                "mender_survivor"
+                "mender_battle_medic",
+                "mender_healing_hands"
             ]
         },
         {
             "level": 16,
             "options": [
-                "mender_rich_field",
-                "mender_rapid_purge"
+                "mender_second_opinion",
+                "mender_rich_field"
             ]
         },
         {
             "level": 18,
             "options": [
-                "mender_quick_field",
-                "mender_quick_purge"
+                "mender_steady_hands",
+                "mender_twin_fields"
             ]
         },
         {
             "level": 20,
             "options": [
                 "mender_lifeline",
-                "mender_battle_medic"
+                "mender_sanctuary"
             ]
         }
     ],
     "upgrades": [
         {
-            "id": "mender_bedside_manner",
-            "displayName": "Bedside Manner",
-            "description": "Your healing is 10% stronger.",
+            "id": "mender_steady_dose",
+            "displayName": "Steady Dose",
+            "description": "Your sidearm hits 10% harder: more healing and more damage.",
             "kind": "trait",
             "stats": [
                 {
-                    "stat": "healingDone",
+                    "stat": "weaponDamage",
                     "op": "percent",
                     "value": 0.1,
                     "when": ""
@@ -100,15 +100,15 @@
             "scriptId": ""
         },
         {
-            "id": "mender_nimble",
-            "displayName": "Nimble",
-            "description": "Move 6% faster.",
+            "id": "mender_wide_reach",
+            "displayName": "Wide Reach",
+            "description": "Mending Field and Purge reach 10% further.",
             "kind": "trait",
             "stats": [
                 {
-                    "stat": "moveSpeed",
+                    "stat": "abilityRadius",
                     "op": "percent",
-                    "value": 0.06,
+                    "value": 0.1,
                     "when": ""
                 }
             ],
@@ -116,26 +116,25 @@
             "scriptId": ""
         },
         {
-            "id": "mender_wide_field",
-            "displayName": "Wide Field",
-            "description": "Mending Field reaches 1.5 m further.",
+            "id": "mender_spare_vials",
+            "displayName": "Spare Vials",
+            "description": "Your magazine holds 20% more rounds.",
             "kind": "talent",
-            "stats": [],
-            "abilityChanges": [
+            "stats": [
                 {
-                    "ability": "mender_field",
-                    "param": "object.radius",
-                    "op": "add",
-                    "value": 1.5,
-                    "text": ""
+                    "stat": "magazineSize",
+                    "op": "percent",
+                    "value": 0.2,
+                    "when": ""
                 }
             ],
+            "abilityChanges": [],
             "scriptId": ""
         },
         {
             "id": "mender_lasting_field",
             "displayName": "Lasting Field",
-            "description": "Mending Field lasts 3 seconds longer.",
+            "description": "Mending Field lasts 2 seconds longer.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
@@ -143,7 +142,7 @@
                     "ability": "mender_field",
                     "param": "object.lifetime",
                     "op": "add",
-                    "value": 3,
+                    "value": 2,
                     "text": ""
                 }
             ],
@@ -166,15 +165,15 @@
             "scriptId": ""
         },
         {
-            "id": "mender_sturdy",
-            "displayName": "Sturdy",
-            "description": "+25 max health.",
+            "id": "mender_efficient",
+            "displayName": "Efficient",
+            "description": "Abilities recover 10% faster.",
             "kind": "trait",
             "stats": [
                 {
-                    "stat": "maxHealth",
-                    "op": "add",
-                    "value": 25,
+                    "stat": "cooldownRate",
+                    "op": "percent",
+                    "value": 0.1,
                     "when": ""
                 }
             ],
@@ -248,6 +247,22 @@
             "scriptId": ""
         },
         {
+            "id": "mender_triage",
+            "displayName": "Triage",
+            "description": "Healing teammates at half health or less is 30% stronger.",
+            "kind": "talent",
+            "stats": [
+                {
+                    "stat": "healingToLowHealth",
+                    "op": "add",
+                    "value": 0.3,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
             "id": "mender_quickening_purge",
             "displayName": "Quickening Purge",
             "description": "Purge also speeds everyone it reaches up by 25% for 3 seconds.",
@@ -265,48 +280,47 @@
             "scriptId": ""
         },
         {
-            "id": "mender_deep_purge",
-            "displayName": "Deep Purge",
-            "description": "Purge heals 40 more.",
-            "kind": "talent",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "mender_purge",
-                    "param": "effect.heal.amount",
-                    "op": "add",
-                    "value": 40,
-                    "text": ""
-                }
-            ],
-            "scriptId": ""
-        },
-        {
-            "id": "mender_steadfast",
-            "displayName": "Steadfast",
-            "description": "Take 15% less damage while on a point.",
+            "id": "mender_battle_medic",
+            "displayName": "Battle Medic",
+            "description": "Your sidearm hits 15% harder: more healing and more damage.",
             "kind": "trait",
             "stats": [
                 {
-                    "stat": "damageTaken",
-                    "op": "multiply",
-                    "value": 0.85,
-                    "when": "onPoint"
+                    "stat": "weaponDamage",
+                    "op": "percent",
+                    "value": 0.15,
+                    "when": ""
                 }
             ],
             "abilityChanges": [],
             "scriptId": ""
         },
         {
-            "id": "mender_survivor",
-            "displayName": "Survivor",
-            "description": "Regain 8 more health a second when you haven't been hit for a while.",
+            "id": "mender_healing_hands",
+            "displayName": "Healing Hands",
+            "description": "Your healing is 10% stronger.",
             "kind": "trait",
             "stats": [
                 {
-                    "stat": "healthRegen",
+                    "stat": "healingDone",
+                    "op": "percent",
+                    "value": 0.1,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_second_opinion",
+            "displayName": "Second Opinion",
+            "description": "Your sidearm's heals also clear slows, stuns and marks.",
+            "kind": "talent",
+            "stats": [
+                {
+                    "stat": "weaponCleanse",
                     "op": "add",
-                    "value": 8,
+                    "value": 1,
                     "when": ""
                 }
             ],
@@ -331,17 +345,33 @@
             "scriptId": ""
         },
         {
-            "id": "mender_rapid_purge",
-            "displayName": "Rapid Purge",
-            "description": "Purge recovers 30% sooner.",
+            "id": "mender_steady_hands",
+            "displayName": "Steady Hands",
+            "description": "Heal yourself for 10% of the damage your sidearm deals.",
+            "kind": "talent",
+            "stats": [
+                {
+                    "stat": "lifeSteal",
+                    "op": "add",
+                    "value": 0.1,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_twin_fields",
+            "displayName": "Twin Fields",
+            "description": "Mending Field holds two charges.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
-                    "ability": "mender_purge",
-                    "param": "cooldown",
-                    "op": "multiply",
-                    "value": 0.7,
+                    "ability": "mender_field",
+                    "param": "charges",
+                    "op": "add",
+                    "value": 1,
                     "text": ""
                 }
             ],
@@ -370,57 +400,18 @@
             "scriptId": ""
         },
         {
-            "id": "mender_battle_medic",
-            "displayName": "Battle Medic",
-            "description": "Your weapons deal 15% more damage and you take 10% less.",
+            "id": "mender_sanctuary",
+            "displayName": "Sanctuary",
+            "description": "Mending Field also gives everyone inside it 15 shield a second.",
             "kind": "capstone",
-            "stats": [
-                {
-                    "stat": "weaponDamage",
-                    "op": "percent",
-                    "value": 0.15,
-                    "when": ""
-                },
-                {
-                    "stat": "damageTaken",
-                    "op": "multiply",
-                    "value": 0.9,
-                    "when": ""
-                }
-            ],
-            "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "mender_quick_field",
-            "displayName": "Quick Field",
-            "description": "Mending Field recovers 20% sooner.",
-            "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
                     "ability": "mender_field",
-                    "param": "cooldown",
-                    "op": "multiply",
-                    "value": 0.8,
-                    "text": ""
-                }
-            ],
-            "scriptId": ""
-        },
-        {
-            "id": "mender_quick_purge",
-            "displayName": "Quick Purge",
-            "description": "Purge recovers 20% sooner.",
-            "kind": "talent",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "mender_purge",
-                    "param": "cooldown",
-                    "op": "multiply",
-                    "value": 0.8,
-                    "text": ""
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "sanctuary"
                 }
             ],
             "scriptId": ""

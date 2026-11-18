@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace DuckAndCover.Core
 {
     /// <summary>
-    /// Lag compensation: the server remembers every player's body for the last
+    /// Lag compensation: the server remembers every body (players, and units from WP14, by unit id) for the last
     /// <see cref="Ruleset.maxRewindSeconds"/>, one sample per tick, so a shot can be checked against
     /// the hitboxes as they were at the tick the shooter saw. Between two samples the position is
     /// interpolated. Plain C#; the network library has no part in it.
@@ -75,14 +75,14 @@ namespace DuckAndCover.Core
                 float k = (float)(tick - older.tick) / (newer.tick - older.tick);
                 // Someone who appeared or vanished between the two samples is taken as the nearer one.
                 if (older.pose.alive != newer.pose.alive) { pose = k < 0.5f ? older.pose : newer.pose; return true; }
-                pose = new BodyPose(Vec3.Lerp(older.pose.position, newer.pose.position, k), k < 0.5f ? older.pose.crouched : newer.pose.crouched, newer.pose.alive);
+                pose = new BodyPose(Vec3.Lerp(older.pose.position, newer.pose.position, k), k < 0.5f ? older.pose.crouched : newer.pose.crouched, newer.pose.alive, newer.pose.size);
                 return true;
             }
             pose = t.ring[(t.head - t.count + 1 + capacity) % capacity].pose; // older than the history: the oldest
             return true;
         }
 
-        /// <summary>Every player with history, in id order.</summary>
+        /// <summary>Every body with history (players, then units, since unit ids sit above player ids), in id order.</summary>
         public List<int> Players()
         {
             var ids = new List<int>();
@@ -127,7 +127,7 @@ namespace DuckAndCover.Core
 
     /// <summary>
     /// The world the combat rules see: unbreakable geometry from the map (the Game layer's physics,
-    /// or a fake in tests) plus player hitboxes from the <see cref="HitHistory"/>. Implements the
+    /// or a fake in tests) plus the hitboxes of players and units from the <see cref="HitHistory"/>. Implements the
     /// contract's lag-compensated Raycast and PlayersInSphere, and WP7's optional position and line of
     /// sight queries, so abilities hit the same bodies weapons do.
     /// </summary>
@@ -187,7 +187,10 @@ namespace DuckAndCover.Core
 
         public int[] PlayersInZone(ZoneId zone) => geometry.PlayersInZone(zone);
 
-        /// <summary>Players whose chest is within the radius at the tick, in id order.</summary>
+        /// <summary>
+        /// Bodies whose chest is within the radius at the tick, in id order: players and units alike
+        /// (units ride the hit history under their unit ids), so area abilities and splash reach both.
+        /// </summary>
         public int[] PlayersInSphere(Vec3 center, float radius, int tick)
         {
             var ids = new List<int>();

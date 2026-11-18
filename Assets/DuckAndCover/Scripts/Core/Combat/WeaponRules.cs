@@ -29,6 +29,8 @@ namespace DuckAndCover.Core
         /// Set by <see cref="CombatServer"/> to the ability rules' slow status; null = hits don't slow.
         /// </summary>
         public Action<int, int, float, float> Slow;
+        /// <summary>Clears a teammate's harmful statuses (the weaponCleanse stat). Set by <see cref="CombatServer"/>.</summary>
+        public Action<int> Cleanse;
         /// <summary>
         /// Hurts a placed object (barrier, turret, mine) a shot hit: object id, final amount, attacker.
         /// Set by <see cref="CombatServer"/> to the ability rules; null = shots don't hurt objects.
@@ -199,14 +201,19 @@ namespace DuckAndCover.Core
                 shot.hitParts[i] = hit.bodyPart;
                 float share = w.Falloff(hit.distance / reach) * w.PartMultiplier(hit.bodyPart);
                 // Heal shots on teammates are kept as negative amounts until the end.
-                float amount = w.allyHeal > 0f && IsTeammate(cmd.playerId, hit.playerId) ? -w.allyHeal * share : w.damage * scale * share;
+                // weaponDamage makes a healing weapon heal harder too.
+                float amount = w.allyHeal > 0f && IsTeammate(cmd.playerId, hit.playerId) ? -w.allyHeal * scale * share : w.damage * scale * share;
                 Add(targets, amounts, hit.playerId, amount);
             }
             Publish(shot);
             // One damage (or heal) call per target per shot, in the order the pellets reached them.
             for (int i = 0; i < targets.Count; i++)
             {
-                if (amounts[i] < 0f) combat.Heal(cmd.playerId, targets[i], -amounts[i], w.id);
+                if (amounts[i] < 0f)
+                {
+                    combat.Heal(cmd.playerId, targets[i], -amounts[i], w.id);
+                    if (Cleanse != null && combat.Stat(cmd.playerId, StatIds.WeaponCleanse) > 0f) Cleanse(targets[i]);
+                }
                 else AfterHit(cmd.playerId, targets[i], combat.Damage(cmd.playerId, targets[i], amounts[i], w.id), dir);
             }
             HurtObjects(cmd.playerId, objects, objectAmounts);
@@ -219,12 +226,8 @@ namespace DuckAndCover.Core
             else amounts[k] += amount;
         }
 
-        bool IsTeammate(int shooterId, int targetId)
-        {
-            var a = State.Player(shooterId);
-            var b = State.Player(targetId);
-            return a != null && b != null && shooterId != targetId && a.team == b.team;
-        }
+        /// <summary>Someone else on the shooter's team: a player or a unit (neutral units are nobody's).</summary>
+        bool IsTeammate(int shooterId, int targetId) => shooterId != targetId && combat.SameTeam(shooterId, targetId);
 
         /// <summary>Objects take the attacker's damageDealt too, as abilities' damage to objects does.</summary>
         void HurtObjects(int attackerId, List<int> objects, List<float> amounts)
@@ -253,9 +256,8 @@ namespace DuckAndCover.Core
         Func<int, bool> PassThrough(int shooterId)
         {
             if (Rules.friendlyFire) return null;
-            var me = State.Player(shooterId);
-            if (me == null) return null;
-            return id => { var p = State.Player(id); return p != null && p.team == me.team; };
+            if (State.Player(shooterId) == null) return null;
+            return id => id != shooterId && combat.SameTeam(shooterId, id);
         }
 
         public CommandResult Reload(int playerId)
@@ -310,7 +312,7 @@ namespace DuckAndCover.Core
             if (dealt <= 0f || shooterId == targetId || !State.IsAlive(shooterId)) return;
             float steal = combat.Stat(shooterId, StatIds.LifeSteal);
             if (steal > 0f) combat.Heal(shooterId, shooterId, dealt * steal, StatIds.LifeSteal);
-            if (!State.IsAlive(targetId)) return;
+            if (!combat.IsAlive(targetId)) return;
             float push = combat.Stat(shooterId, StatIds.WeaponPush);
             if (push > 0f && direction.Magnitude > 1e-4f)
             {

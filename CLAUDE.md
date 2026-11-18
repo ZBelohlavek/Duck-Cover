@@ -18,7 +18,7 @@ Assets/DuckAndCover/
   Scripts/Core/   Game rules in plain C# (asmdef DuckAndCover.Core, noEngineReferences). Runs in Tests/CoreSim.
           Common/     Vec3, TeamId, ZoneId
           Contracts/  IWorldQuery, INetBridge, MatchCommand, IAbility, ISupportAction, IGameEvents
-          <Module>/   Match, Ruleset, Zones, Spawn, Events (WP1); Progression, Heroes, Abilities, Stats, Combat (one folder each)
+          <Module>/   Match, Ruleset, Zones, Spawn, Events (WP1); Progression, Heroes, Abilities, Stats, Combat, Units (one folder each)
           Session/    The network session with no network library in it (WP3): SessionHost, SessionClient,
                       WireCodec (the wire format), LoopbackNetwork, scripted play for the smoke test
   Scripts/Net/    The only code that touches Netcode for GameObjects (asmdef DuckAndCover.Net): NetSession
@@ -73,6 +73,10 @@ nothing. If Game needs something from UI, raise an event instead of adding a ref
   (`FireCommand`) judged against bodies as they were at the tick the shooter saw. Deal damage only
   through `DamageRules.Damage`. Player bodies have no colliders and sit on the Ignore Raycast layer:
   the map answers rays (`PhysicsWorld`), the rules add hitboxes.
+- **Combat ids are unit ids.** A player is a unit whose id is their player id; minions, Bastions and camp
+  guards are units from `UnitIds.First` (20000) up, spawned through `CombatServer.Units`. Ask `DamageRules`
+  (`IsAlive`, `TeamOf`, `SameTeam`, `IsKnown`) rather than `MatchState.Player` when an id may be a unit.
+  Neutral units (team None) are everyone's enemy. Units are moved by the server only.
 - **Colour placeholder objects with `Paint`** (`Paint.Block`, `Paint.Apply`), never by setting a colour on
   a material: runtime colour properties all showed the last colour set in real captures. The capture run
   starts with the `Paint` self check (two frames after its blocks are made) and fails if colours collapse.
@@ -144,6 +148,6 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
   hero's abilities, X the ultimate, hold Z or V to take the left or right upgrade, Esc frees the mouse.
 - Heroes (WP11): Bulwark (vanguard), Lancer (striker), Mender (support), Rigger (controller), as data in
   Data/Resources. `HeroServer` (Core/Heroes) gives a pick its kit, runs leveling beside the match and
-  applies upgrades; `HeroKitTests` checks every ability and all 72 upgrades.
+  applies upgrades; `HeroKitTests` checks every ability and all 80 upgrades. Levels run 1 to 20 (picks on even levels); each hero has two upgrade paths, left and right (`docs/HEROES.md`).
 - F1 in the Boot scene shows a developer panel to host, join, pick a team and hero and start a match.
   Two copies on one PC: host in one, join `127.0.0.1` in the other.

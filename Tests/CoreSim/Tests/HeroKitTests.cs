@@ -150,10 +150,10 @@ static class HeroKitTests
         Check.Near(300f * boost, h.Combat.Damage.MaxHealth(A1), "each gives 2% max health by itself");
         Check.Near(boost, h.Stat(A1, StatIds.DamageDealt), "and 2% damage");
         Check.True(h.Heroes.Progression.Apply(new ChooseUpgradeCommand { playerId = A1, level = 2, option = 0 }).IsAccepted, "Thick Hide");
-        Check.Near(350f * boost, h.Combat.Damage.MaxHealth(A1), "+50 max health");
-        Check.Near(350f * boost, h.Health(A1), "given as health at once");
-        Check.True(h.Heroes.Progression.Apply(new ChooseUpgradeCommand { playerId = A1, level = 4, option = 1 }).IsAccepted, "Double Rush");
-        Check.Equal(2, h.Unit(A1).slots[1].charges, "the extra charge comes at once");
+        Check.Near(325f * boost, h.Combat.Damage.MaxHealth(A1), "+25 max health");
+        Check.Near(325f * boost, h.Health(A1), "given as health at once");
+        Check.True(h.Heroes.Progression.Apply(new ChooseUpgradeCommand { playerId = A1, level = 4, option = 1 }).IsAccepted, "Reinforced Panel");
+        Check.True(h.Unit(A1).changes.Any(c => c.ability == "bulwark_panel"), "the panel change is on");
     }
 
     [Test]
@@ -251,7 +251,7 @@ static class HeroKitTests
         h.Place(A1, 0f, 0f);
         h.Place(B1, 0f, 5f);
         h.LevelTo(A1, h.Heroes.Progression.Rules.UltimateFormLevel());
-        h.PickForm(A1, "bulwark_iron_ring");
+        Check.True(h.PickForm(A1, "bulwark_crushing_line").IsAccepted, "pick Crushing Line");
         Check.True(h.Use(A1, 2, Ahead).IsAccepted, "ultimate");
         Check.True(h.Shield(A1) >= 100f - 1e-3f, "a 100 shield");
         h.Run(0.6f);
@@ -426,6 +426,74 @@ static class HeroKitTests
         h.Run(0.2f);
         Check.True(h.FireAt(A1, h.ChestOf(B1)).IsAccepted, "shoot an enemy");
         Check.Near(185f, h.Health(B1), "15 damage");
+    }
+
+    [Test]
+    static void MedicPathHealsHarderAndCleanses()
+    {
+        var h = With(A1, "mender", B1, "lancer");
+        h.Place(A1, 0f, 0f);
+        h.Place(A2, 0f, 5f);
+        h.Heroes.ApplyUpgrade(A1, "mender", "mender_steady_dose");
+        h.Unit(A2).health = 150f;
+        h.FireAt(A1, h.ChestOf(A2));
+        Check.Near(150f + 14f * 1.1f, h.Health(A2), "Steady Dose: the sidearm heals 10% more");
+
+        h.Heroes.ApplyUpgrade(A1, "mender", "mender_triage");
+        h.Unit(A2).health = 60f; // under half
+        h.Run(0.2f);
+        h.FireAt(A1, h.ChestOf(A2));
+        Check.Near(60f + 14f * 1.1f * 1.3f, h.Health(A2), "Triage: 30% more on a low teammate");
+
+        h.Abilities.ApplyStatus(A2, AbilityLibrary.SlowStatus, B1, 0.5f, 5f);
+        h.Run(0.2f);
+        h.FireAt(A1, h.ChestOf(A2));
+        Check.True(h.Unit(A2).HasStatus(AbilityLibrary.SlowStatus), "a plain heal leaves the slow");
+        h.Heroes.ApplyUpgrade(A1, "mender", "mender_second_opinion");
+        h.Run(0.2f);
+        h.FireAt(A1, h.ChestOf(A2));
+        Check.False(h.Unit(A2).HasStatus(AbilityLibrary.SlowStatus), "Second Opinion: the heal clears it");
+    }
+
+    [Test]
+    static void ShieldingAreasCoverTeammates()
+    {
+        var h = With(A1, "bulwark", B1, "lancer");
+        h.Map.Wall(new Vec3(0f, -0.5f, 0f), new Vec3(200f, 1f, 200f)); // a floor
+        h.Place(A1, 0f, 0f);
+        h.Place(A2, 1f, 2f);
+        h.NoShield(A2);
+        h.Heroes.ApplyUpgrade(A1, "bulwark", "bulwark_bastion_aura");
+        h.Heroes.ApplyUpgrade(A1, "bulwark", "bulwark_wide_panel");
+        Check.True(h.Use(A1, 0, new Vec3(0f, -0.4f, 1f)).IsAccepted, "panel");
+        var panel = h.Of<ObjectSpawnedEvent>().First(o => o.defId == "bulwark_panel");
+        Check.Near(4.5f, panel.width, "Wide Panel: 1.5 m wider");
+        h.Run(1.1f);
+        Check.True(h.Shield(A2) > 0f, "Bastion Aura shields the teammate by the panel");
+
+        var m = With(A1, "mender", B1, "lancer");
+        m.Place(A1, 0f, 0f);
+        m.Place(A2, 0f, 3f);
+        m.NoShield(A2);
+        m.Heroes.ApplyUpgrade(A1, "mender", "mender_sanctuary");
+        m.UseAt(A1, 0, A2);
+        m.Run(1.1f);
+        Check.True(m.Shield(A2) > 0f, "Sanctuary: the field shields too");
+    }
+
+    [Test]
+    static void StickyMinesRevealWhoStepsOnThem()
+    {
+        var h = With(A1, "rigger", B1, "lancer");
+        h.Place(A1, 0f, 0f);
+        h.Place(B1, 0f, 30f);
+        h.Heroes.ApplyUpgrade(A1, "rigger", "rigger_sticky_mines");
+        Check.True(h.Use(A1, 0, new Vec3(0f, -0.3f, 1f)).IsAccepted, "mine");
+        h.Run(1.2f);
+        var mine = h.Of<ObjectSpawnedEvent>().First(o => o.defId == "rigger_mine");
+        h.Place(B1, mine.position.x, mine.position.z);
+        h.Run(0.3f);
+        Check.True(h.Abilities.IsRevealed(B1), "shown through walls");
     }
 
     [Test]
