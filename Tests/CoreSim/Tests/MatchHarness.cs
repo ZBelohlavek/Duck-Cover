@@ -22,6 +22,7 @@ sealed class FakeWorld : IWorldQuery
 /// <summary>
 /// A match on a test map with a recorded event stream. Team A is players 1..n, team B 101..100+n.
 /// "points": 1 (A's forward point), 2 (middle), 3 (B's forward point). "hills": 11, 12, 13, 14.
+/// "bases" (Flag Rush): 21 in A's base, 22 in B's; flag spots at x = -10, 0 and 10.
 /// </summary>
 sealed class MatchHarness
 {
@@ -51,7 +52,13 @@ sealed class MatchHarness
                 name = "hills",
                 zones = { new ZoneDef(11), new ZoneDef(12), new ZoneDef(13), new ZoneDef(14) },
             },
+            new ZoneSetDef
+            {
+                name = "bases",
+                zones = { new ZoneDef(21, startOwner: TeamId.A), new ZoneDef(22, startOwner: TeamId.B) },
+            },
         },
+        flagSpots = { new Vec3(-10f, 0f, 0f), new Vec3(0f, 0f, 0f), new Vec3(10f, 0f, 0f) },
     };
 
     public MatchHarness(ModeDef mode = null, int perTeam = 5, Ruleset rules = null, bool toPlay = true)

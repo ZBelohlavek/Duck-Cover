@@ -13,7 +13,7 @@ namespace DuckAndCover.Core
         Deploy = 2,
         /// <summary>Points are live, holding them scores, players respawn.</summary>
         Play = 3,
-        /// <summary>A cap was reached while the trailing team was fighting on a point.</summary>
+        /// <summary>A cap was reached while the trailing team was fighting on a point (Flag Rush: level at the time cap, next capture wins).</summary>
         Overtime = 4,
         /// <summary>Scoreboard. Nothing scores any more.</summary>
         MatchEnd = 5,
@@ -32,6 +32,8 @@ namespace DuckAndCover.Core
         OvertimeComeback = 4,
         /// <summary>Overtime ran out (overtimeMaxSeconds); the higher score won.</summary>
         OvertimeTimeout = 5,
+        /// <summary>Flag Rush: level at the time cap, then the next capture won.</summary>
+        OvertimeCapture = 6,
     }
 
     /// <summary>One player. Level is owned by Progression (WP8); the rules here only read it.</summary>
@@ -93,6 +95,11 @@ namespace DuckAndCover.Core
     {
         public string mapId = "";
         public List<ZoneSetDef> zoneSets = new List<ZoneSetDef>();
+        /// <summary>
+        /// Where a Flag Rush flag may appear (WP21): spots the same walk from both bases, which the map
+        /// validator checks. Empty on maps without the mode.
+        /// </summary>
+        public List<Vec3> flagSpots = new List<Vec3>();
 
         public ZoneSetDef ZoneSet(string name)
         {

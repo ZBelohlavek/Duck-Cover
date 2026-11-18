@@ -81,6 +81,32 @@ namespace DuckAndCover.Game
             return root;
         }
 
+        /// <summary>
+        /// Builds a dressed copy of a map for looking at only (no colliders, no zones, no rules), with its
+        /// centre at <paramref name="offset"/>. The screenshot run uses it to show art mock-ups such as
+        /// <see cref="LaneStudy"/> beside the real map. Sky and light stay as the real map set them.
+        /// </summary>
+        public static GameObject BuildPreview(MapDef map, Vector3 offset)
+        {
+            var root = new GameObject("Preview " + map.displayName);
+            root.transform.position = offset;
+            var t = root.transform;
+            var dress = MapDresser.Begin(map, t, EnvTheme.Find(map.theme));
+            if (dress != null) dress.lighting = false;
+            foreach (var b in map.blocks)
+            {
+                var go = b.kind == BlockKind.Ramp ? Ramp(t, b) : Paint.Block(t, b.name, b.center.ToVector3(), b.size.ToVector3(), ColorOf(b), false);
+                if (b.kind == BlockKind.Ramp)
+                {
+                    var col = go.GetComponent<Collider>();
+                    if (col != null) UnityEngine.Object.Destroy(col);
+                }
+                MapDresser.DressBlock(dress, go, b);
+            }
+            MapDresser.DressWorld(dress, null);
+            return root;
+        }
+
         static Color ColorOf(MapBlock b)
         {
             switch (b.kind)

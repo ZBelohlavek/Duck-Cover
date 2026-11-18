@@ -8,12 +8,25 @@ namespace DuckAndCover.Core
     /// what schedule, and how scoring works. Capture and hold and king of the hill are both just
     /// ModeDefs (Data/Modes/*.json), so a new mode is a new data file. Loaded with JsonUtility in
     /// Unity, so only plain fields: no enums, dictionaries or properties.
+    /// Flag Rush (WP21) is a ModeDef too, with <see cref="objective"/> "flag": its zone set is the two
+    /// base capture zones, which never go live as points, and score is counted in captures.
     /// </summary>
     [Serializable]
     public class ModeDef
     {
+        /// <summary>Score comes from holding live zones (capture and hold, king of the hill).</summary>
+        public const string ZonesObjective = "zones";
+        /// <summary>Score comes from carrying the flag into the enemy base (Flag Rush, Core/Flag).</summary>
+        public const string FlagObjective = "flag";
+
         public string id = "";
         public string displayName = "";
+        /// <summary>
+        /// How the mode scores: <see cref="ZonesObjective"/> (empty means the same) or <see cref="FlagObjective"/>.
+        /// A flag mode's zone set holds one capture zone in each base: the zone whose startOwner is a
+        /// team is that team's base, where the other team scores.
+        /// </summary>
+        public string objective = ZonesObjective;
         /// <summary>Name of the map zone set the mode plays on (MatchMap.zoneSets), e.g. "points" or "hills".</summary>
         public string zoneSet = "";
         /// <summary>Zones live at once. 0 = every zone in the set, all the time.</summary>
@@ -64,6 +77,27 @@ namespace DuckAndCover.Core
             mapShiftScore = 250,
         };
 
+        /// <summary>
+        /// Flag Rush: one flag at a random fair spot, carried into the enemy base; first to 5 captures
+        /// or the most at 15 minutes, the map shifts at 3 captures by either team. Flag timings and
+        /// experience live in the ruleset (Core/Flag/Ruleset.Flag.cs).
+        /// </summary>
+        public static ModeDef FlagRush() => new ModeDef
+        {
+            id = "flag_rush",
+            displayName = "Flag Rush",
+            objective = FlagObjective,
+            zoneSet = "bases",
+            activeZoneCount = 0,
+            scoreToWin = 5,
+            scorePerSecond = 1f, // unused: bases never go live as points
+            allHeldMultiplier = 1f,
+            timeCapSeconds = 900f,
+            mapShiftScore = 3,
+        };
+
+        public bool IsFlag() => objective == FlagObjective;
+
         public ModeDef Clone() => (ModeDef)MemberwiseClone();
 
         /// <summary>Problems in the mode itself and against the map it would run on.</summary>
@@ -80,7 +114,18 @@ namespace DuckAndCover.Core
             if (rotationSeconds < 0f) errors.Add("rotationSeconds can't be negative");
             if (rotationWarningSeconds < 0f || (rotationSeconds > 0f && rotationWarningSeconds >= rotationSeconds))
                 errors.Add("rotationWarningSeconds must be between 0 and rotationSeconds");
-            if (map != null)
+            if (!string.IsNullOrEmpty(objective) && objective != ZonesObjective && objective != FlagObjective)
+                errors.Add("objective must be '" + ZonesObjective + "' or '" + FlagObjective + "'");
+            if (IsFlag() && (rotationSeconds > 0f || activeZoneCount != 0)) errors.Add("a flag mode's base zones don't rotate");
+            if (map != null && IsFlag())
+            {
+                var bases = map.ZoneSet(zoneSet);
+                if (bases == null) errors.Add("map " + map.mapId + " has no zone set '" + zoneSet + "'");
+                else if (bases.zones.Count != 2 || BaseZone(map, TeamId.A) == null || BaseZone(map, TeamId.B) == null)
+                    errors.Add("a flag mode needs '" + zoneSet + "' to hold one base zone per team (startOwner A and B)");
+                if (map.flagSpots == null || map.flagSpots.Count < 2) errors.Add("a flag mode needs at least two flag spots on map " + map.mapId);
+            }
+            else if (map != null)
             {
                 var set = map.ZoneSet(zoneSet);
                 if (set == null) errors.Add("map " + map.mapId + " has no zone set '" + zoneSet + "'");
@@ -92,6 +137,21 @@ namespace DuckAndCover.Core
                 }
             }
             return errors;
+        }
+
+        /// <summary>A flag mode's capture zone inside <paramref name="team"/>'s base (where the other team scores), or null.</summary>
+        public ZoneDef BaseZone(MatchMap map, TeamId team)
+        {
+            var set = map == null ? null : map.ZoneSet(zoneSet);
+            if (set == null || team == TeamId.None) return null;
+            ZoneDef found = null;
+            foreach (var z in set.zones)
+                if (z != null && z.startOwner == team)
+                {
+                    if (found != null) return null; // two bases for one team
+                    found = z;
+                }
+            return found;
         }
     }
 }

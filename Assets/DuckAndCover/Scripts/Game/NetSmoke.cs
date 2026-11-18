@@ -16,7 +16,7 @@ namespace DuckAndCover.Game
     ///   -duckSmoke host|join      which side this instance plays
     ///   -duckSmokeOut file        where to write the result
     ///   -duckPlayers n            the host starts the match once n players are connected (default 2)
-    ///   -duckMode id              capture_hold or king_of_the_hill
+    ///   -duckMode id              capture_hold, king_of_the_hill or flag_rush
     ///   -duckAddress a, -duckPort p, -duckSpeed x
     /// </summary>
     public class NetSmoke : MonoBehaviour

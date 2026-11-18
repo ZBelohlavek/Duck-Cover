@@ -18,6 +18,7 @@ using DuckAndCover.Core;
 ///
 ///   dotnet run --project Tools/netsmoke                       2 players, king of the hill
 ///   dotnet run --project Tools/netsmoke -- 10 capture_hold    10 players, capture and hold
+///   dotnet run --project Tools/netsmoke -- 4 flag_rush        4 players, Flag Rush
 ///
 /// This checks the session code, the wire format and the rules across processes. It does not check
 /// Netcode for GameObjects: that is Tools/unity netsmoke, which needs Unity.
@@ -216,7 +217,7 @@ static class Program
     {
         var world = new ScriptedWorld();
         var events = new GameEventBus();
-        var mode = modeId == "capture_hold" ? ModeDef.CaptureAndHold() : ModeDef.KingOfTheHill();
+        var mode = modeId == "capture_hold" ? ModeDef.CaptureAndHold() : modeId == "flag_rush" ? ModeDef.FlagRush() : ModeDef.KingOfTheHill();
         var match = new MatchRules(ScriptedPlay.SmokeRuleset(), mode, ScriptedPlay.PlaceholderMap(), world, events);
         var tcp = new TcpServer();
         var transport = new HostTransport { tcp = tcp };

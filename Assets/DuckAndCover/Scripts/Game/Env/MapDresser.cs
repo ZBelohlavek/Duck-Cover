@@ -39,6 +39,8 @@ namespace DuckAndCover.Game
             public MapDef map;
             public Transform root;
             public System.Random rng;
+            /// <summary>False for a second, preview map in the same scene: keep the sky and light already set.</summary>
+            public bool lighting = true;
             public readonly Dictionary<string, Material> materials = new Dictionary<string, Material>();
         }
 
@@ -75,6 +77,8 @@ namespace DuckAndCover.Game
             var t = b.kind == BlockKind.Ground || outer ? c.theme : ThemeAt(c, b.center.x, b.center.z);
             c.active = t;
             bool bigCrate = b.kind == BlockKind.Crate && Math.Max(b.size.x, b.size.z) > 3.5f;
+
+            if (!string.IsNullOrEmpty(b.style) && b.kind != BlockKind.Ground && DressStyled(c, go, b, t)) return;
 
             Material mat;
             float bevel, tile;
@@ -116,6 +120,62 @@ namespace DuckAndCover.Game
                 case BlockKind.Platform: Band(c, b, 1f - 0.12f / Math.Max(0.2f, b.size.y), 0.07f, Plain(c, t.glow, true)); break;
             }
         }
+
+        // ---------------- natural walls: tree lines and rocks ----------------
+
+        /// <summary>
+        /// Draws a block by its art style instead of its kind. The block keeps its box collider, so the
+        /// drawing fills the box closely: a tree line is a dense hedge with trunks rising out of it and
+        /// canopies high overhead; rocks are a chunky outcrop with boulders inside its footprint.
+        /// </summary>
+        static bool DressStyled(Context c, GameObject go, MapBlock b, EnvTheme t)
+        {
+            var size = b.size.ToVector3();
+            var centre = b.center.ToVector3();
+            var filter = go.GetComponent<MeshFilter>();
+            var renderer = go.GetComponent<Renderer>();
+            switch (b.style)
+            {
+                case "treeline":
+                {
+                    var hedge = Mat(c, PaintedTextures.Kind.Leaf, Shade(Pick(t.canopy, b), 0.72f), Shade(Pick(t.canopy, b), 0.72f));
+                    if (renderer != null) renderer.sharedMaterial = hedge;
+                    if (filter != null) filter.sharedMesh = EnvMesh.ChamferBox(size, Math.Min(0.7f, Math.Min(size.x, size.z) * 0.3f), centre, 2.5f);
+                    // Leafy lumps on the hedge, inside its box, so it reads as bushes rather than a block.
+                    var leaf = Mat(c, PaintedTextures.Kind.Leaf, Pick(t.canopy, b), Pick(t.canopy, b));
+                    int lumps = 2 + c.rng.Next(2);
+                    for (int i = 0; i < lumps; i++)
+                    {
+                        float sx = size.x * Range(c, 0.6f, 0.95f), sz = size.z * Range(c, 0.6f, 0.95f), sy = size.y * Range(c, 0.35f, 0.5f);
+                        float px = b.center.x + Range(c, -1f, 1f) * (size.x - sx) * 0.5f;
+                        float pz = b.center.z + Range(c, -1f, 1f) * (size.z - sz) * 0.5f;
+                        float py = b.Min.y + Range(c, sy * 0.5f, size.y - sy * 0.5f);
+                        Shape(c, PrimitiveType.Sphere, "Bush", new Vector3(px, py, pz), new Vector3(sx, sy, sz), leaf);
+                    }
+                    // Now and then a tree grows out of the hedge: trunk through the top, canopy well overhead.
+                    if (c.rng.NextDouble() < 0.45) Tree(c, new Vector3(b.center.x, b.Max.y - 1f, b.center.z), Range(c, 3.5f, 6f), Range(c, 2.4f, 3.6f));
+                    return true;
+                }
+                case "rocks":
+                {
+                    var rock = Mat(c, PaintedTextures.Kind.Rock, t.rock, t.rockCrack);
+                    if (renderer != null) renderer.sharedMaterial = rock;
+                    if (filter != null) filter.sharedMesh = EnvMesh.ChamferBox(size, Math.Min(0.6f, Math.Min(size.x, Math.Min(size.y, size.z)) * 0.3f), centre, 6f);
+                    // A boulder on top of the outcrop, turned a little, kept inside the footprint and below the top.
+                    float bs = Math.Min(size.x, size.z) * Range(c, 0.5f, 0.65f), bh = size.y * Range(c, 0.3f, 0.45f);
+                    float yaw = Range(c, -20f, 20f);
+                    var boulder = Box(c, "Boulder", new Vector3(b.center.x, b.Max.y - bh * 0.5f + 0.02f, b.center.z), new Vector3(bs, bh, bs), rock, bs * 0.25f, 6f);
+                    boulder.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+                    // Moss on top.
+                    var moss = Mat(c, PaintedTextures.Kind.Patch, t.patch, t.patch);
+                    Shape(c, PrimitiveType.Sphere, "Moss", new Vector3(b.center.x, b.Max.y - 0.05f, b.center.z), new Vector3(size.x * 0.8f, 0.12f, size.z * 0.8f), moss);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        static Color Shade(Color c, float k) => new Color(c.r * k, c.g * k, c.b * k, 1f);
 
         /// <summary>A building wall: dark base course, a cap course and a glowing strip near the top, vines down its faces.</summary>
         static void WallTrims(Context c, MapBlock b)
@@ -214,7 +274,7 @@ namespace DuckAndCover.Game
             var map = c.map;
             float hx = map.halfX, hz = map.halfZ;
 
-            Lighting(c, sun);
+            if (c.lighting) Lighting(c, sun);
 
             // Ground beyond the walls, just under the map's own floor.
             var groundMat = Mat(c, PaintedTextures.Kind.Ground, t.groundA, t.groundB);
@@ -252,6 +312,7 @@ namespace DuckAndCover.Game
             }
             foreach (var zone in map.zones)
             {
+                if (zone.set == "bases") continue; // Flag Rush's capture zones sit in the spawn rooms, shown only in that mode
                 c.active = ThemeAt(c, zone.center.x, zone.center.z);
                 var paving = Mat(c, PaintedTextures.Kind.Paving, c.active.paving, c.active.pavingMortar);
                 float r = zone.radius + 1.5f;
@@ -259,6 +320,7 @@ namespace DuckAndCover.Game
             }
 
             c.active = t;
+            Paths(c);
             Cliffs(c, hx, hz);
             if (t.mushroomTrees) Trees(c, hx, hz);
             if (t.overheadGantries) Gantries(c, hx, hz);
@@ -300,6 +362,84 @@ namespace DuckAndCover.Game
                 if (skyShader != null) cam.clearFlags = CameraClearFlags.Skybox;
                 else { cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = t.skyHorizon; }
                 cam.farClipPlane = Math.Max(cam.farClipPlane, 700f);
+            }
+        }
+
+        /// <summary>
+        /// Paints each art path flat on the ground: a lane of packed dirt with darker verges, or a narrow
+        /// mossy trail with a leafy arch overhead where it leaves the lane (a jungle entrance).
+        /// Strips sit 1 to 1.2 cm up: over floor patches, under zone paving.
+        /// </summary>
+        static void Paths(Context c)
+        {
+            foreach (var path in c.map.paths)
+            {
+                if (path.points.Count < 2) continue;
+                c.active = ThemeAt(c, path.points[0].x, path.points[0].z);
+                var t = c.active;
+                bool lane = path.style == "lane";
+                var top = lane ? Mat(c, PaintedTextures.Kind.Ground, t.laneA, t.laneB) : Mat(c, PaintedTextures.Kind.Patch, t.trail, t.trail);
+                var edge = Mat(c, PaintedTextures.Kind.Patch, t.verge, t.verge);
+                for (int i = 0; i + 1 < path.points.Count; i++)
+                {
+                    var a = path.points[i].ToVector3();
+                    var b = path.points[i + 1].ToVector3();
+                    if (lane) Strip(c, a, b, path.width + 1.6f, 0.010f, edge);
+                    Strip(c, a, b, path.width, lane ? 0.012f : 0.011f, top);
+                }
+                // Round joints so bends read as one curving path.
+                foreach (var p in path.points)
+                {
+                    var at = p.ToVector3();
+                    if (lane) Shape(c, PrimitiveType.Cylinder, "Verge", new Vector3(at.x, 0.005f, at.z), new Vector3(path.width + 1.6f, 0.005f, path.width + 1.6f), edge);
+                    Shape(c, PrimitiveType.Cylinder, "Joint", new Vector3(at.x, lane ? 0.006f : 0.0055f, at.z), new Vector3(path.width, lane ? 0.006f : 0.0055f, path.width), top);
+                }
+                if (path.style == "trail") Gateway(c, path);
+            }
+            c.active = c.theme;
+        }
+
+        /// <summary>A flat strip from a to b on the ground, its top at <paramref name="height"/>.</summary>
+        static void Strip(Context c, Vector3 a, Vector3 b, float width, float height, Material m)
+        {
+            float dx = b.x - a.x, dz = b.z - a.z;
+            float len = Mathf.Sqrt(dx * dx + dz * dz);
+            if (len < 0.01f) return;
+            var size = new Vector3(width, height, len);
+            var centre = new Vector3((a.x + b.x) * 0.5f, height * 0.5f, (a.z + b.z) * 0.5f);
+            var go = Box(c, "Path", centre, size, m, 0f, 6f);
+            go.transform.rotation = Quaternion.Euler(0f, Mathf.Atan2(dx, dz) * Mathf.Rad2Deg, 0f);
+        }
+
+        /// <summary>
+        /// Marks a way into the jungle: a leafy arch over the trail's first point, its underside 4.6 m up so
+        /// nobody can touch it, with vines and two glowing fruit hanging from it.
+        /// </summary>
+        static void Gateway(Context c, ArtPath path)
+        {
+            var t = c.active;
+            var a = path.points[0].ToVector3();
+            var b = path.points[1].ToVector3();
+            float dx = b.x - a.x, dz = b.z - a.z;
+            float len = Mathf.Sqrt(dx * dx + dz * dz);
+            if (len < 0.01f) return;
+            // Across the trail: perpendicular to its first leg.
+            float px = -dz / len, pz = dx / len;
+            float span = path.width + 3.2f;
+            var leaf = Mat(c, PaintedTextures.Kind.Leaf, Pick(t.canopy, c), Pick(t.canopy, c));
+            var fruit = Plain(c, t.bulb, true);
+            var mid = new Vector3(a.x, 5.1f, a.z);
+            int lumps = 4;
+            for (int i = 0; i < lumps; i++)
+            {
+                float f = (i / (float)(lumps - 1) - 0.5f) * span;
+                float rise = 0.6f * (1f - Mathf.Abs(f) / (span * 0.5f));
+                Shape(c, PrimitiveType.Sphere, "Arch", mid + new Vector3(px * f, rise, pz * f), new Vector3(2.2f, 1.0f, 2.2f), leaf);
+            }
+            for (int side = -1; side <= 1; side += 2)
+            {
+                var hang = mid + new Vector3(px * side * span * 0.28f, -0.8f, pz * side * span * 0.28f);
+                Shape(c, PrimitiveType.Sphere, "ArchFruit", hang, new Vector3(0.45f, 0.55f, 0.45f), fruit);
             }
         }
 
@@ -346,7 +486,7 @@ namespace DuckAndCover.Game
 
         static void Tree(Context c, Vector3 basePos, float height, float capRadius)
         {
-            var t = c.theme;
+            var t = c.active;
             var bark = Mat(c, PaintedTextures.Kind.Bark, t.trunk, t.trunkDark);
             var cap = Mat(c, PaintedTextures.Kind.Leaf, Pick(t.canopy, c), Pick(t.canopy, c));
             var fruit = Plain(c, t.bulb, true);
@@ -411,7 +551,7 @@ namespace DuckAndCover.Game
                 float a = k * (360f / n) + Range(c, -15f, 15f);
                 var go = Shape(c, PrimitiveType.Sphere, "Frond", at, new Vector3(size * 0.32f, 0.06f, size), leaf);
                 go.transform.rotation = Quaternion.Euler(-30f, a, 0f);
-                go.transform.position = at + go.transform.rotation * new Vector3(0f, 0f, size * 0.42f);
+                go.transform.localPosition = at + go.transform.rotation * new Vector3(0f, 0f, size * 0.42f);
             }
         }
 

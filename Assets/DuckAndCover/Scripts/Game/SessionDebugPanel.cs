@@ -70,6 +70,7 @@ namespace DuckAndCover.Game
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Capture and Hold")) modeId = "capture_hold";
             if (GUILayout.Button("King of the Hill")) modeId = "king_of_the_hill";
+            if (GUILayout.Button("Flag Rush")) modeId = "flag_rush";
             GUILayout.EndHorizontal();
 
             GUILayout.Space(8f);

@@ -1,5 +1,6 @@
 {
     "id": "capture_hold",
+    "objective": "zones",
     "displayName": "Capture and Hold",
     "zoneSet": "points",
     "activeZoneCount": 0,
