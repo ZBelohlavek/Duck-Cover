@@ -22,6 +22,16 @@ namespace DuckAndCover.UI
         readonly List<Color32> colors = new List<Color32>();
         readonly List<int> triangles = new List<int>();
 
+        /// <summary>Corners drawn now, and how many times Unity has asked for the mesh (for the capture's HUD check).</summary>
+        public int VertexCount => points.Count;
+        public int MeshBuilds { get; private set; }
+
+        protected VisorGraphic()
+        {
+            // The mesh path Image and Text use (VertexHelper straight to the renderer), not the old Mesh one.
+            useLegacyMeshGeneration = false;
+        }
+
         public void Clear()
         {
             points.Clear();
@@ -35,6 +45,7 @@ namespace DuckAndCover.UI
         protected override void OnPopulateMesh(VertexHelper vh)
         {
             vh.Clear();
+            MeshBuilds++;
             Color tint = color;
             for (int i = 0; i < points.Count; i++)
             {
@@ -51,14 +62,27 @@ namespace DuckAndCover.UI
             return points.Count - 1;
         }
 
+        /// <summary>
+        /// One triangle, always wound clockwise on screen as Unity's own Image and Text meshes are, so a
+        /// pipeline that culls back faces still draws it.
+        /// </summary>
+        void Tri(int a, int b, int c)
+        {
+            Vector3 pa = points[a], pb = points[b], pc = points[c];
+            float cross = (pb.x - pa.x) * (pc.y - pa.y) - (pb.y - pa.y) * (pc.x - pa.x);
+            triangles.Add(a);
+            if (cross > 0f) { triangles.Add(c); triangles.Add(b); }
+            else { triangles.Add(b); triangles.Add(c); }
+        }
+
         static Color Faded(Color c, float alpha) => new Color(c.r, c.g, c.b, c.a * alpha);
 
         /// <summary>A four-cornered patch, corners in order around it, each with its own colour (for gradients).</summary>
         public void Quad(Vector2 a, Vector2 b, Vector2 c, Vector2 d, Color ca, Color cb, Color cc, Color cd)
         {
             int i0 = Vert(a.x, a.y, ca), i1 = Vert(b.x, b.y, cb), i2 = Vert(c.x, c.y, cc), i3 = Vert(d.x, d.y, cd);
-            triangles.Add(i0); triangles.Add(i1); triangles.Add(i2);
-            triangles.Add(i0); triangles.Add(i2); triangles.Add(i3);
+            Tri(i0, i1, i2);
+            Tri(i0, i2, i3);
         }
 
         /// <summary>A filled convex shape, corners in order around it, with a glow fading out past its edges.</summary>
@@ -74,9 +98,7 @@ namespace DuckAndCover.UI
             foreach (var p in corners) Vert(p.x, p.y, c);
             for (int i = 0; i < corners.Count; i++)
             {
-                triangles.Add(centre);
-                triangles.Add(first + i);
-                triangles.Add(first + (i + 1) % corners.Count);
+                Tri(centre, first + i, first + (i + 1) % corners.Count);
             }
             if (glow <= 0f) return;
             for (int i = 0; i < corners.Count; i++)

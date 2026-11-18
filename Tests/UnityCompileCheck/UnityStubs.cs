@@ -112,6 +112,14 @@ namespace UnityEngine
         public static Font CreateDynamicFontFromOSFont(string fontname, int size) => null;
     }
 
+    public sealed class CanvasRenderer : Component
+    {
+        public bool cull { get; set; }
+        public bool cullTransparentMesh { get; set; }
+        public int materialCount { get; set; }
+        public float GetInheritedAlpha() => 1f;
+    }
+
     public enum FontStyle { Normal = 0, Bold = 1, Italic = 2, BoldAndItalic = 3 }
 
     public struct Vector4
@@ -521,6 +529,8 @@ namespace UnityEngine.UI
         public virtual bool raycastTarget { get; set; }
         public RectTransform rectTransform => null;
         public virtual void SetVerticesDirty() { }
+        protected bool useLegacyMeshGeneration { get; set; }
+        public CanvasRenderer canvasRenderer => null;
         protected virtual void OnPopulateMesh(VertexHelper vh) { }
     }
 

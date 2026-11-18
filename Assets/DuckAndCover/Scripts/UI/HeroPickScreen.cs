@@ -51,7 +51,7 @@ namespace DuckAndCover.UI
             screen = layer.gameObject;
 
             var glass = UIKit.Lines(layer, "Glass");
-            Color dark = UITheme.WithAlpha(UITheme.Glass, 0.55f), clear = UITheme.WithAlpha(UITheme.Glass, 0.15f);
+            Color dark = UITheme.WithAlpha(UITheme.Glass, 0.8f), clear = UITheme.WithAlpha(UITheme.Glass, 0.45f);
             glass.Quad(new Vector2(0f, 0f), new Vector2(1920f, 0f), new Vector2(1920f, 1080f), new Vector2(0f, 1080f), dark, dark, clear, clear);
             glass.Segment(new Vector2(560f, 836f), new Vector2(1360f, 836f), 1.2f, UITheme.VisorFaint, 3f);
             glass.Fill(VisorGraphic.Regular(960f, 836f, 5f, 4, 90f), UITheme.Visor, 3f);
@@ -62,12 +62,12 @@ namespace DuckAndCover.UI
             subtitle = UIKit.Readout(layer, "Subtitle", new Vector2(960f, 806f), new Vector2(900f, 28f), "", 20, UITheme.Text, TextAnchor.MiddleCenter);
             lineupTitle = UIKit.Readout(layer, "LineupTitle", new Vector2(960f, LineupY + 56f), new Vector2(900f, 22f), "", 16, UITheme.TextDim, TextAnchor.MiddleCenter, true);
             hint = UIKit.Readout(layer, "Hint", new Vector2(960f, 96f), new Vector2(1200f, 26f), "", 19, UITheme.Warning, TextAnchor.MiddleCenter, true);
-            UIKit.Readout(layer, "Keys", new Vector2(960f, 62f), new Vector2(900f, 22f), "PRESS 1 - 4 OR CLICK A HERO", 15, UITheme.TextDim, TextAnchor.MiddleCenter);
+            UIKit.Readout(layer, "Keys", new Vector2(960f, 62f), new Vector2(900f, 22f), "PRESS 1 - 4 OR CLICK A HERO", 17, UITheme.TextDim, TextAnchor.MiddleCenter);
             for (int j = 0; j < Roles.Lineup.Length; j++)
             {
                 float x = ChipX(j);
                 chipLabels.Add(UIKit.Readout(layer, "Role" + j, new Vector2(x + 4f, LineupY + 18f), new Vector2(ChipWidth, 24f), "", 18, UITheme.Text, TextAnchor.MiddleCenter, true));
-                chipNames.Add(UIKit.Readout(layer, "RoleNames" + j, new Vector2(x, LineupY - 16f), new Vector2(ChipWidth + 10f, 20f), "", 14, UITheme.TextDim, TextAnchor.MiddleCenter));
+                chipNames.Add(UIKit.Readout(layer, "RoleNames" + j, new Vector2(x, LineupY - 16f), new Vector2(ChipWidth + 10f, 22f), "", 16, UITheme.TextDim, TextAnchor.MiddleCenter));
             }
             screen.SetActive(false);
         }
@@ -89,10 +89,10 @@ namespace DuckAndCover.UI
                 card.name = UIKit.Readout(layer, "Name" + hero.id, new Vector2(mid, CardBottom + 236f), new Vector2(CardWidth, 46f), hero.displayName.ToUpperInvariant(), 38, UITheme.ForHero(hero.id), TextAnchor.MiddleCenter, true);
                 card.role = UIKit.Readout(layer, "RoleTag" + hero.id, new Vector2(mid, CardBottom + 188f), new Vector2(CardWidth, 24f), Roles.Label(hero.role).ToUpperInvariant(), 18, UITheme.Text, TextAnchor.MiddleCenter, true);
                 UIKit.Readout(layer, "Stats" + hero.id, new Vector2(mid - 4f, CardBottom + 146f), new Vector2(CardWidth, 20f),
-                              "HEALTH " + Mathf.RoundToInt(hero.maxHealth) + "   //   " + hero.weaponId.ToUpperInvariant(), 14, UITheme.TextDim, TextAnchor.MiddleCenter);
-                var kit = UIKit.Readout(layer, "Kit" + hero.id, new Vector2(mid - 8f, CardBottom + 82f), new Vector2(CardWidth - 30f, 90f), Kit(hero), 15, UITheme.Text, TextAnchor.UpperCenter);
+                              "HEALTH " + Mathf.RoundToInt(hero.maxHealth) + "   //   " + hero.weaponId.ToUpperInvariant(), 16, UITheme.TextDim, TextAnchor.MiddleCenter);
+                var kit = UIKit.Readout(layer, "Kit" + hero.id, new Vector2(mid - 8f, CardBottom + 82f), new Vector2(CardWidth - 30f, 90f), Kit(hero), 17, UITheme.Text, TextAnchor.UpperCenter);
                 kit.horizontalOverflow = HorizontalWrapMode.Wrap;
-                card.others = UIKit.Readout(layer, "Others" + hero.id, new Vector2(mid - 10f, CardBottom + 18f), new Vector2(CardWidth - 20f, 20f), "", 14, UITheme.TextDim, TextAnchor.MiddleCenter);
+                card.others = UIKit.Readout(layer, "Others" + hero.id, new Vector2(mid - 10f, CardBottom + 18f), new Vector2(CardWidth - 20f, 20f), "", 15, UITheme.TextDim, TextAnchor.MiddleCenter);
                 cards.Add(card);
             }
         }
@@ -174,7 +174,7 @@ namespace DuckAndCover.UI
                 Color tone = UITheme.ForHero(card.hero.id);
                 bool mine = me.heroId == card.hero.id;
                 var shape = VisorGraphic.Slanted(card.left, CardBottom, CardWidth, CardHeight, CardSlant);
-                g.Fill(shape, mine ? UITheme.WithAlpha(tone, 0.22f) : UITheme.Glass);
+                g.Fill(shape, mine ? new Color(tone.r * 0.25f, tone.g * 0.25f, tone.b * 0.25f, 0.8f) : UITheme.WithAlpha(UITheme.Glass, 0.75f));
                 g.Line(shape, mine ? 2.6f : hover == i ? 2f : 1.4f, mine || hover == i ? tone : UITheme.WithAlpha(tone, 0.6f), true, mine ? 8f : hover == i ? 5f : 0f);
                 // A band of the hero's colour across the top, and the key's tag in the corner.
                 const float band = 14f;

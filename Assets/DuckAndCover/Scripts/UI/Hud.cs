@@ -33,10 +33,12 @@ namespace DuckAndCover.UI
 
         Canvas canvas;
         GameObject fight;
-        VisorGraphic frame, vitals, badge, ammoRow, hitMarker, choiceLines, headerLines, centreLines;
+        VisorGraphic frame, crosshair, vitals, badge, ammoRow, hitMarker, choiceLines, headerLines, centreLines;
         Text healthText, levelText, xpText, heroText, stanceText, ammoText, magazineText, weaponText, reloadText;
         Text centerText, feedText;
         string frameHero;
+        float fightingSince = -1f;
+        bool visorChecked;
         int lastLevel = -1;
         float lastXpShare = -1f;
 
@@ -111,7 +113,7 @@ namespace DuckAndCover.UI
 
         void BuildCrosshair(Transform f)
         {
-            var cross = UIKit.Lines(f, "Crosshair");
+            var cross = crosshair = UIKit.Lines(f, "Crosshair");
             const float cx = 960f, cy = 540f;
             cross.Fill(VisorGraphic.Regular(cx, cy, 2.2f, 8, 0f), UITheme.Text, 2f);
             cross.Segment(new Vector2(cx - 24f, cy), new Vector2(cx - 10f, cy), 2f, UITheme.Text, 3f);
@@ -137,12 +139,12 @@ namespace DuckAndCover.UI
         {
             vitals = UIKit.Lines(f, "Vitals");
             badge = UIKit.Lines(f, "LevelBadge");
-            UIKit.Readout(f, "LevelTag", new Vector2(Badge.x, Badge.y + 30f), new Vector2(60f, 20f), "LEVEL", 13, UITheme.TextDim, TextAnchor.MiddleCenter);
+            UIKit.Readout(f, "LevelTag", new Vector2(Badge.x, Badge.y + 30f), new Vector2(60f, 20f), "LEVEL", 15, UITheme.TextDim, TextAnchor.MiddleCenter);
             levelText = UIKit.Readout(f, "Level", new Vector2(Badge.x, Badge.y - 4f), new Vector2(100f, 56f), "", 44, UITheme.Text, TextAnchor.MiddleCenter, true);
-            xpText = UIKit.Readout(f, "Xp", new Vector2(BarX + 150f, 74f), new Vector2(300f, 24f), "", 17, UITheme.TextDim, TextAnchor.MiddleLeft);
+            xpText = UIKit.Readout(f, "Xp", new Vector2(BarX + 150f, 74f), new Vector2(300f, 24f), "", 19, UITheme.TextDim, TextAnchor.MiddleLeft);
             heroText = UIKit.Readout(f, "Hero", new Vector2(BarX + 150f, 176f), new Vector2(300f, 30f), "", 24, UITheme.Text, TextAnchor.MiddleLeft, true);
             stanceText = UIKit.Readout(f, "Stance", new Vector2(BarX + 200f, 208f), new Vector2(400f, 26f), "", 18, UITheme.TextDim, TextAnchor.MiddleLeft);
-            UIKit.Readout(f, "HealthTag", new Vector2(BarX + BarWidth + 64f, HealthY + 44f), new Vector2(100f, 18f), "HEALTH", 13, UITheme.TextDim, TextAnchor.MiddleLeft);
+            UIKit.Readout(f, "HealthTag", new Vector2(BarX + BarWidth + 64f, HealthY + 44f), new Vector2(100f, 18f), "HEALTH", 15, UITheme.TextDim, TextAnchor.MiddleLeft);
             healthText = UIKit.Readout(f, "HealthText", new Vector2(BarX + BarWidth + 74f, HealthY + 12f), new Vector2(120f, 50f), "", 42, UITheme.Text, TextAnchor.MiddleLeft, true);
         }
 
@@ -173,9 +175,9 @@ namespace DuckAndCover.UI
                 slot.lines = UIKit.Lines(f, "Ability" + i);
                 float top = SlotY + slot.height;
                 float left = slot.x - slot.width * 0.5f - 7f;
-                slot.key = UIKit.Readout(f, "AbilityKey" + i, new Vector2(left + 18f, top + 16f), new Vector2(26f, 22f), AbilityKeys[i], 16, UITheme.Text, TextAnchor.MiddleCenter, true);
+                slot.key = UIKit.Readout(f, "AbilityKey" + i, new Vector2(left + 18f, top + 16f), new Vector2(26f, 22f), AbilityKeys[i], 18, UITheme.Text, TextAnchor.MiddleCenter, true);
                 slot.status = UIKit.Readout(f, "AbilityStatus" + i, new Vector2(slot.x + 7f, SlotY + slot.height * 0.5f), new Vector2(slot.width, 40f), "", 26, UITheme.Text, TextAnchor.MiddleCenter, true);
-                slot.name = UIKit.Readout(f, "AbilityName" + i, new Vector2(slot.x, SlotY - 16f), new Vector2(150f, 22f), "", 15, UITheme.TextDim, TextAnchor.MiddleCenter, true);
+                slot.name = UIKit.Readout(f, "AbilityName" + i, new Vector2(slot.x, SlotY - 16f), new Vector2(170f, 22f), "", 17, UITheme.TextDim, TextAnchor.MiddleCenter, true);
                 slots.Add(slot);
             }
         }
@@ -219,7 +221,7 @@ namespace DuckAndCover.UI
             emblem.Commit();
             headerLines = UIKit.Lines(h, "TeamBars");
             headerClock = UIKit.Readout(h, "Clock", new Vector2(960f, HeaderY), new Vector2(120f, 40f), "", 24, UITheme.Text, TextAnchor.MiddleCenter, true);
-            headerGoal = UIKit.Readout(h, "Goal", new Vector2(960f, HeaderY - 66f), new Vector2(360f, 22f), "", 15, UITheme.TextDim, TextAnchor.MiddleCenter, true);
+            headerGoal = UIKit.Readout(h, "Goal", new Vector2(960f, HeaderY - 66f), new Vector2(420f, 22f), "", 17, UITheme.TextDim, TextAnchor.MiddleCenter, true);
             headerScoreA = UIKit.Readout(h, "ScoreA", new Vector2(960f - TeamBarInner - 70f, HeaderY - 30f), new Vector2(120f, 36f), "0", 30, UITheme.TeamA, TextAnchor.MiddleRight, true);
             headerScoreB = UIKit.Readout(h, "ScoreB", new Vector2(960f + TeamBarInner + 70f, HeaderY - 30f), new Vector2(120f, 36f), "0", 30, UITheme.TeamB, TextAnchor.MiddleLeft, true);
 
@@ -249,8 +251,8 @@ namespace DuckAndCover.UI
                 var card = new BastionCard { team = team, tier = tier, x = x };
                 card.lines = UIKit.Lines(overrunRow.transform, name);
                 float top = HeaderY + CardHeight * 0.5f;
-                UIKit.Readout(overrunRow.transform, name + "Name", new Vector2(x - 44f, top - 14f), new Vector2(110f, 20f), TierName(tier).ToUpperInvariant(), 15, UITheme.Text, TextAnchor.MiddleLeft, true);
-                card.state = UIKit.Readout(overrunRow.transform, name + "State", new Vector2(x + 50f, top - 14f), new Vector2(90f, 20f), "", 14, UITheme.TextDim, TextAnchor.MiddleRight, true);
+                UIKit.Readout(overrunRow.transform, name + "Name", new Vector2(x - 44f, top - 14f), new Vector2(110f, 20f), TierName(tier).ToUpperInvariant(), 17, UITheme.Text, TextAnchor.MiddleLeft, true);
+                card.state = UIKit.Readout(overrunRow.transform, name + "State", new Vector2(x + 50f, top - 14f), new Vector2(90f, 20f), "", 16, UITheme.TextDim, TextAnchor.MiddleRight, true);
                 bastionCards.Add(card);
             }
         }
@@ -396,6 +398,7 @@ namespace DuckAndCover.UI
             if (!fighting) return;
 
             if (frameHero != me.heroId) DrawFrame(me.heroId);
+            CheckVisor();
             var unit = snapshot.abilities == null ? null : snapshot.abilities.Unit(me.id);
             ShowVitals(snapshot, me, unit, local, runner);
             ShowWeapon(local);
@@ -405,6 +408,24 @@ namespace DuckAndCover.UI
             bool hit = Time.time - local.LastHitAt < HitMarkerSeconds;
             if (hitMarker.gameObject.activeSelf != hit) hitMarker.gameObject.SetActive(hit);
             if (hit) hitMarker.color = local.LastHitEliminated ? UITheme.Danger : local.LastHitWasHead ? UITheme.Warning : UITheme.Text;
+        }
+
+        /// <summary>
+        /// Once a second into the first fight, log whether the visor's line work is being built (the
+        /// capture's log shows it), and warn if a graphic holds shapes that Unity never asked to draw.
+        /// </summary>
+        void CheckVisor()
+        {
+            if (visorChecked) return;
+            if (fightingSince < 0f) fightingSince = Time.unscaledTime;
+            if (Time.unscaledTime - fightingSince < 1f) return;
+            visorChecked = true;
+            var r = crosshair.canvasRenderer;
+            string line = "Duck and Cover: visor check, crosshair " + crosshair.VertexCount + " corners, " + crosshair.MeshBuilds + " mesh builds, active " +
+                          crosshair.isActiveAndEnabled + ", cull " + r.cull + ", materials " + r.materialCount + ", inherited alpha " + r.GetInheritedAlpha() +
+                          "; health bars " + vitals.VertexCount + " corners, " + vitals.MeshBuilds + " builds.";
+            if (crosshair.VertexCount > 0 && crosshair.MeshBuilds == 0) Debug.LogWarning(line);
+            else Debug.Log(line);
         }
 
         void ShowVitals(MatchSnapshot snapshot, PlayerState me, HeroUnit unit, LocalPlayer local, SessionRunner runner)
