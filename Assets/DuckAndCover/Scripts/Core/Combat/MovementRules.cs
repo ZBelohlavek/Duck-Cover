@@ -12,7 +12,7 @@ namespace DuckAndCover.Core
     /// puts the player back where the server had them. It also places players at spawns and feeds
     /// the lag compensation history once per tick.
     /// </summary>
-    public sealed class MovementRules
+    public sealed partial class MovementRules
     {
         sealed class Allowance
         {
@@ -73,6 +73,7 @@ namespace DuckAndCover.Core
             if (m == null) return CommandResult.Reject("not placed yet");
             if (cmd.placement != m.placement) return CommandResult.Accepted; // made before the latest teleport: stale, ignored
             if (!IsFinite(cmd.position) || !IsFinite(cmd.velocity)) return Correct(m, "bad position");
+            if (Flying(cmd.playerId)) return ApplyInFlight(m, cmd);
 
             Vec3 delta = cmd.position - m.position;
             float flat = (float)Math.Sqrt(delta.x * delta.x + delta.z * delta.z);
@@ -90,11 +91,13 @@ namespace DuckAndCover.Core
             m.grounded = cmd.grounded;
             m.sprinting = cmd.sprinting && !cmd.crouched;
             m.vaulting = cmd.vaulting;
+            LaunchIfOnPad(m);
             return CommandResult.Accepted;
         }
 
         CommandResult Correct(PlayerMotion m, string reason)
         {
+            Land(m.playerId);
             m.placement++;
             m.velocity = Vec3.Zero;
             Publish(new PlayerPlacedEvent { playerId = m.playerId, position = m.position, yaw = m.yaw, placement = m.placement, correction = true });
@@ -141,6 +144,7 @@ namespace DuckAndCover.Core
             m.sprinting = false;
             m.vaulting = false;
             m.placement++;
+            Land(playerId);
             AllowanceOf(playerId).metres = MaxAllowance(playerId);
             Publish(new PlayerPlacedEvent { playerId = playerId, position = m.position, yaw = m.yaw, placement = m.placement });
         }
@@ -154,6 +158,7 @@ namespace DuckAndCover.Core
             m.yaw = yaw;
             m.velocity = Vec3.Zero;
             m.placement++;
+            Land(playerId);
             AllowanceOf(playerId).metres = MaxAllowance(playerId);
             Publish(new PlayerPlacedEvent { playerId = playerId, position = position, yaw = yaw, placement = m.placement });
             return true;
@@ -193,6 +198,7 @@ namespace DuckAndCover.Core
         /// <summary>Refill allowances and record every body in the lag compensation history. Call once per tick, after the match.</summary>
         public void Tick(float dt)
         {
+            TickFlights(dt);
             foreach (var m in motions)
             {
                 bool alive = State.IsAlive(m.playerId);

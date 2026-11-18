@@ -93,7 +93,10 @@ namespace DuckAndCover.Core
         }
 
         /// <summary>Seconds from a point to every cell (Dijkstra).</summary>
-        public Field TravelFrom(Vec3 start)
+        public Field TravelFrom(Vec3 start) => TravelFrom(start, null);
+
+        /// <summary>Seconds from a point to every cell, stepping only on cells <paramref name="allowed"/> accepts (by column and row; null allows all).</summary>
+        public Field TravelFrom(Vec3 start, Func<int, int, bool> allowed)
         {
             var dist = new float[height.Length];
             var prev = new int[height.Length];
@@ -114,6 +117,7 @@ namespace DuckAndCover.Core
                     int ni = i + Di[n], nj = j + Dj[n];
                     if (ni < 0 || nj < 0 || ni >= width || nj >= depth) continue;
                     int nk = nj * width + ni;
+                    if (allowed != null && !allowed(ni, nj)) continue;
                     float c;
                     if (n < 4) c = StepCost(k, nk, cell);
                     else
