@@ -12,6 +12,10 @@ namespace DuckAndCover.Game
     /// over <see cref="ShiftSeconds"/>. It follows the state rather than the event, so a player who
     /// joins after the shift sees the map already open, and a new match shuts it again.
     /// The host's physics is this same scene, so the server's rays see the shutters go too.
+    ///
+    /// In Overrun (WP19) each base's side gate opens on its own, when that base's Forward Bastion falls
+    /// (<see cref="OverrunState.GateOpen"/>): a shift block whose name ends in A or B belongs to that
+    /// team's base. A Bastion that has fallen drops to a dark stump and loses its crown.
     /// </summary>
     public class MapView : MonoBehaviour
     {
@@ -34,6 +38,14 @@ namespace DuckAndCover.Game
             public float t;
         }
 
+        class BastionMarks
+        {
+            public MapBastion spot;
+            public GameObject pillar, crown;
+            public bool down;
+            public Color crownShown = Color.white;
+        }
+
         class ZoneMarks
         {
             public MapZone zone;
@@ -44,6 +56,22 @@ namespace DuckAndCover.Game
 
         readonly List<ShiftPiece> pieces = new List<ShiftPiece>();
         readonly List<ZoneMarks> zones = new List<ZoneMarks>();
+        readonly List<BastionMarks> bastions = new List<BastionMarks>();
+
+        static readonly Color Rubble = new Color(0.20f, 0.20f, 0.22f);
+        /// <summary>A fallen Bastion's stump keeps this share of its height.</summary>
+        const float StumpShare = 0.18f;
+
+        public void AddBastion(MapBastion spot, GameObject pillar, GameObject crown) =>
+            bastions.Add(new BastionMarks { spot = spot, pillar = pillar, crown = crown });
+
+        /// <summary>The base a shift block belongs to in Overrun: Breakwater names each pair's blocks ...A and ...B.</summary>
+        static TeamId BaseOf(MapBlock b)
+        {
+            if (string.IsNullOrEmpty(b.name)) return TeamId.None;
+            char last = b.name[b.name.Length - 1];
+            return last == 'A' ? TeamId.A : last == 'B' ? TeamId.B : TeamId.None;
+        }
 
         public void AddShiftBlock(GameObject go, MapBlock block)
         {
@@ -61,15 +89,38 @@ namespace DuckAndCover.Game
             var runner = SessionRunner.Instance;
             var state = runner == null || runner.Client == null ? null : runner.Client.State;
             bool shifted = state != null ? state.mapShifted : PreviewShift;
+            var overrun = runner == null || runner.Client == null || runner.Client.Snapshot == null ? null : runner.Client.Snapshot.overrun;
 
             float step = Time.deltaTime / ShiftSeconds;
             foreach (var p in pieces)
             {
-                float target = shifted ? 1f : 0f;
+                // Overrun opens each base's gate on its own; a block of neither base follows the whole-map shift.
+                var team = overrun == null ? TeamId.None : BaseOf(p.block);
+                bool open = team != TeamId.None ? overrun.GateOpen(team) : shifted;
+                float target = open ? 1f : 0f;
                 if (Mathf.Approximately(p.t, target)) continue;
                 // A new match (or a late join) snaps; a shift during play rolls.
                 p.t = state != null && state.phase != MatchPhase.Play && state.phase != MatchPhase.Overtime ? target : Mathf.MoveTowards(p.t, target, step);
                 Pose(p);
+            }
+
+            foreach (var b in bastions)
+            {
+                var live = overrun == null ? null : overrun.Bastion(b.spot.team, b.spot.tier);
+                bool down = live != null && !live.alive;
+                if (down != b.down)
+                {
+                    b.down = down;
+                    ShowBastion(b);
+                }
+                // The crown says who may hurt it: grey while sealed, the enemy's colour while their minions
+                // are near (their heroes can hurt it now), white otherwise.
+                var crown = live == null || down ? Color.white : live.sealedOff ? Locked : live.openToHeroes ? TeamColor(b.spot.team.Other()) : Color.white;
+                if (b.crown != null && crown != b.crownShown)
+                {
+                    b.crownShown = crown;
+                    Paint.Apply(b.crown, crown);
+                }
             }
 
             string modeSet = state == null ? null : SessionRunner.ModeById(state.modeId).zoneSet;
@@ -88,6 +139,19 @@ namespace DuckAndCover.Game
                 z.shown = color;
                 foreach (var part in z.parts) if (part != null) Paint.Apply(part, color);
             }
+        }
+
+        /// <summary>Standing: the full pillar in its team's colour under the crown. Fallen: a dark stump, no crown.</summary>
+        static void ShowBastion(BastionMarks b)
+        {
+            if (b.pillar == null) return;
+            float h = MapScene.BastionHeight(b.spot.tier) * (b.down ? StumpShare : 1f);
+            var p = b.spot.position.ToVector3();
+            var size = b.pillar.transform.localScale;
+            b.pillar.transform.localScale = new Vector3(size.x, h * 0.5f, size.z);
+            b.pillar.transform.localPosition = p + new Vector3(0f, h * 0.5f, 0f);
+            Paint.Apply(b.pillar, b.down ? Rubble : TeamColor(b.spot.team));
+            if (b.crown != null) b.crown.SetActive(!b.down);
         }
 
         static Color TeamColor(TeamId team) => team == TeamId.A ? MapScene.TeamA : team == TeamId.B ? MapScene.TeamB : Neutral;

@@ -7,6 +7,17 @@ namespace DuckAndCover.Core
     {
         /// <summary>Bastions, the late push and Overrun experience (WP16). Cloned by the Overrun rules at the start of a match.</summary>
         public OverrunRuleset overrun = new OverrunRuleset();
+
+        /// <summary>
+        /// The unit kind with this id among the lane kinds (minions, camp guards) and the Overrun kinds
+        /// (Bastions), or null. Clients use it to size and name what they draw.
+        /// </summary>
+        public UnitDef UnitKind(string typeId)
+        {
+            if (lanes != null && lanes.units != null) foreach (var u in lanes.units) if (u != null && u.id == typeId) return u;
+            if (overrun != null && overrun.units != null) foreach (var u in overrun.units) if (u != null && u.id == typeId) return u;
+            return null;
+        }
     }
 
     /// <summary>

@@ -9,7 +9,9 @@ namespace DuckAndCover.UI
     /// <summary>
     /// The fighting HUD: crosshair and hit marker, health and shield, the weapon and its ammo, the
     /// hero's abilities with their cooldowns, level and experience, the upgrade on offer, the respawn
-    /// countdown, who took whom down, and in Flag Rush the captures and where the flag is (WP21).
+    /// countdown, who took whom down, in Flag Rush the captures and where the flag is (WP21), and in
+    /// Overrun (WP19) the four Bastions with their shields and health, who may hurt them, the clock, the
+    /// next wave and the late push.
     /// It reads the latest state and the local player; it decides
     /// nothing. Score and zones come with WP6; the ability and upgrade panels here are plain text
     /// stand-ins until the hero UI (WP12).
@@ -30,6 +32,17 @@ namespace DuckAndCover.UI
         GameObject choicePanel;
         GameObject flagPanel;
         Text flagScoreA, flagScoreB, flagGoal, flagStatus;
+        GameObject overrunPanel;
+        Text overrunScoreA, overrunScoreB, overrunClock, overrunStatus;
+        sealed class BastionCard
+        {
+            public TeamId team;
+            public BastionTier tier;
+            public RectTransform shield, health;
+            public Text state;
+        }
+        readonly List<BastionCard> bastionCards = new List<BastionCard>();
+        const float BastionBarWidth = 190f;
         static readonly string[] AbilityKeys = { "E", "F", "X" };
         GameObject hitMarker;
         readonly List<Image> hitTicks = new List<Image>();
@@ -113,6 +126,32 @@ namespace DuckAndCover.UI
             flagStatus = UIKit.Label(fp, "FlagStatus", tm, new Vector2(0f, -104f), new Vector2(1100f, 40f), "", 26, UITheme.Text, TextAnchor.MiddleCenter);
             flagPanel.SetActive(false);
 
+            // Top middle, Overrun only: Bastions destroyed each side, the clock, and the four Bastions in
+            // the order they stand along the lane (A's Core, A's Forward, B's Forward, B's Core).
+            overrunPanel = UIKit.Rect(root, "Overrun", tm, new Vector2(0f, -30f), new Vector2(1920f, 150f)).gameObject;
+            var op = overrunPanel.transform;
+            UIKit.Box(op, "ScoreBack", tm, new Vector2(0f, -10f), new Vector2(300f, 76f), UITheme.Panel);
+            UIKit.Box(op, "ScoreA", tm, new Vector2(-105f, -18f), new Vector2(70f, 60f), UITheme.TeamA);
+            UIKit.Box(op, "ScoreB", tm, new Vector2(105f, -18f), new Vector2(70f, 60f), UITheme.TeamB);
+            overrunScoreA = UIKit.Label(op, "DestroyedA", tm, new Vector2(-105f, -18f), new Vector2(70f, 60f), "0", 38, UITheme.Text, TextAnchor.MiddleCenter);
+            overrunScoreB = UIKit.Label(op, "DestroyedB", tm, new Vector2(105f, -18f), new Vector2(70f, 60f), "0", 38, UITheme.Text, TextAnchor.MiddleCenter);
+            overrunClock = UIKit.Label(op, "Clock", tm, new Vector2(0f, -18f), new Vector2(140f, 60f), "", 22, UITheme.Text, TextAnchor.MiddleCenter);
+            var order = new[] { (TeamId.A, BastionTier.Core, -560f), (TeamId.A, BastionTier.Forward, -335f), (TeamId.B, BastionTier.Forward, 335f), (TeamId.B, BastionTier.Core, 560f) };
+            foreach (var (team, tier, x) in order)
+            {
+                string name = "Bastion" + team + tier;
+                UIKit.Box(op, name + "Back", tm, new Vector2(x, -10f), new Vector2(210f, 76f), UITheme.Panel);
+                UIKit.Box(op, name + "Team", tm, new Vector2(x, -10f), new Vector2(210f, 5f), UITheme.ForTeam(team));
+                UIKit.Label(op, name + "Name", tm, new Vector2(x - 40f, -16f), new Vector2(120f, 24f), tier == BastionTier.Core ? "Core" : "Forward", 18, UITheme.Text, TextAnchor.MiddleLeft);
+                var card = new BastionCard { team = team, tier = tier };
+                card.state = UIKit.Label(op, name + "State", tm, new Vector2(x + 50f, -16f), new Vector2(100f, 24f), "", 16, UITheme.TextDim, TextAnchor.MiddleRight);
+                card.shield = UIKit.Bar(op, name + "Shield", tm, new Vector2(x, -44f), new Vector2(BastionBarWidth, 8f), ShieldColor);
+                card.health = UIKit.Bar(op, name + "Health", tm, new Vector2(x, -56f), new Vector2(BastionBarWidth, 14f), HealthColor);
+                bastionCards.Add(card);
+            }
+            overrunStatus = UIKit.Label(op, "OverrunStatus", tm, new Vector2(0f, -100f), new Vector2(1300f, 36f), "", 24, UITheme.Text, TextAnchor.MiddleCenter);
+            overrunPanel.SetActive(false);
+
             // Messages in the middle, and the feed top right. These show outside the fight too.
             centerText = UIKit.Label(root, "Center", new Vector2(0.5f, 0.5f), new Vector2(0f, 160f), new Vector2(1200f, 80f), "", 40, UITheme.Text, TextAnchor.MiddleCenter);
             feedText = UIKit.Label(root, "Feed", new Vector2(1f, 1f), new Vector2(-40f, -40f), new Vector2(700f, 160f), "", 22, UITheme.Text, TextAnchor.UpperRight);
@@ -150,11 +189,43 @@ namespace DuckAndCover.UI
                 case FlagResetEvent _:
                     line = "The flag reset";
                     break;
+                case BastionShieldBrokenEvent broken:
+                    line = TeamName(broken.team) + "'s " + TierName(broken.tier) + " Bastion: shield down";
+                    break;
+                case BastionDestroyedEvent fallen:
+                    line = TeamName(fallen.byTeam) + "  DESTROYED  " + TeamName(fallen.team) + "'s " + TierName(fallen.tier) + " Bastion";
+                    break;
+                case SideGateOpenedEvent gate:
+                    line = TeamName(gate.team) + "'s side gate is open";
+                    break;
+                case LatePushStartedEvent _:
+                    line = "Late push: waves come faster, Bastions take more damage";
+                    break;
+                case CampTakenEvent camp:
+                    line = TeamName(camp.team) + "  took the " + CampName(camp.kind) + " camp";
+                    break;
+                case WaveSpawnedEvent wave when wave.juggernaut:
+                    line = TeamName(wave.team) + "'s Juggernaut joins the wave";
+                    break;
                 default:
                     return;
             }
             feed.Add(new KeyValuePair<float, string>(Time.unscaledTime, line));
             if (feed.Count > 5) feed.RemoveAt(0);
+        }
+
+        static string TierName(BastionTier tier) => tier == BastionTier.Core ? "Core" : "Forward";
+
+        static string CampName(CampKind kind)
+        {
+            switch (kind)
+            {
+                case CampKind.Juggernaut: return "Juggernaut";
+                case CampKind.Damage: return "damage";
+                case CampKind.Experience: return "experience";
+                case CampKind.Speed: return "speed";
+                default: return kind.ToString();
+            }
         }
 
         static string TeamName(TeamId team) => team == TeamId.A ? "Team A" : team == TeamId.B ? "Team B" : "nobody";
@@ -182,6 +253,7 @@ namespace DuckAndCover.UI
 
             centerText.text = CenterMessage(snapshot, me);
             ShowFlag(snapshot, me);
+            ShowOverrun(snapshot, me);
             if (!fighting) return;
 
             var unit = snapshot.abilities == null ? null : snapshot.abilities.Unit(me.id);
@@ -263,7 +335,7 @@ namespace DuckAndCover.UI
             int level = LocalPlayer.PendingLevel(snapshot, me.id, SessionRunner.Instance.ClientRules.progression);
             var hero = level > 0 ? HeroData.Catalog.Resolve(me.heroId) : null;
             var offer = hero == null ? null : hero.Level(level);
-            bool show = offer != null && offer.options != null && offer.options.Length >= 2;
+            bool show = offer != null && offer.options != null && offer.options.Length >= 2 && !ScreenshotDirector.HideTraits;
             if (choicePanel.activeSelf != show) choicePanel.SetActive(show);
             if (!show) return;
             var left = hero.Upgrade(offer.options[0]);
@@ -328,6 +400,76 @@ namespace DuckAndCover.UI
             }
             flagStatus.text = line;
             flagStatus.color = color;
+        }
+
+        /// <summary>Overrun: Bastions destroyed each side, the clock, each Bastion's shield and health, and one line on what to do.</summary>
+        void ShowOverrun(MatchSnapshot snapshot, PlayerState me)
+        {
+            var o = snapshot == null ? null : snapshot.overrun;
+            var state = snapshot == null ? null : snapshot.match;
+            bool show = o != null && state != null && state.phase >= MatchPhase.Deploy;
+            if (overrunPanel.activeSelf != show)
+            {
+                overrunPanel.SetActive(show);
+                // The feed moves down under the Bastion cards while they show.
+                feedText.rectTransform.anchoredPosition = new Vector2(-40f, show ? -200f : -40f);
+            }
+            if (!show) return;
+
+            overrunScoreA.text = state.scoreA.ToString();
+            overrunScoreB.text = state.scoreB.ToString();
+            var mode = SessionRunner.ModeById(state.modeId);
+            if (state.phase == MatchPhase.Overtime) { overrunClock.text = "SUDDEN\nDEATH"; overrunClock.color = UITheme.Danger; }
+            else
+            {
+                float left = state.phase == MatchPhase.Deploy ? mode.timeCapSeconds : Mathf.Max(0f, mode.timeCapSeconds - state.elapsed);
+                int secs = Mathf.CeilToInt(left);
+                overrunClock.text = (secs / 60) + ":" + (secs % 60).ToString("00") + (o.latePush ? "\nLATE PUSH" : "");
+                overrunClock.color = o.latePush ? UITheme.Warning : UITheme.Text;
+            }
+
+            foreach (var card in bastionCards)
+            {
+                var b = o.Bastion(card.team, card.tier);
+                if (b == null) continue;
+                UIKit.SetFill(card.shield, BastionBarWidth, b.alive && b.maxShield > 0f ? b.shield / b.maxShield : 0f);
+                UIKit.SetFill(card.health, BastionBarWidth, b.alive && b.maxHealth > 0f ? b.health / b.maxHealth : 0f);
+                if (!b.alive) { card.state.text = "DOWN"; card.state.color = UITheme.Danger; }
+                else if (b.sealedOff) { card.state.text = "sealed"; card.state.color = UITheme.TextDim; }
+                else if (b.openToHeroes) { card.state.text = "OPEN"; card.state.color = UITheme.ForTeam(card.team.Other()); }
+                else { card.state.text = ""; }
+            }
+
+            TeamId mine = me == null ? TeamId.None : me.team;
+            string line;
+            Color color = UITheme.Text;
+            if (state.phase == MatchPhase.MatchEnd) line = state.winner == TeamId.None ? "Draw" : TeamName(state.winner) + " wins";
+            else if (state.phase == MatchPhase.Deploy) line = "Push with your minions: destroy the enemy Forward Bastion, then their Core";
+            else
+            {
+                var target = o.Bastion(mine.Other(), BastionTier.Forward);
+                if (target != null && !target.alive) target = o.Bastion(mine.Other(), BastionTier.Core);
+                var ours = o.Bastion(mine, BastionTier.Forward);
+                if (ours != null && !ours.alive) ours = o.Bastion(mine, BastionTier.Core);
+                if (mine != TeamId.None && target != null && target.openToHeroes)
+                {
+                    line = "Your minions are at the enemy " + TierName(target.tier) + " Bastion: hit it now";
+                    color = UITheme.ForTeam(mine);
+                }
+                else if (mine != TeamId.None && ours != null && ours.alive && ours.openToHeroes)
+                {
+                    line = "Enemy minions at your " + TierName(ours.tier) + " Bastion: clear them";
+                    color = UITheme.Danger;
+                }
+                else
+                {
+                    float next = snapshot.lanes == null ? 0f : snapshot.lanes.nextWaveIn;
+                    line = "Next wave in " + Mathf.Max(0, Mathf.CeilToInt(next)) + "   Heroes hurt a Bastion only with their own minions near it";
+                    color = UITheme.TextDim;
+                }
+            }
+            overrunStatus.text = line;
+            overrunStatus.color = color;
         }
 
         string CenterMessage(MatchSnapshot snapshot, PlayerState me)

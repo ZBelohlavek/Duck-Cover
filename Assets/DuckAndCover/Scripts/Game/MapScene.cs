@@ -16,6 +16,8 @@ namespace DuckAndCover.Game
     {
         /// <summary>The map built in this scene (every machine builds the same one).</summary>
         public static MapDef Current { get; private set; }
+        /// <summary>The root of the map built by <see cref="Build"/>, or null.</summary>
+        public static GameObject Root { get; private set; }
 
         static readonly Color GroundColor = new Color(0.36f, 0.38f, 0.42f);
         static readonly Color OuterWall = new Color(0.22f, 0.24f, 0.30f);
@@ -45,6 +47,7 @@ namespace DuckAndCover.Game
             if (map == null) throw new ArgumentNullException(nameof(map));
             Current = map;
             var root = new GameObject("Map " + map.displayName);
+            Root = root;
             var t = root.transform;
 
             var sun = new GameObject("Sun");
@@ -66,7 +69,7 @@ namespace DuckAndCover.Game
                 if (b.shift != ShiftRole.None) view.AddShiftBlock(go, b);
             }
             foreach (var z in map.zones) view.AddZone(z, ZoneMarker(t, z));
-            LaneMarkers(t, map);
+            LaneMarkers(t, map, view);
 
             var cam = Camera.main;
             if (cam != null)
@@ -104,7 +107,7 @@ namespace DuckAndCover.Game
                 }
                 MapDresser.DressBlock(dress, go, b);
             }
-            LaneMarkers(t, map);
+            LaneMarkers(t, map, null);
             MapDresser.DressWorld(dress, null);
             return root;
         }
@@ -122,23 +125,28 @@ namespace DuckAndCover.Game
             }
         }
 
+        /// <summary>Height of a Bastion's pillar: the Core stands taller than the Forward one.</summary>
+        public static float BastionHeight(BastionTier tier) => tier == BastionTier.Core ? 7f : 5f;
+
         /// <summary>
-        /// Placeholders for a lane map's Overrun pieces, none with a collider: each Bastion as a team
-        /// coloured pillar (WP19 replaces them with the real units), each camp's pad as a coloured ring,
-        /// and each launch pad as a glowing disc with markers along its arc. Maps without lanes get none.
+        /// A lane map's Overrun pieces, none with a collider (the rules give Bastions their hitboxes):
+        /// each Bastion as a team coloured pillar under a white crown (<see cref="MapView"/> knocks it down
+        /// when the match says it fell), each camp's pad as a coloured ring, and each launch pad as a
+        /// glowing disc with markers along its arc. Maps without lanes get none.
         /// </summary>
-        static void LaneMarkers(Transform parent, MapDef map)
+        static void LaneMarkers(Transform parent, MapDef map, MapView view)
         {
             if (!map.IsLaneMap) return;
             foreach (var b in map.bastions)
             {
                 var c = b.team == TeamId.A ? TeamA : TeamB;
-                float h = b.tier == BastionTier.Core ? 7f : 5f;
+                float h = BastionHeight(b.tier);
                 var p = b.position.ToVector3();
                 // A cylinder primitive is 2 m tall, so a y scale of h/2 stands h high.
-                Paint.Shape(PrimitiveType.Cylinder, parent, "Bastion " + b.team + " " + b.tier, p + new Vector3(0f, h * 0.5f, 0f), new Vector3(b.radius * 1.4f, h * 0.5f, b.radius * 1.4f), c, false);
-                Paint.Shape(PrimitiveType.Cube, parent, "Bastion " + b.team + " " + b.tier + " Crown", p + new Vector3(0f, h + 0.9f, 0f), new Vector3(1.2f, 1.2f, 1.2f), Color.white, false)
-                    .transform.localRotation = Quaternion.Euler(45f, 0f, 45f);
+                var pillar = Paint.Shape(PrimitiveType.Cylinder, parent, "Bastion " + b.team + " " + b.tier, p + new Vector3(0f, h * 0.5f, 0f), new Vector3(b.radius * 1.4f, h * 0.5f, b.radius * 1.4f), c, false);
+                var crown = Paint.Shape(PrimitiveType.Cube, parent, "Bastion " + b.team + " " + b.tier + " Crown", p + new Vector3(0f, h + 0.9f, 0f), new Vector3(1.2f, 1.2f, 1.2f), Color.white, false);
+                crown.transform.localRotation = Quaternion.Euler(45f, 0f, 45f);
+                if (view != null) view.AddBastion(b, pillar, crown);
             }
             foreach (var camp in map.camps)
             {

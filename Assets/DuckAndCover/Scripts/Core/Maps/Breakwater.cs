@@ -161,6 +161,11 @@ namespace DuckAndCover.Core
                 m.spawnsB.Add(MapDef.Mirror(spot));
             }
 
+            // Practice dummies stand on the lane just past the middle on B's side, facing A's half.
+            m.dummies.Add(new SpawnPoint(11f, 0f, 6f, 200f));
+            m.dummies.Add(new SpawnPoint(14f, 0f, 9f, 200f));
+            m.dummies.Add(new SpawnPoint(12f, 0f, 12f, 200f));
+
             // ---- Core plaza: the Core Bastion on the lane, cover, the launch pad, the side gate ----
             m.bastions.Add(new MapBastion { team = TeamId.A, tier = BastionTier.Core, position = new Vec3(-12f, 0f, -84f), radius = 2.5f });
             Pair(m, "PlazaLowWest", BlockKind.LowCover, -20f, -90f, 3f, 1f, 0.5f);

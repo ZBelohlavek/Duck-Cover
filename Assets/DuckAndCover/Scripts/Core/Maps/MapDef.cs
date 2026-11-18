@@ -291,10 +291,23 @@ namespace DuckAndCover.Core
         public static SpawnPoint Turn(SpawnPoint s, int zone) => new SpawnPoint(-s.position.x, s.position.y, -s.position.z, TurnYaw(s.yaw), zone);
     }
 
-    /// <summary>The maps the game knows. The first map is the default for every mode.</summary>
+    /// <summary>
+    /// The maps the game knows. Each mode plays on one map: Overrun needs a lane map (Breakwater), every
+    /// other mode plays Gantry Yard. Every machine picks the map from the match's mode, so the host
+    /// never has to send it.
+    /// </summary>
     public static class MapCatalog
     {
         public static MapDef Default => GantryYard.Build();
+
+        /// <summary>The id of the map a mode plays on.</summary>
+        public static string MapIdForMode(string modeId) => modeId == "overrun" ? Breakwater.Id : GantryYard.Id;
+
+        /// <summary>A map's name for menus, without building it.</summary>
+        public static string DisplayName(string id) => id == Breakwater.Id ? "Breakwater" : id == GantryYard.Id ? "Gantry Yard" : id;
+
+        /// <summary>The map a mode plays on, built fresh.</summary>
+        public static MapDef ForMode(string modeId) => ById(MapIdForMode(modeId));
 
         public static MapDef ById(string id)
         {
