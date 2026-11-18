@@ -21,6 +21,8 @@ namespace DuckAndCover.Core
         public float cooldown;
         /// <summary>Wardens: seconds until the next shield pulse.</summary>
         public float pulseIn;
+        /// <summary>Getting round cover: 1 keeps it on the right, -1 on the left, 0 when the way ahead is clear.</summary>
+        public int steer;
     }
 
     /// <summary>A neutral camp's guards, pad and timers.</summary>
