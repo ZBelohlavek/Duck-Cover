@@ -66,9 +66,21 @@ namespace DuckAndCover.Game
             rules.flagFirstSpawnSeconds = 1f;
             rules.flagDropResetSeconds = 60f; // the dropped flag stays put for the last shot
             var runner = SessionRunner.Ensure();
-            runner.Host("flag_rush", "Capture", false, 0, false, rules);
+            // The practice match from shot 06 still holds its port: Netcode shuts its transport down on a
+            // later frame and the old NetworkManager is destroyed at the end of this one. Leave first, give
+            // both a moment, and host on the next port, so the new host never meets the old socket.
+            runner.Leave();
+            runner.StartCoroutine(HostFlagMatchSoon(runner, rules));
+        }
+
+        static IEnumerator HostFlagMatchSoon(SessionRunner runner, Ruleset rules)
+        {
+            yield return null;
+            yield return null;
+            yield return new WaitForSecondsRealtime(0.25f);
+            runner.Host("flag_rush", "Capture", false, runner.Settings.defaultPort + 1, false, rules);
             var session = runner.Session;
-            if (session == null || session.Client == null) { Debug.LogError("Duck and Cover: the capture could not host Flag Rush."); return; }
+            if (session == null || session.Client == null) { Debug.LogError("Duck and Cover: the capture could not host Flag Rush."); yield break; }
             var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
             if (local != null) { local.scripted = true; local.freeCamera = false; }
             session.Client.Welcomed += welcome =>
