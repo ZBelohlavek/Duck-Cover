@@ -225,6 +225,16 @@ namespace DuckAndCover.Core
             PairRaw(m, "LaneLowFwdEast", BlockKind.LowCover, -11f, -64f, 0.5f, 1f, 3f, 0f, ShiftRole.None, 0, "");
             PairRaw(m, "LaneCrateBend", BlockKind.Crate, -23f, -41f, 1.5f, 1.5f, 1.5f, 0f, ShiftRole.None, 0, "");
             PairRaw(m, "LaneLowZigWest", BlockKind.LowCover, 9f, -24f, 3f, 1f, 0.5f, 0f, ShiftRole.None, 0, "");
+            // Nov 18 (Zach: "pretty open"): a cover-to-cover line down the lane, alternating sides so three abreast
+            // still fit between pieces. Low walls to crouch and peek over, tall crate stacks and rocks to hide behind.
+            PairRaw(m, "LaneStackCore", BlockKind.Crate, -12.5f, -76f, 1.6f, 2.6f, 1.6f, 0f, ShiftRole.None, 0, "");
+            PairRaw(m, "LaneLowCoreWest", BlockKind.LowCover, -24f, -79f, 3f, 1f, 0.5f, 0f, ShiftRole.None, 0, "");
+            PairRaw(m, "LaneLowFwdWest", BlockKind.LowCover, -24f, -63f, 0.5f, 1f, 3f, 0f, ShiftRole.None, 0, "");
+            PairRaw(m, "LaneStackFwd", BlockKind.Crate, -13f, -55f, 1.6f, 2.6f, 1.6f, 0f, ShiftRole.None, 0, "");
+            PairRaw(m, "LaneRockBendWest", BlockKind.Wall, -10f, -42f, 2.5f, 2.6f, 2.5f, 0f, ShiftRole.None, 0, "rocks");
+            PairRaw(m, "LaneStackZig", BlockKind.Crate, 18f, -28f, 1.6f, 2.6f, 1.6f, 0f, ShiftRole.None, 0, "");
+            PairRaw(m, "LaneLowZigEast", BlockKind.LowCover, 27f, -23f, 0.5f, 1f, 3f, 0f, ShiftRole.None, 0, "");
+            PairRaw(m, "LaneLowMidEast", BlockKind.LowCover, 26f, -5f, 0.5f, 1f, 3f, 0f, ShiftRole.None, 0, "rocks");
             Cover(m, "LaneLowPlaza", BlockKind.LowCover, -15f, -69f, 3f, 1f, 0.5f);
             Cover(m, "LaneLowLedge", BlockKind.LowCover, -9f, -50f, 0.5f, 1f, 3f);
             Cover(m, "LaneRockBend", BlockKind.LowCover, 1f, -35f, 2f, 1.1f, 2f, 0f, ShiftRole.None, 0, "rocks");
@@ -252,6 +262,11 @@ namespace DuckAndCover.Core
             }
             // A few rocks to fight around in the bigger clearings.
             Cover(m, "DamageRock", BlockKind.Wall, 9f, -97f, 2f, 2.4f, 3f, 0f, ShiftRole.None, 0, "rocks");
+            // More to fight round in the clearings and where jungle trails meet (placed in metres).
+            PairRaw(m, "DamageLow", BlockKind.LowCover, 26f, -91f, 0.5f, 1f, 3f, 0f, ShiftRole.None, 0, "rocks");
+            PairRaw(m, "ExperienceRock", BlockKind.Wall, 57f, -76f, 2f, 2.4f, 2.5f, 0f, ShiftRole.None, 0, "rocks");
+            PairRaw(m, "SpeedLow", BlockKind.LowCover, 23f, -62f, 2.5f, 1f, 0.5f, 0f, ShiftRole.None, 0, "rocks");
+            PairRaw(m, "SideBendRock", BlockKind.Wall, -57.5f, -65f, 2f, 2.4f, 2f, 0f, ShiftRole.None, 0, "rocks");
             Cover(m, "ExperienceLow", BlockKind.LowCover, 30f, -83f, 2.5f, 1f, 1.5f, 0f, ShiftRole.None, 0, "rocks");
             // Broken temple walls at the top of each stair keep the camp out of sight from the lane below.
             PairRaw(m, "ShelfScreen", BlockKind.Wall, -37.5f, -7.5f, 7f, 3f, 1.5f, ShelfHeight, ShiftRole.None, 0, "rocks");
