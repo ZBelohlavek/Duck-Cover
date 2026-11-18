@@ -20,12 +20,22 @@ namespace DuckAndCover.Game
     /// </summary>
     public static class MapDresser
     {
+        const float GlyphSize = 0.5f;
+
+        static EnvTheme ThemeAt(Context c, float x, float z)
+        {
+            var t = EnvTheme.Find(c.map.ThemeAt(x, z));
+            return t == null ? c.theme : t;
+        }
+
         /// <summary>How far trims may stand proud of a block's faces, in metres.</summary>
         public const float MaxProud = 0.07f;
 
         public class Context
         {
             public EnvTheme theme;
+            /// <summary>The theme of the piece being dressed: the map's own, or an art region's.</summary>
+            public EnvTheme active;
             public MapDef map;
             public Transform root;
             public System.Random rng;
@@ -35,7 +45,7 @@ namespace DuckAndCover.Game
         public static Context Begin(MapDef map, Transform root, EnvTheme theme)
         {
             if (theme == null) return null;
-            var ctx = new Context { theme = theme, map = map, root = root, rng = new System.Random(theme.seed * 7919 + StableHash(map.id)) };
+            var ctx = new Context { theme = theme, active = theme, map = map, root = root, rng = new System.Random(theme.seed * 7919 + StableHash(map.id)) };
             return ctx;
         }
 
@@ -45,7 +55,7 @@ namespace DuckAndCover.Game
         {
             string key = kind + "|" + (Color32)a + "|" + (Color32)b + "|" + glow;
             if (c.materials.TryGetValue(key, out var m) && m != null) return m;
-            m = Paint.Textured(PaintedTextures.Get(kind, a, b, c.theme.seed), glow);
+            m = Paint.Textured(PaintedTextures.Get(kind, a, b, c.active.seed), glow);
             c.materials[key] = m;
             return m;
         }
@@ -58,10 +68,12 @@ namespace DuckAndCover.Game
         public static void DressBlock(Context c, GameObject go, MapBlock b)
         {
             if (c == null || go == null) return;
-            var t = c.theme;
             var size = b.size.ToVector3();
             var centre = b.center.ToVector3();
             bool outer = IsOuter(c.map, b);
+            // The floor and the outer walls span the whole map, so they always wear the map's own theme.
+            var t = b.kind == BlockKind.Ground || outer ? c.theme : ThemeAt(c, b.center.x, b.center.z);
+            c.active = t;
             bool bigCrate = b.kind == BlockKind.Crate && Math.Max(b.size.x, b.size.z) > 3.5f;
 
             Material mat;
@@ -108,12 +120,24 @@ namespace DuckAndCover.Game
         /// <summary>A building wall: dark base course, a cap course and a glowing strip near the top, vines down its faces.</summary>
         static void WallTrims(Context c, MapBlock b)
         {
-            var t = c.theme;
+            var t = c.active;
             if (b.Min.y < 0.05f) BandAbs(c, b, b.Min.y, Math.Min(0.5f, b.size.y * 0.3f), Plain(c, t.trimBase), 0.06f);
             if (b.size.y >= 2.5f || b.Min.y > 0.05f)
             {
                 BandAbs(c, b, b.Max.y - 0.3f, 0.3f, Plain(c, t.trimBase), 0.06f);
                 if (b.size.y >= 2.5f) BandAbs(c, b, b.Max.y - 0.62f, 0.09f, Plain(c, t.glow, true), 0.02f);
+            }
+            if (t.glyphs && b.size.y >= 3f && b.Min.y < 0.05f)
+            {
+                // Carved glyphs, one per half metre. The band starts on a half-metre line so each glyph
+                // lands whole in the world-projected texture.
+                float bottom = Mathf.Floor((b.Max.y - 1.25f) / GlyphSize) * GlyphSize;
+                var glyphs = Mat(c, PaintedTextures.Kind.Glyph, t.stone, t.glyph);
+                var size = new Vector3(b.size.x + 0.06f, GlyphSize, b.size.z + 0.06f);
+                var centre = new Vector3(b.center.x, bottom + GlyphSize * 0.5f, b.center.z);
+                var go = Shape(c, PrimitiveType.Cube, "Glyphs", centre, size, glyphs);
+                var f = go.GetComponent<MeshFilter>();
+                if (f != null) f.sharedMesh = EnvMesh.ChamferBox(size, 0.02f, centre, GlyphSize);
             }
             if (t.vines && b.size.y >= 3.5f && c.rng.NextDouble() < 0.55) Vines(c, b);
         }
@@ -124,7 +148,7 @@ namespace DuckAndCover.Game
             float length = alongX ? b.size.x : b.size.z;
             float half = (alongX ? b.size.z : b.size.x) * 0.5f;
             int count = Math.Max(1, (int)(length / 3.5f));
-            var leaf = Mat(c, PaintedTextures.Kind.Leaf, c.theme.leaf, c.theme.leaf);
+            var leaf = Mat(c, PaintedTextures.Kind.Leaf, c.active.leaf, c.active.leaf);
             for (int side = -1; side <= 1; side += 2)
             for (int i = 0; i < count; i++)
             {
@@ -143,7 +167,7 @@ namespace DuckAndCover.Game
 
         static void WallTopPlants(Context c, MapBlock b)
         {
-            var leaf = Mat(c, PaintedTextures.Kind.Leaf, c.theme.leaf, c.theme.leaf);
+            var leaf = Mat(c, PaintedTextures.Kind.Leaf, c.active.leaf, c.active.leaf);
             bool alongX = b.size.x >= b.size.z;
             float length = alongX ? b.size.x : b.size.z;
             int count = (int)(length / 5f);
@@ -157,7 +181,7 @@ namespace DuckAndCover.Game
 
         static void CornerPosts(Context c, MapBlock b)
         {
-            var m = Plain(c, c.theme.trimBase);
+            var m = Plain(c, c.active.trimBase);
             const float w = 0.2f;
             for (int sx = -1; sx <= 1; sx += 2)
             for (int sz = -1; sz <= 1; sz += 2)
@@ -186,6 +210,7 @@ namespace DuckAndCover.Game
         {
             if (c == null) return;
             var t = c.theme;
+            c.active = t;
             var map = c.map;
             float hx = map.halfX, hz = map.halfZ;
 
@@ -205,17 +230,35 @@ namespace DuckAndCover.Game
             {
                 float x = Range(c, -hx + 2f, hx - 2f), z = Range(c, -hz + 2f, hz - 2f);
                 float r = Range(c, 1.2f, 3.2f);
+                if (ThemeAt(c, x, z).courtyard) continue; // courtyards are paved
                 // Each patch a hair thicker than the last, so overlapping patches never flicker.
                 float th = 0.003f + (i % 16) * 0.0003f;
                 Shape(c, PrimitiveType.Cylinder, "Patch", new Vector3(x, th, z), new Vector3(r * 2f, th, r * Range(c, 1.0f, 1.8f)), patch);
             }
-            var paving = Mat(c, PaintedTextures.Kind.Paving, t.paving, t.pavingMortar);
+            // Courtyards: flagstones over a region's whole floor, 6 mm high (under the zone paving).
+            foreach (var region in map.artRegions)
+            {
+                var rt = EnvTheme.Find(region.theme);
+                if (rt == null || !rt.courtyard) continue;
+                c.active = rt;
+                float x0 = Math.Max(region.minX, -hx), x1 = Math.Min(region.maxX, hx);
+                float z0 = Math.Max(region.minZ, -hz), z1 = Math.Min(region.maxZ, hz);
+                if (x1 <= x0 || z1 <= z0) continue;
+                var size = new Vector3(x1 - x0, 0.006f, z1 - z0);
+                var centre = new Vector3((x0 + x1) * 0.5f, 0.003f, (z0 + z1) * 0.5f);
+                var floor = Shape(c, PrimitiveType.Cube, "Courtyard", centre, size, Mat(c, PaintedTextures.Kind.Paving, rt.paving, rt.pavingMortar));
+                var ff = floor.GetComponent<MeshFilter>();
+                if (ff != null) ff.sharedMesh = EnvMesh.ChamferBox(size, 0f, centre, 3f);
+            }
             foreach (var zone in map.zones)
             {
+                c.active = ThemeAt(c, zone.center.x, zone.center.z);
+                var paving = Mat(c, PaintedTextures.Kind.Paving, c.active.paving, c.active.pavingMortar);
                 float r = zone.radius + 1.5f;
                 Shape(c, PrimitiveType.Cylinder, "Paving " + zone.label, zone.center.ToVector3() + new Vector3(0f, 0.008f, 0f), new Vector3(r * 2f, 0.008f, r * 2f), paving);
             }
 
+            c.active = t;
             Cliffs(c, hx, hz);
             if (t.mushroomTrees) Trees(c, hx, hz);
             if (t.overheadGantries) Gantries(c, hx, hz);

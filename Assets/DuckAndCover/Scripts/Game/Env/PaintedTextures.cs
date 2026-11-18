@@ -18,7 +18,7 @@ namespace DuckAndCover.Game
     {
         public const int Size = 256;
 
-        public enum Kind { Stone, Rock, Ground, Ribbed, Planks, Concrete, Deck, Shutter, Bark, Leaf, Paving, Plain, Patch }
+        public enum Kind { Stone, Rock, Ground, Ribbed, Planks, Concrete, Deck, Shutter, Bark, Leaf, Paving, Plain, Patch, Glyph }
 
         static readonly Dictionary<string, Texture2D> cache = new Dictionary<string, Texture2D>();
 
@@ -62,6 +62,7 @@ namespace DuckAndCover.Game
                     case Kind.Shutter: c = Shutter(u, v, a, b); break;
                     case Kind.Bark: c = Bark(u, v, a, b, seed); break;
                     case Kind.Leaf: c = Leaf(u, v, a, seed); break;
+                    case Kind.Glyph: c = Glyph(u, v, a, b, seed); break;
                     case Kind.Patch: c = Shade(a, 0.85f + 0.3f * Noise.Fbm(u * 8f, v * 8f, 8, seed, 4)); break;
                     default: c = Shade(a, 0.9f + 0.2f * Noise.Fbm(u * 6f, v * 6f, 6, seed, 3)); break;
                 }
@@ -198,6 +199,29 @@ namespace DuckAndCover.Game
             var c = Shade(a, 0.85f + 0.3f * Mathf.Sin(slat * Mathf.PI));
             if (slat < 0.08f) c = Shade(c, 0.6f);
             return c;
+        }
+
+        /// <summary>
+        /// One carved glyph per tile, for a band of stone: a framed square key of stepped grooves, cut
+        /// darker into the stone with a light lip above each groove.
+        /// </summary>
+        static Color Glyph(float u, float v, Color stone, Color groove, int seed)
+        {
+            var c = Shade(stone, 0.92f + 0.14f * Noise.Fbm(u * 4f, v * 4f, 4, seed, 3));
+            if (Cut(u, v)) return Shade(groove, 0.85f + 0.2f * Noise.Fbm(u * 16f, v * 16f, 16, seed + 1, 2));
+            if (Cut(u, v - 0.025f)) return Lighten(c, 0.25f); // the lit lip just above a groove
+            return c;
+        }
+
+        static bool Cut(float u, float v)
+        {
+            float x = u - 0.5f, y = v - 0.5f;
+            float d = Mathf.Max(Mathf.Abs(x), Mathf.Abs(y));
+            if (d > 0.4f && d < 0.44f) return true;                          // frame
+            if (d > 0.26f && d < 0.3f) return !(x > 0f && Mathf.Abs(y) < 0.06f);  // middle ring, open on the right
+            if (d > 0.12f && d < 0.16f) return !(x < 0f && Mathf.Abs(y) < 0.05f); // inner ring, open on the left
+            if (Mathf.Abs(y) < 0.025f && x > 0.12f && x < 0.3f) return true;   // step joining the rings
+            return d < 0.05f;                                                    // centre stud
         }
 
         static Color Bark(float u, float v, Color a, Color dark, int seed)

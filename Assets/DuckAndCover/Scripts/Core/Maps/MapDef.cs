@@ -88,6 +88,22 @@ namespace DuckAndCover.Core
         public MapBlock Clone() => (MapBlock)MemberwiseClone();
     }
 
+    /// <summary>A footprint (x and z, any height) dressed in its own environment theme. Art only: rules never read it.</summary>
+    [Serializable]
+    public class ArtRegion
+    {
+        public string theme = "";
+        public float minX, minZ, maxX, maxZ;
+
+        public ArtRegion() { }
+        public ArtRegion(string theme, float minX, float minZ, float maxX, float maxZ)
+        {
+            this.theme = theme; this.minX = minX; this.minZ = minZ; this.maxX = maxX; this.maxZ = maxZ;
+        }
+
+        public bool Contains(float x, float z) => x >= minX && x <= maxX && z >= minZ && z <= maxZ;
+    }
+
     /// <summary>A zone on the map: a standing cylinder. Its id is the one the mode's zone set uses.</summary>
     [Serializable]
     public class MapZone
@@ -146,6 +162,16 @@ namespace DuckAndCover.Core
         /// "jungle_moon"). Art only: rules and the validator never read it. Empty keeps the plain greybox.
         /// </summary>
         public string theme = "";
+        /// <summary>Parts of the map dressed in another theme (a temple quarter in a jungle). Art only, like <see cref="theme"/>.</summary>
+        public List<ArtRegion> artRegions = new List<ArtRegion>();
+
+        /// <summary>The theme for something standing at (x, z): the last region holding it, else the map's theme.</summary>
+        public string ThemeAt(float x, float z)
+        {
+            string found = theme;
+            foreach (var r in artRegions) if (r.Contains(x, z)) found = r.theme;
+            return found;
+        }
 
         public MapZone Zone(ZoneId id)
         {
