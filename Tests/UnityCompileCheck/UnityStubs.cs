@@ -216,6 +216,7 @@ namespace UnityEngine
         public GameObject(string name, params Type[] components) { }
         public Transform transform => null;
         public bool activeSelf => true;
+        public bool activeInHierarchy => true;
         public bool isStatic { get; set; }
         public string tag { get; set; }
         public int layer { get; set; }
@@ -230,6 +231,7 @@ namespace UnityEngine
 
     public class Transform : Component, IEnumerable
     {
+        public Transform Find(string n) => null;
         public Vector3 position { get; set; }
         public Vector3 localPosition { get; set; }
         public Quaternion rotation { get; set; }
