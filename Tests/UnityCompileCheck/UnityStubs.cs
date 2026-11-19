@@ -712,8 +712,11 @@ namespace UnityEditor
 
     public enum TextureImporterType { Default = 0, NormalMap = 1, GUI = 2, Sprite = 8, Cursor = 7, Cookie = 4, Lightmap = 6, SingleChannel = 10 }
 
+    public enum TextureImporterShape { Texture2D = 1, TextureCube = 2, Texture2DArray = 4, Texture3D = 8 }
+
     public sealed class TextureImporter : AssetImporter
     {
+        public TextureImporterShape textureShape { get; set; }
         public TextureImporterType textureType { get; set; }
         public bool sRGBTexture { get; set; }
         public bool mipmapEnabled { get; set; }

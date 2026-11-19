@@ -12,6 +12,9 @@ namespace DuckAndCover.EditorTools
         {
             if (!assetPath.Contains("/Resources/EnvArt/")) return;
             var importer = (TextureImporter)assetImporter;
+            // A plain 2D texture: the first imports on the owner's PC came in as cubemaps, which
+            // Resources.Load<Texture2D> can't return, and every piece drew white.
+            importer.textureShape = TextureImporterShape.Texture2D;
             if (assetPath.EndsWith("_n.jpg") || assetPath.EndsWith("_n.png"))
             {
                 importer.textureType = TextureImporterType.NormalMap;
