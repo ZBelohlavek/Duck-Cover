@@ -47,7 +47,8 @@ static class WaveKitTests
             h.Run(5f);
             float dealt = WaveDamage(h, wave);
             Check.True(dealt >= 400f, name + ": blast and fire take " + dealt.ToString("0") + " off the wave on their own (of 650 health)");
-            if (form == 0) Check.True(WaveHarness.Alive(U(h), wave) <= 2, "Thermite destroys Scrappers outright: " + WaveHarness.Alive(U(h), wave) + " left");
+            // Area damage stays under single-target damage (Zach, Nov 19), so Thermite softens a wave rather than wiping it.
+            if (form == 0) Check.True(dealt >= 4 * 55f, "Thermite: at least 55 a minion (" + dealt.ToString("0") + ")");
         }
     }
 
@@ -171,30 +172,5 @@ static class WaveKitTests
         h.Combat.Damage.Damage(enemy, ours, 1000f);
         h.Tick();
         Check.Near(alone, h.Stat(A1, StatIds.DamageTaken), "gone when the minion is destroyed");
-    }
-
-    // ---- Ultimate charge ----
-
-    [Test]
-    static void UnitsGiveUltimateChargeAtAShare()
-    {
-        var h = OnGround("mender");
-        h.R.ultimateChargePerSecond = 0f;
-        h.LevelTo(A1, 8, false);
-        h.Place(B1, 0f, 6f);
-        int unit = U(h).Spawn(WaveHarness.Warden, TeamId.B, new Vec3(3f, 0f, 6f));
-        int own = U(h).Spawn(WaveHarness.Warden, TeamId.A, new Vec3(-3f, 0f, 6f));
-        h.Tick();
-        h.Unit(A1).ultimateCharge = 0f;
-        float dealt = h.Combat.Damage.Damage(A1, B1, 100f, "test");
-        float fromHero = h.Unit(A1).ultimateCharge;
-        Check.Near(dealt * h.R.ultimateChargePerDamage, fromHero, "damage to a hero: full charge");
-        h.Unit(A1).ultimateCharge = 0f;
-        Check.Near(dealt, h.Combat.Damage.Damage(A1, unit, 100f, "test"), "the same damage to a minion");
-        Check.Near(fromHero * h.R.ultimateChargeUnitShare, h.Unit(A1).ultimateCharge, "gives the unit share of the charge");
-        h.Unit(A1).ultimateCharge = 0f;
-        h.Combat.Damage.Damage(B1, own, 100f, "setup");
-        h.Combat.Damage.Heal(A1, own, 100f, "test");
-        Check.Near(100f * h.R.ultimateChargePerHealing * h.R.ultimateChargeUnitShare, h.Unit(A1).ultimateCharge, "healing an own minion: the unit share too");
     }
 }

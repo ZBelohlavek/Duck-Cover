@@ -175,13 +175,13 @@
         {
             "id": "bulwark_quick_build",
             "displayName": "Quick Build",
-            "description": "Bulkhead charges 15% faster.",
+            "description": "Your abilities recharge 10% faster (never quicker than 13 seconds).",
             "kind": "trait",
             "stats": [
                 {
-                    "stat": "ultimateChargeRate",
+                    "stat": "cooldownRate",
                     "op": "percent",
-                    "value": 0.15,
+                    "value": 0.1,
                     "when": ""
                 }
             ],

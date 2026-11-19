@@ -117,13 +117,12 @@ sealed class HeroHarness
         direction = Combat.Weapons.Library.Weapon(Combat.Weapons.Weapons(shooter).CurrentId)?.AimAt(Eye(shooter), target) ?? (target - Eye(shooter)).Normalized,
     });
 
-    /// <summary>Reach a level (experience straight from the leveling rules) and fill the ultimate.</summary>
-    public void LevelTo(int id, int level, bool fillUltimate = true)
+    /// <summary>Reach a level (experience straight from the leveling rules).</summary>
+    public void LevelTo(int id, int level)
     {
         var rules = Heroes.Progression.Rules;
         while (Heroes.Progression.Level(id) < level)
             Heroes.Progression.Grant(id, 500f, ExperienceSource.Match);
-        if (fillUltimate) Unit(id).ultimateCharge = R.ultimateChargeMax;
     }
 
     /// <summary>Pick an ultimate upgrade through leveling.</summary>

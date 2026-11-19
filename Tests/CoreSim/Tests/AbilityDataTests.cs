@@ -34,7 +34,6 @@ static class AbilityDataTests
         {
             var h = new AbilityHarness();
             h.Give(A1, def.id);
-            h.Abilities.AddUltimateCharge(A1, 100f);
             h.Place(A1, 0); h.Place(B1, 4); h.Place(A2, 0, 2);
             h.Combat.Damage(-1, A2, 50f);
             h.Forget();
@@ -108,7 +107,7 @@ static class AbilityDataTests
         Bad("slow share", One(new AbilityDef { id = "a", cooldown = 1f, effects = new[] { new EffectDef { kind = EffectKinds.Slow, amount = 30f } } }), "between 0 and 1");
         Bad("status", One(new AbilityDef { id = "a", cooldown = 1f, effects = new[] { new EffectDef { kind = EffectKinds.Status, status = "ghost" } } }), "unknown status");
         Bad("object", One(new AbilityDef { id = "a", cooldown = 1f, effects = new[] { new EffectDef { kind = EffectKinds.Spawn, objectId = "ghost" } } }), "unknown object");
-        Bad("ult cost", One(new AbilityDef { id = "a", ultimate = true, ultimateCost = 0f, effects = new[] { Dmg() } }), "ultimateCost");
+        Bad("no cooldown", One(new AbilityDef { id = "a", effects = new[] { Dmg() } }), "needs a cooldown");
         Bad("passive", One(new AbilityDef { id = "a", passive = true }), "a passive needs stats");
         Bad("forever", new AbilityDataFile { objects = new[] { new ObjectDef { id = "o" } } }, "would last forever");
         Bad("pulse", new AbilityDataFile { objects = new[] { new ObjectDef { id = "o", lifetime = 5f, trigger = Triggers.Pulse } } }, "needs a radius");

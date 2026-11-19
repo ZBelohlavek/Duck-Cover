@@ -3,8 +3,8 @@
     {
       "id": "mender_canister",
       "displayName": "Mending Canister",
-      "description": "Throw a canister where you aim. For 6 seconds, you and teammates within 3.5 m of it regenerate 16 health a second, and keep regenerating for a second after stepping out.",
-      "cooldown": 12,
+      "description": "Throw a canister where you aim. For 6 seconds, you and teammates within 3.5 m of it regenerate 18 health a second, and keep regenerating for a second after stepping out. Cooldown 14 s.",
+      "cooldown": 14,
       "targeting": {
         "shape": "sphere",
         "origin": "aimPoint",
@@ -22,8 +22,8 @@
     {
       "id": "mender_purge",
       "displayName": "Purge",
-      "description": "Clear every harmful effect (slows, stuns, silences, marks, damage and healing cuts) from you and teammates within 6 m.",
-      "cooldown": 12,
+      "description": "Clear every harmful effect (slows, stuns, silences, marks, damage and healing cuts) from you and teammates within 6 m. Cooldown 16 s.",
+      "cooldown": 16,
       "targeting": {
         "shape": "sphere",
         "origin": "caster",
@@ -45,7 +45,7 @@
     {
       "id": "mender_rounds",
       "displayName": "Mending Rounds",
-      "description": "Reload at once with a magazine of healing rounds: each one that hits a teammate heals them 16. Healing rounds do no harm to enemies. A normal reload swaps back.",
+      "description": "Reload at once with a magazine of healing rounds: each one that hits a teammate heals them 16. Healing rounds do no harm to enemies. A normal reload swaps back. Cooldown 6 s.",
       "cooldown": 6,
       "targeting": {
         "shape": "self",
@@ -56,7 +56,8 @@
           "kind": "healRounds",
           "amount": 16
         }
-      ]
+      ],
+      "shortCooldownReason": "It is the Mender's gun healing (a reload into healing rounds), not a burst: on a 13 s cooldown he couldn't heal with his gun for most of a fight. It deals no damage."
     }
   ],
   "statuses": [
@@ -71,7 +72,7 @@
       "tickEffects": [
         {
           "kind": "heal",
-          "amount": 8
+          "amount": 9
         }
       ]
     },

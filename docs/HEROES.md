@@ -3,8 +3,18 @@
 Generated from the hero and ability data in `Assets/DuckAndCover/Data/Resources`. The data files are
 the source of truth; numbers here are the ones the tests check. All names and kits are original.
 
-Every hero has three abilities, all usable from level 1: nothing is locked behind a level. The third (X) may run on
-ultimate charge, which builds from the start of the match, or on a plain cooldown.
+Every hero has three abilities, all usable from level 1: nothing is locked behind a level. There are no ultimates:
+every ability runs on a plain cooldown.
+
+Ability rules (Zach, Nov 19 2026), checked for every hero by `AbilityRulesTests` (`report abilities` prints the table):
+- Cooldowns sit between 13 and 20 seconds (`Ruleset.abilityCooldownFloor`/`Ceiling`). Cooldown-rate upgrades can't take
+  an ability under 13 s. An ability may sit lower only with a written reason (`AbilityDef.shortCooldownReason`): today
+  Rampart (a held shield; 5 s is the wait after it breaks) and Mending Rounds (the Mender's gun healing, 6 s).
+- No single ability kills a full-health hero: one cast, with its damage over time and the caster's upgrades, deals at
+  most 75% of the lowest max health in the roster to one enemy (150 of 200).
+- Area damage is lower than single-target damage: an ability that hits several enemies deals each at most 50% of the
+  lowest max health (100), counting 3 seconds in any lingering area; an area weapon's damage a second is below every
+  single-target hero weapon's.
 Levels run 1 to 20 with a pick every other level: traits at 2, 6 and 14, talents at 4, 12, 16 and 18, an upgrade to
 the third ability at 8 (one of two; it is usable before and without it), the passive at 10 (heroes start without one)
 and a capstone at 20. Each odd level gives a small automatic boost instead: +2% max health and +2% damage.
@@ -16,7 +26,7 @@ Health 300. Weapons: Shotgun and pistol.
 
 - **E (hold): Rampart.** Hold E to raise a wide shield in front of you; let go to lower it. It opens out from your arm to 5 m across over a third of a second, moves and turns with you, and stops enemy shots and abilities while your team shoots through it (it doesn't stop feet). It holds 900 damage and keeps what is left between raises, regaining 180 a second once it has been down for 1.5 seconds. If it breaks, it needs 5 seconds before it can go up again. While it is up you move 35% slower and can't fire. A stun or going down drops it.
 - **F: Patch Drone.** Launch a repair drone that hovers behind your shoulder for 10 seconds and heals you 20 a second. Enemies can shoot it down (100 health); your team's shots pass it. Cooldown 14 s.
-- **X (ultimate): Bulkhead.** Drop a 9 m wide, 3.5 m high wall where you aim, up to 20 m away, for 8 seconds (2000 health). Nobody walks through it and enemy shots stop on it, but your team shoots through: cover for your team, or a cut-off route for the enemy.
+- **X: Bulkhead.** Drop a 9 m wide, 3.5 m high wall where you aim, up to 20 m away, for 8 seconds (2000 health). Nobody walks through it and enemy shots stop on it, but your team shoots through: cover for your team, or a cut-off route for the enemy. Cooldown 20 s.
 
 Left (Z) is the **Guardian** path: a stronger, wider, faster Rampart that sends damage back. Right (V) is the **Brawler** path: up close, with a better Patch Drone, bigger and more frequent Bulkheads and a shotgun that fires faster and knocks back enemies at point-blank range.
 
@@ -24,7 +34,7 @@ Left (Z) is the **Guardian** path: a stronger, wider, faster Rampart that sends 
 |---|---|---|
 | 2 trait | **Thick Plating**: +25 max health. | **Close Quarters**: Your weapons deal 6% more damage. |
 | 4 talent | **Dense Field**: Rampart holds 20% more damage and regains its strength 30% faster. | **Spare Parts**: Patch Drone heals 30% more. |
-| 6 trait | **Anchor**: Take 8% less damage on a point your team holds, or beside your own minions. | **Quick Build**: Bulkhead charges 15% faster. |
+| 6 trait | **Anchor**: Take 8% less damage on a point your team holds, or beside your own minions. | **Quick Build**: Your abilities recharge 10% faster (never quicker than 13 seconds). |
 | 8 ultimate | **Reinforced Bulkhead**: Bulkhead holds twice as much damage and stands 4 seconds longer. | **Wide Bulkhead**: Bulkhead is 4 m wider and 1 m taller. |
 | 10 passive | **Braced**: Take 15% less damage while standing on a point, or beside your own minions. | **Second Wind**: Regain 8 health a second when you haven't been hit for a while. |
 | 12 talent | **Deflector**: Rampart sends 25% of the damage it blocks back at whoever dealt it. | **Armoured Drone**: Patch Drone has twice the health and stays 4 seconds longer. |
@@ -37,9 +47,9 @@ Left (Z) is the **Guardian** path: a stronger, wider, faster Rampart that sends 
 
 Health 200. Weapons: Rifle and pistol.
 
-- **E: Slip.** Dash 6 m along your aim. Cooldown 6 s.
-- **F: Tracer Mark.** Fire a tracer round at the enemy you aim at: 25 damage, and for 5 seconds they take 15% more damage and show through walls to your team. Cooldown 10 s.
-- **X (ultimate): Incendiary Grenade.** Throw a grenade where you aim: 40 damage to enemies within 3 m, and it leaves a 4 m fire for 5 seconds that burns enemies standing in it for 20 damage a second.
+- **E: Slip.** Dash 6 m along your aim. Cooldown 13 s.
+- **F: Tracer Mark.** Fire a tracer round at the enemy you aim at: 35 damage, and for 5 seconds they take 15% more damage and show through walls to your team. Cooldown 14 s.
+- **X: Incendiary Grenade.** Throw a grenade where you aim: 25 damage to enemies within 3 m, and it leaves a 4 m fire for 5 seconds that burns enemies standing in it for 12 damage a second. Cooldown 18 s.
 
 Left (Z) is the **gun path**, built around dominating whoever Tracer Mark hits: harder, longer-reaching shots and life steal. Right (V) is the **control path**: fire that keeps burning, slows and knockbacks for enemies who get too close.
 
@@ -47,21 +57,21 @@ Left (Z) is the **gun path**, built around dominating whoever Tracer Mark hits: 
 |---|---|---|
 | 2 trait | **Steady Aim**: Your weapons deal 5% more damage. | **Lingering Heat**: Your burns and slows last 15% longer. |
 | 4 talent | **Lingering Mark**: Tracer Mark lasts 3 seconds longer. | **Pinning Mark**: Tracer Mark also slows the target by 30% for 2 seconds. |
-| 6 trait | **Extended Mag**: Your magazines hold 25% more rounds. | **Quick Fuse**: Your ultimate charges 15% faster. |
-| 8 ultimate | **Thermite**: Incendiary Grenade hits much harder where it lands (120 damage), but its fire is smaller. | **Clinging Fire**: Incendiary Grenade's fire reaches 1 m further, and enemies keep burning for 3 seconds after they leave it. |
+| 6 trait | **Extended Mag**: Your magazines hold 25% more rounds. | **Quick Fuse**: Your abilities recharge 10% faster (never quicker than 13 seconds). |
+| 8 ultimate | **Thermite**: Incendiary Grenade hits harder where it lands (55 damage), but its fire is smaller and burns 25% less. | **Clinging Fire**: Incendiary Grenade's fire reaches 1 m further, and enemies keep burning for 3 seconds after they leave it. |
 | 10 passive | **Bloodthirst**: Heal for 10% of the damage your weapons deal. | **Suppressing Fire**: Your bullets slow enemies by 15% for a second. |
 | 12 talent | **Hunter's Mark**: Marked enemies take 25% more damage instead of 15%. | **Repulse**: Slip blasts enemies within 4 m of where you start 4 m away and slows them by 40% for 2 seconds. |
 | 14 trait | **Long Barrel**: Your weapons deal 8% more damage and keep full damage 30% further out. | **Stopping Power**: Your bullets push enemies back slightly. |
-| 16 talent | **Twin Marks**: Tracer Mark holds two charges and recovers 30% sooner. | **Firewalk**: Slip leaves a 2.5 m fire where you started that burns enemies for 3 seconds. |
+| 16 talent | **Twin Marks**: Tracer Mark holds two charges. | **Firewalk**: Slip leaves a 2.5 m fire where you started that burns enemies for 3 seconds. |
 | 18 talent | **Blood Mark**: Tracer Mark deals 40 more damage and heals you 40. | **Sticky Fire**: Enemies in Incendiary Grenade's fire are slowed by 25%. |
-| 20 capstone | **Apex Predator**: Your weapons deal 12% more damage and you heal for 10% more of it. | **Inferno**: Incendiary Grenade's fire reaches 1.5 m further, lasts 3 seconds longer and burns 30% harder. |
+| 20 capstone | **Apex Predator**: Your weapons deal 12% more damage and you heal for 10% more of it. | **Inferno**: Incendiary Grenade's fire reaches 1.5 m further and lasts 3 seconds longer. |
 
 ## Mender (support)
 
 Health 200. Weapon: Mending sidearm (15 damage a shot). It heals only while loaded with Mending Rounds.
 
-- **E: Mending Canister.** Throw a canister where you aim. For 6 seconds, you and teammates within 3.5 m of it regenerate 16 health a second, and keep regenerating for a second after stepping out. Cooldown 12 s.
-- **F: Purge.** Clear every harmful effect (slows, stuns, silences, marks, damage and healing cuts) from you and teammates within 6 m. Cooldown 12 s.
+- **E: Mending Canister.** Throw a canister where you aim. For 6 seconds, you and teammates within 3.5 m of it regenerate 18 health a second, and keep regenerating for a second after stepping out. Cooldown 14 s.
+- **F: Purge.** Clear every harmful effect (slows, stuns, silences, marks, damage and healing cuts) from you and teammates within 6 m. Cooldown 16 s.
 - **X: Mending Rounds.** Reload at once with a magazine of healing rounds: each one that hits a teammate heals them 16 (shots stop on teammates instead of passing through). Healing rounds do no harm to enemies, so reload to fight. A normal reload or emptying the magazine swaps back. Cooldown 6 s.
 
 Left (Z) is the **single-target** path: the gun and Mending Rounds, ending in healing rounds that ricochet from the teammate hit to the nearest hurt teammate within 6 m (`Ruleset.healRicochetRange`, 60% of the heal: `healRicochetShare`). Right (V) is the **area** path: the canister and Purge, with a canister that latches onto a teammate and follows them, and a Purge that wards everyone it reaches so the next enemy debuff on them is blocked.
@@ -100,7 +110,7 @@ the **Shutdown** path: longer silences on one enemy at a time that weaken, expos
 | 2 trait | **Hollow Points**: Your weapons deal 5% more damage. | **Long Hush**: Everything you put on a target lasts 15% longer: silences, Hamper, and your own Cloak and Stim. |
 | 4 talent | **Ambush**: For 2.5 seconds after you fire or throw out of Cloak, your weapons deal 20% more damage. | **Quick Hush**: Hush Grenade recovers 3 seconds sooner. |
 | 6 trait | **Drum Mag**: Your magazines hold 25% more rounds. | **Handy**: Abilities recover 10% faster. |
-| 8 third ability | **Sharp Hush**: Hush Grenade deals 25 more damage and recovers 4 seconds sooner, to open an ambush. | **Deep Hush**: Hush Grenade silences for 1 second longer. |
+| 8 third ability | **Sharp Hush**: Hush Grenade deals 25 more damage, to open an ambush. | **Deep Hush**: Hush Grenade silences for 1 second longer. |
 | 10 passive | **Light Feet**: Move 6% faster, and another 10% faster while cloaked. | **Padded Vest**: +25 max health. |
 | 12 talent | **Killing Window**: Ambush lasts 1.5 seconds longer, and your weapons deal 15% more damage during it. | **Hamper**: The enemy Hush Grenade hits deals 20% less damage and heals 25% less for 5 seconds. |
 | 14 trait | **Close Work**: Your weapons deal 8% more damage. | **Wide Reach**: Your abilities reach 15% further (Hush Grenade still hits one enemy). |
@@ -118,10 +128,10 @@ while his axe works. Gashrak is a working name.
   takes the hit instead.
 - **E: War Leap.** Leap up to 12 m to where you aim (onto the floor below it, so aiming at a wall or the sky still lands).
   Where he lands, 0.8 s later, enemies within 3.5 m take 30 damage and are knocked up: thrown into the air and stunned for
-  0.75 seconds. Cooldown 10 s.
-- **F: Axe Throw.** Throw a hand axe up to 25 m: the first enemy hit takes 40 damage and is stunned for 1.25 seconds.
-  Cooldown 12 s.
-- **X: Rage.** For 6 seconds, regenerate 15 health a second and deal 20% more damage. Cooldown 20 s (not ultimate charge).
+  0.75 seconds. Cooldown 14 s.
+- **F: Axe Throw.** Throw a hand axe up to 25 m: the first enemy hit takes 50 damage and is stunned for 1.25 seconds.
+  Cooldown 15 s.
+- **X: Rage.** For 6 seconds, regenerate 15 health a second and deal 20% more damage. Cooldown 20 s.
 
 Stuns and knock-ups use the built-in stun: Purge clears them, a ward blocks them, and `Ruleset.maxStunSeconds` caps them.
 A silence (Hush Grenade) stops his abilities but not the axe, unless he has Unbroken.
@@ -138,7 +148,7 @@ harmful effect.
 | 6 trait | **Long Reach**: Your swings reach 15% further (about half a metre). | **Warlord's Pace**: Abilities recover 10% faster. |
 | 8 third ability | **Long Rage**: Rage lasts 2 seconds longer. | **Second Skin**: Rage regenerates 50% more health. |
 | 10 passive | **Battle Hunger**: Heal for 8% of the damage your axe deals. | **Hard to Kill**: Take 10% less damage while at half health or less. |
-| 12 talent | **Crushing Landing**: War Leap's landing deals 40 more damage. | **Ground Shaker**: War Leap's knock-up stuns for 0.4 seconds longer. |
+| 12 talent | **Crushing Landing**: War Leap's landing deals 30 more damage. | **Ground Shaker**: War Leap's knock-up stuns for 0.4 seconds longer. |
 | 14 trait | **Quick Swings**: You swing 10% faster. | **Iron Grip**: Your stuns, knock-ups and Rage last 15% longer. |
 | 16 talent | **Blood Rage**: While Rage is up, your axe also heals you for 15% of the damage it deals. | **Unbroken**: Rage can be used while stunned or silenced, and clears every harmful effect on you when it starts. |
 | 18 talent | **Wide Landing**: War Leap's landing reaches 1.5 m further. | **Twin Axes**: Axe Throw holds two charges. |
@@ -192,11 +202,11 @@ enemy and grows a frenzy mushroom out of a teammate.
 - **E: Bloom Cap.** Plant a healing mushroom where you aim. For 6 seconds, you and teammates within 3.5 m of it heal 18
   health a second, and keep healing for a second after stepping out. Cooldown 14 s.
 - **F: Rot Spore.** Throw a rotten spore pod where you aim. It bursts a second later: enemies within 3.5 m are poisoned
-  for 10 damage a second and Wilt (deal 20% less damage) for 5 seconds. Both are harmful effects, so a cleanse (Purge)
-  clears them (50 damage in all, so it never kills a healthy hero alone). Cooldown 15 s.
+  for 7 damage a second and Wilt (deal 20% less damage) for 5 seconds. Both are harmful effects, so a cleanse (Purge)
+  clears them (35 damage in all, so it never kills a healthy hero alone). Cooldown 15 s.
 - **X: Frenzy Cap.** Grow a frenzy mushroom on the teammate you aim at (within 1.5 m of where your aim
   lands, up to 30 m): for 6 seconds they fire 25% faster and deal 15% more damage. With no teammate there it is
-  refused and spends nothing (`TargetingDef.needsTarget`). Cooldown 20 s (no ultimate charge).
+  refused and spends nothing (`TargetingDef.needsTarget`). Cooldown 20 s.
 
 Left (Z) is the **Overgrowth** path: everything grows bigger, lasts longer and spreads. Right (V) is the **Symbiosis**
 path: Bolete gains from his own fungus, healed when he heals, feeding on his poison and sharing his Frenzy.
@@ -239,6 +249,5 @@ as `Tests/CoreSim/Tests/WaveKitTests.cs` checks it:
 
 Turrets shoot the nearest enemy they can see, so a minion in front of one comes before a hero at the edge of its reach.
 Upgrades that work "on a point" (Anchor, Braced) also work within 8 m of your own minions or Bastion
-(`Ruleset.escortRadius`). Damage and healing on units give half the ultimate charge they give on heroes
-(`Ruleset.ultimateChargeUnitShare`), so clearing waves helps ultimates without replacing fights.
+(`Ruleset.escortRadius`).
 `dotnet run --project Tests/CoreSim -- report kitwaves` shows how long each hero takes to clear one wave alone.

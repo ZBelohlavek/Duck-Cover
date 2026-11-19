@@ -39,7 +39,7 @@ static class BoleteKitTests
         Check.Equal("bolete_bloom,bolete_rot,bolete_frenzy", string.Join(",", slots), "E, F and X");
         Check.Equal("spore_bombs", h.Combat.Weapons.Weapons(A1).weapons[0], "spore bombs in hand");
         Check.Equal(1, h.Combat.Weapons.Weapons(A1).weapons.Length, "and nothing else");
-        Check.False(h.Abilities.AbilityIn(A1, Frenzy).ultimate, "Frenzy Cap runs on a cooldown, not ultimate charge");
+        Check.True(h.Abilities.AbilityIn(A1, Frenzy).cooldown > 0f, "Frenzy Cap runs on a cooldown");
         Check.Equal("14,15,20", string.Join(",", Enumerable.Range(0, 3).Select(i => h.Abilities.AbilityIn(A1, i).cooldown)), "cooldowns 14, 15 and 20 s");
         Check.Near(200f, h.Combat.Damage.MaxHealth(A1), "200 health");
         Check.Equal("support", ProgressionHarness.DataCatalog().Get("bolete").role, "the healer pick");
@@ -117,7 +117,7 @@ static class BoleteKitTests
         Check.True(h.Unit(B1).Status("bolete_poison") != null, "poisoned once it bursts");
         Check.Near(0.8f, h.Stat(B1, StatIds.DamageDealt), "and Wilted: 20% less damage");
         h.Run(5f);
-        Check.Near(hp - 50f, h.Health(B1), "10 poison a second for 5 seconds", 5.5f);
+        Check.Near(hp - 35f, h.Health(B1), "7 poison a second for 5 seconds", 4f);
         Check.True(h.Unit(B1).Status("bolete_poison") == null, "then it wears off");
         Check.Near(1f, h.Stat(B1, StatIds.DamageDealt), "and so does Wilt");
 
@@ -132,7 +132,6 @@ static class BoleteKitTests
     static void FrenzyCapGrowsOnATeammate()
     {
         var h = Field();
-        h.Unit(A1).ultimateCharge = 100f;
         Check.Equal("no target in reach", h.Use(A1, Frenzy, Vec3.Up).reason, "aimed at nobody, it waits");
         Check.Equal(1, h.Unit(A1).slots[Frenzy].charges, "and spends nothing");
         Check.Equal("no target in reach", h.UseAt(A1, Frenzy, B1).reason, "an enemy is no target either");
@@ -153,7 +152,6 @@ static class BoleteKitTests
         var h = Field("bolete_wild_frenzy", "bolete_shared_frenzy");
         // A third teammate 3 m from the one aimed at.
         h.Place(A1, 0f, 0f);
-        h.Unit(A1).ultimateCharge = 100f;
         Check.True(h.UseAt(A1, Frenzy, A2).IsAccepted, "Frenzy Cap");
         Check.Near(1.2f, h.Stat(A2, StatIds.MoveSpeed), "Wild Frenzy: 20% faster");
 
@@ -163,7 +161,6 @@ static class BoleteKitTests
         g.Place(A2, 0f, 8f);
         g.Place(3, 3f, 8f);
         g.Tick();
-        g.Unit(A1).ultimateCharge = 100f;
         Check.True(g.UseAt(A1, Frenzy, A2).IsAccepted, "Shared Frenzy");
         Check.Near(1.25f, g.Stat(A2, StatIds.FireRate), "the teammate aimed at");
         Check.Near(1.25f, g.Stat(3, StatIds.FireRate), "and the one 3 m from them");
@@ -217,7 +214,6 @@ static class BoleteKitTests
     static void KindredFrenzyAlsoGrowsOnHim()
     {
         var h = Field("bolete_kindred_frenzy");
-        h.Unit(A1).ultimateCharge = 100f;
         Check.True(h.UseAt(A1, Frenzy, A2).IsAccepted, "Frenzy Cap");
         Check.Near(1.25f, h.Stat(A2, StatIds.FireRate), "the teammate");
         Check.Near(1.25f, h.Stat(A1, StatIds.FireRate), "and Bolete");

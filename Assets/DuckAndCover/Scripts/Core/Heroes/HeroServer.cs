@@ -81,7 +81,7 @@ namespace DuckAndCover.Core
             }
         }
 
-        /// <summary>The hero's abilities (ultimate last), passive and max health. Unknown heroes get the catalog's fallback.</summary>
+        /// <summary>The hero's abilities (E, F, then X), passive and max health. Unknown heroes get the catalog's fallback.</summary>
         public CommandResult GiveKit(int playerId, string heroId)
         {
             var hero = Heroes.Resolve(heroId);
@@ -89,7 +89,7 @@ namespace DuckAndCover.Core
             return Combat.Abilities.SetLoadout(playerId, Slots(hero), hero.maxHealth, hero.passiveId);
         }
 
-        /// <summary>Ability slots in order: the two abilities, then the ultimate.</summary>
+        /// <summary>Ability slots in order: the two abilities, then the third (X).</summary>
         public static string[] Slots(HeroDef hero)
         {
             var slots = new List<string>(hero.abilities ?? new string[0]);
@@ -166,8 +166,6 @@ namespace DuckAndCover.Core
             var a = lib.Ability(id);
             if (a == null) { errors.Add(who + " uses unknown ability '" + id + "'"); return; }
             if (a.passive != passive) errors.Add(who + ": '" + id + "' " + (passive ? "is its passive but isn't marked passive" : "is a passive, not something to cast"));
-            // The third slot (X) may run on ultimate charge or on a cooldown; the first two always use cooldowns.
-            if (!passive && !thirdSlot && a.ultimate) errors.Add(who + ": '" + id + "' is marked ultimate but sits in an E or F slot (only the third ability may use ultimate charge)");
         }
     }
 }
