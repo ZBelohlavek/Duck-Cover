@@ -119,6 +119,11 @@ static class HeroKitTests
             h.Run(2f);
             Check.True(h.Use(A1, 1, Ahead).IsAccepted, heroId + ": F works at level 1");
             h.Run(2f);
+            if (!h.Abilities.AbilityIn(A1, 2).ultimate)
+            {
+                Check.True(h.Use(A1, 2, Ahead).IsAccepted, heroId + ": X (a cooldown ability) works at level 1");
+                continue;
+            }
             var empty = h.Use(A1, 2, Ahead);
             Check.Equal("ultimate not charged", empty.reason, heroId + ": X is only waiting for charge");
             h.Run(5f);
@@ -195,6 +200,7 @@ static class HeroKitTests
         h.Place(A2, 0f, 3f);
         h.Unit(A2).health = 100f;
         var before = h.Heroes.Progression.Progress(A1)?.xp ?? 0f;
+        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "Mending Rounds");
         Check.True(h.FireAt(A1, h.ChestOf(A2)).IsAccepted, "heal shot");
         Check.True(h.Heroes.Progression.Progress(A1).xp > before, "healing a teammate pays experience");
     }
@@ -341,41 +347,75 @@ static class HeroKitTests
     // ---- Mender ----
 
     [Test]
-    static void MendingSidearmHealsTeammatesAndHurtsEnemies()
+    static void MenderSidearmOnlyHealsWithMendingRounds()
     {
         var h = With(A1, "mender", B1, "lancer");
         h.Place(A1, 0f, 0f);
         h.Place(A2, 0f, 5f);
-        h.Place(B1, 3f, 10f);
+        h.Place(B1, 0f, 10f);
         h.Unit(A2).health = 100f;
-        Check.True(h.FireAt(A1, h.ChestOf(A2)).IsAccepted, "shoot a teammate");
-        Check.Near(114f, h.Health(A2), "healed 14");
+        Check.True(h.FireAt(A1, h.ChestOf(A2)).IsAccepted, "shoot through a teammate");
+        Check.Near(100f, h.Health(A2), "a plain round doesn't heal");
+        Check.True(h.Health(B1) < 200f, "it flies on and hurts the enemy behind");
+        Check.True(h.Combat.Weapons.Weapons(A1).CurrentAmmo < 18, "spent a round");
+
+        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "Mending Rounds");
+        var w = h.Combat.Weapons.Weapons(A1);
+        Check.Equal(18, w.CurrentAmmo, "reloaded at once");
+        Check.Equal(18, w.healRounds, "with a full magazine of healing rounds");
         h.Run(0.2f);
-        Check.True(h.FireAt(A1, h.ChestOf(B1)).IsAccepted, "shoot an enemy");
-        Check.Near(185f, h.Health(B1), "15 damage");
+        Check.True(h.FireAt(A1, h.ChestOf(A2)).IsAccepted, "heal shot");
+        Check.Near(116f, h.Health(A2), "healed 16");
+        Check.Equal(17, w.healRounds, "one healing round used");
+        float enemy = h.Health(B1);
+        h.Place(A2, 5f, 5f);
+        h.Run(0.2f);
+        h.FireAt(A1, h.ChestOf(B1));
+        Check.Near(enemy - 15f, h.Health(B1), "a healing round still hurts an enemy");
+
+        Check.True(h.Combat.Apply(new ReloadCommand { playerId = A1 }).IsAccepted, "a normal reload");
+        h.Run(2f);
+        Check.Equal(0, w.healRounds, "swaps back to plain rounds");
+        Check.False(h.Use(A1, 2, Ahead).IsAccepted, "and Mending Rounds is on its 6 s cooldown");
+        h.Run(4.1f);
+        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "ready again after 6 s");
     }
 
     [Test]
-    static void MedicPathHealsHarderAndCleanses()
+    static void SingleTargetPathHealsHarderAndRicochets()
     {
-        var h = With(A1, "mender", B1, "lancer");
+        var h = With(A1, "mender", B1, "lancer", 3);
+        int A3 = HeroHarness.A1 + 2;
         h.Place(A1, 0f, 0f);
         h.Place(A2, 0f, 5f);
-        h.Heroes.ApplyUpgrade(A1, "mender", "mender_steady_dose");
+        h.Place(A3, 3f, 6f);
+        h.Heroes.ApplyUpgrade(A1, "mender", "mender_steady_aim");
+        h.Heroes.ApplyUpgrade(A1, "mender", "mender_potent_rounds");
         h.Unit(A2).health = 150f;
+        h.Unit(A3).health = 100f;
+        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "Mending Rounds");
         h.FireAt(A1, h.ChestOf(A2));
-        Check.Near(150f + 14f * 1.1f, h.Health(A2), "Steady Dose: the sidearm heals 10% more");
+        float one = 16f * 1.08f * 1.25f;
+        Check.Near(150f + one, h.Health(A2), "Steady Aim and Potent Rounds: 8% and 25% more");
+        Check.Near(100f, h.Health(A3), "no ricochet yet");
 
         h.Heroes.ApplyUpgrade(A1, "mender", "mender_triage");
         h.Unit(A2).health = 60f; // under half
         h.Run(0.2f);
         h.FireAt(A1, h.ChestOf(A2));
-        Check.Near(60f + 14f * 1.1f * 1.3f, h.Health(A2), "Triage: 30% more on a low teammate");
+        Check.Near(60f + one * 1.3f, h.Health(A2), "Triage: 30% more on a low teammate");
+
+        h.Heroes.ApplyUpgrade(A1, "mender", "mender_ricochet");
+        h.Unit(A2).health = 150f;
+        h.Run(0.2f);
+        h.FireAt(A1, h.ChestOf(A2));
+        Check.Near(100f + one * 0.6f * 1.3f, h.Health(A3), "Ricochet: the round jumps to the hurt teammate nearby for 60%");
+        Check.True(h.Of<HealRoundBouncedEvent>().Any(e => e.fromId == A2 && e.toId == A3), "and says so");
 
         h.Abilities.ApplyStatus(A2, AbilityLibrary.SlowStatus, B1, 0.5f, 5f);
         h.Run(0.2f);
         h.FireAt(A1, h.ChestOf(A2));
-        Check.True(h.Unit(A2).HasStatus(AbilityLibrary.SlowStatus), "a plain heal leaves the slow");
+        Check.True(h.Unit(A2).HasStatus(AbilityLibrary.SlowStatus), "a healing round leaves the slow");
         h.Heroes.ApplyUpgrade(A1, "mender", "mender_second_opinion");
         h.Run(0.2f);
         h.FireAt(A1, h.ChestOf(A2));
@@ -383,16 +423,121 @@ static class HeroKitTests
     }
 
     [Test]
-    static void ShieldingAreasCoverTeammates()
+    static void LifelineRicochetsTwiceToTheNearestHurt()
     {
-        var m = With(A1, "mender", B1, "lancer");
-        m.Place(A1, 0f, 0f);
-        m.Place(A2, 0f, 3f);
-        m.NoShield(A2);
-        m.Heroes.ApplyUpgrade(A1, "mender", "mender_sanctuary");
-        m.UseAt(A1, 0, A2);
-        m.Run(1.1f);
-        Check.True(m.Shield(A2) > 0f, "Sanctuary: the field shields too");
+        var h = With(A1, "mender", B1, "lancer", 4);
+        int A3 = HeroHarness.A1 + 2, A4 = HeroHarness.A1 + 3;
+        h.Place(A1, 0f, 0f);
+        h.Place(A2, 0f, 5f);
+        h.Place(A3, 4f, 5f);
+        h.Place(A4, 8f, 5f);
+        h.Heroes.ApplyUpgrade(A1, "mender", "mender_ricochet");
+        h.Heroes.ApplyUpgrade(A1, "mender", "mender_lifeline");
+        h.Unit(A3).health = 100f;
+        h.Unit(A4).health = 100f;
+        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "Mending Rounds");
+        h.FireAt(A1, h.ChestOf(A2));
+        Check.True(h.Health(A3) > 100f, "first jump to the next teammate");
+        Check.True(h.Health(A4) > 100f, "Lifeline: a second jump on from there");
+        Check.Equal(2, h.Of<HealRoundBouncedEvent>().Count(), "two jumps");
+    }
+
+    [Test]
+    static void SplashRoundsHealAroundTheTeammateHit()
+    {
+        var h = With(A1, "mender", B1, "lancer", 3);
+        int A3 = HeroHarness.A1 + 2;
+        h.Place(A1, 0f, 0f);
+        h.Place(A2, 0f, 6f);
+        h.Place(A3, 1.5f, 6f);
+        h.Unit(A2).health = 100f;
+        h.Unit(A3).health = 100f;
+        h.Heroes.ApplyUpgrade(A1, "mender", "mender_splash_rounds");
+        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "Mending Rounds");
+        h.FireAt(A1, h.ChestOf(A2));
+        Check.Near(116f, h.Health(A2), "the teammate hit");
+        Check.Near(108f, h.Health(A3), "and half for the one beside them");
+    }
+
+    [Test]
+    static void MendingCanisterGivesRegenThatLingers()
+    {
+        var h = With(A1, "mender");
+        h.Place(A1, 0f, 0f);
+        h.Place(A2, 0f, 3f);
+        h.Unit(A2).health = 100f;
+        Check.True(h.UseAt(A1, 0, A2).IsAccepted, "canister");
+        h.Run(3.05f);
+        Check.True(h.Unit(A2).HasStatus("mender_regen"), "regenerating inside");
+        Check.Near(100f + 16f * 2.5f, h.Health(A2), "16 a second once it starts", 8.5f);
+        h.Place(A2, 0f, 20f);
+        float left = h.Health(A2);
+        h.Run(1.05f);
+        Check.True(h.Health(A2) > left, "keeps regenerating just after stepping out");
+        h.Run(1f);
+        Check.False(h.Unit(A2).HasStatus("mender_regen"), "then stops");
+        float after = h.Health(A2);
+        h.Run(1f);
+        Check.Near(after, h.Health(A2), "no more healing outside");
+    }
+
+    [Test]
+    static void TetheredCanisterFollowsATeammate()
+    {
+        var h = With(A1, "mender");
+        h.Place(A1, 0f, 0f);
+        h.Place(A2, 0f, 6f);
+        h.Heroes.ApplyUpgrade(A1, "mender", "mender_tethered_canister");
+        h.Unit(A2).health = 100f;
+        Check.True(h.UseAt(A1, 0, A2).IsAccepted, "canister at the teammate");
+        var can = h.Abilities.State.objects.First(o => o.defId == "mender_canister");
+        Check.Equal(A2, can.followId, "latched onto the teammate");
+        h.Place(A2, 10f, 15f);
+        h.Run(1.05f);
+        Check.Near(10f, can.position.x, "follows them", 0.01f);
+        Check.Near(15f, can.position.z, "follows them", 0.01f);
+        Check.True(h.Unit(A2).HasStatus("mender_regen"), "and keeps healing them there");
+
+        var plain = With(A1, "mender");
+        plain.Place(A1, 0f, 0f);
+        plain.Place(A2, 0f, 6f);
+        plain.UseAt(A1, 0, A2);
+        Check.Equal(-1, plain.Abilities.State.objects.First(o => o.defId == "mender_canister").followId, "without the talent it stays where it lands");
+    }
+
+    [Test]
+    static void PurgeCleansesEveryDebuff()
+    {
+        var h = With(A1, "mender", B1, "rigger");
+        h.Place(A1, 0f, 0f);
+        h.Place(A2, 0f, 3f);
+        h.Abilities.ApplyStatus(A2, AbilityLibrary.SlowStatus, B1, 0.5f, 3f, 0f, "rigger_mine");
+        h.Abilities.ApplyStatus(A2, AbilityLibrary.StunStatus, B1, 1f, 0.5f);
+        h.Abilities.ApplyStatus(A1, AbilityLibrary.SlowStatus, B1, 0.5f, 3f);
+        Check.True(h.Use(A1, 1, Ahead).IsAccepted, "purge");
+        Check.False(h.Unit(A2).statuses.Any(s => h.Abilities.Library.Status(s.statusId).negative), "teammate cleared");
+        Check.False(h.Unit(A1).HasStatus(AbilityLibrary.SlowStatus), "and Mender too");
+        Check.False(h.Unit(A2).HasStatus("mender_ward"), "no ward without the talent");
+    }
+
+    [Test]
+    static void WardingPurgeBlocksTheNextDebuff()
+    {
+        var h = With(A1, "mender", B1, "rigger");
+        h.Place(A1, 0f, 0f);
+        h.Place(A2, 0f, 3f);
+        h.Heroes.ApplyUpgrade(A1, "mender", "mender_warding_purge");
+        Check.True(h.Use(A1, 1, Ahead).IsAccepted, "purge");
+        Check.True(h.Unit(A2).HasStatus("mender_ward"), "teammate warded");
+        Check.False(h.Abilities.ApplyStatus(A2, AbilityLibrary.SlowStatus, B1, 0.5f, 3f), "the next slow is blocked");
+        Check.False(h.Unit(A2).HasStatus(AbilityLibrary.SlowStatus), "not slowed");
+        Check.False(h.Unit(A2).HasStatus("mender_ward"), "the ward is used up");
+        Check.True(h.Of<StatusBlockedEvent>().Any(e => e.targetId == A2 && e.wardId == "mender_ward"), "and says so");
+        Check.True(h.Abilities.ApplyStatus(A2, AbilityLibrary.SlowStatus, B1, 0.5f, 3f), "the one after lands");
+
+        Check.True(h.Unit(A1).HasStatus("mender_ward"), "Mender is warded too");
+        h.Run(8.1f);
+        Check.False(h.Unit(A1).HasStatus("mender_ward"), "a ward lasts 8 seconds");
     }
 
     [Test]
@@ -408,48 +553,6 @@ static class HeroKitTests
         h.Place(B1, mine.position.x, mine.position.z);
         h.Run(0.3f);
         Check.True(h.Abilities.IsRevealed(B1), "shown through walls");
-    }
-
-    [Test]
-    static void MendingFieldHealsOverTime()
-    {
-        var h = With(A1, "mender");
-        h.Place(A1, 0f, 0f);
-        h.Place(A2, 0f, 3f);
-        h.Unit(A2).health = 100f;
-        Check.True(h.UseAt(A1, 0, A2).IsAccepted, "field");
-        h.Run(3.05f);
-        Check.Near(160f, h.Health(A2), "20 a second for three seconds", 0.5f);
-    }
-
-    [Test]
-    static void PurgeCleansesAndHeals()
-    {
-        var h = With(A1, "mender", B1, "rigger");
-        h.Place(A1, 0f, 0f);
-        h.Place(A2, 0f, 3f);
-        h.Unit(A2).health = 100f;
-        h.Abilities.ApplyStatus(A2, AbilityLibrary.SlowStatus, B1, 0.5f, 3f, 0f, "rigger_mine");
-        Check.True(h.Use(A1, 1, Ahead).IsAccepted, "purge");
-        Check.False(h.Unit(A2).HasStatus(AbilityLibrary.SlowStatus), "slow cleared");
-        Check.Near(130f, h.Health(A2), "healed 30");
-        Check.False(h.Unit(A2).HasStatus("mender_quicken"), "no speed without the talent");
-    }
-
-    [Test]
-    static void AegisPulseShieldsTheTeam()
-    {
-        var h = With(A1, "mender");
-        h.Place(A1, 0f, 0f);
-        h.Place(A2, 0f, 10f);
-        h.LevelTo(A1, h.Heroes.Progression.Rules.UltimateFormLevel());
-        h.PickForm(A1, "mender_broad_aegis");
-        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "aegis");
-        Check.Near(100f, h.Shield(A1), "self");
-        Check.Near(100f, h.Shield(A2), "teammate 10 m away");
-        h.Run(5.1f);
-        Check.Near(0f, h.Shield(A2), "for 5 seconds", 0.01f);
-        Check.False(h.Unit(A2).shields.Any(s => s.abilityId == "mender_aegis"), "the shield is gone");
     }
 
     // ---- Rigger ----

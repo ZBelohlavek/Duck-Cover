@@ -492,10 +492,10 @@ namespace DuckAndCover.UI
         {
             weaponText.text = local.WeaponName.ToUpperInvariant();
             ammoText.text = local.Ammo.ToString();
-            ammoText.color = local.Reloading ? UITheme.TextDim : local.Ammo == 0 ? UITheme.Danger : UITheme.Text;
+            ammoText.color = local.Reloading ? UITheme.TextDim : local.Ammo == 0 ? UITheme.Danger : local.HealRounds ? UITheme.Health : UITheme.Text;
             magazineText.text = "/ " + local.Magazine;
-            reloadText.text = local.Reloading ? "RELOADING" : local.Ammo == 0 ? "RELOAD (R)" : "";
-            reloadText.color = local.Reloading ? UITheme.Warning : UITheme.Danger;
+            reloadText.text = local.Reloading ? "RELOADING" : local.Ammo == 0 ? "RELOAD (R)" : local.HealRounds ? "HEALING ROUNDS" : "";
+            reloadText.color = local.Reloading ? UITheme.Warning : local.HealRounds && local.Ammo > 0 ? UITheme.Health : UITheme.Danger;
 
             // One cell per round for magazines up to 40, else 20 cells that each stand for several.
             int mag = Mathf.Max(1, local.Magazine);
@@ -503,7 +503,7 @@ namespace DuckAndCover.UI
             var g = ammoRow;
             g.Clear();
             g.SegmentedBar(1884f - 300f, 164f, 300f, 14f, 3f, cells, cells > 24 ? 2f : 3f, (float)local.Ammo / mag,
-                           local.Ammo * 4 <= mag ? UITheme.Warning : UITheme.Visor, UITheme.VisorFaint, true);
+                           local.HealRounds ? UITheme.Health : local.Ammo * 4 <= mag ? UITheme.Warning : UITheme.Visor, UITheme.VisorFaint, true);
             g.Commit();
         }
 

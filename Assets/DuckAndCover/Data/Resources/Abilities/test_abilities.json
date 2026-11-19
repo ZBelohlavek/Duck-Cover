@@ -10,7 +10,8 @@
       "effects": [
         { "kind": "push", "amount": 6, "duration": 0.25, "direction": "aim" },
         { "kind": "spawn", "objectId": "test_heal_trail", "tag": "healTrail" },
-        { "kind": "reload", "affects": "self", "tag": "dashReload" }
+        { "kind": "reload", "affects": "self", "tag": "dashReload" },
+        { "kind": "healRounds", "amount": 10, "radius": 2, "affects": "self", "tag": "dashHealRounds" }
       ]
     },
     {
