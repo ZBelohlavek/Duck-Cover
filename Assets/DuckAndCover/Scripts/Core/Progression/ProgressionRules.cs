@@ -200,7 +200,7 @@ namespace DuckAndCover.Core
             return list;
         }
 
-        /// <summary>The ultimate form the player picked, or null: the ultimate is usable once this is set.</summary>
+        /// <summary>The ultimate upgrade the player picked at the form level, or null (the ultimate itself works from level 1).</summary>
         public UpgradeDef UltimateForm(int playerId)
         {
             foreach (var u in Chosen(playerId)) if (u.Kind == UpgradeKind.Ultimate) return u;

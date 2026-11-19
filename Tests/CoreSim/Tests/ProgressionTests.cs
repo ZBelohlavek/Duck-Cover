@@ -14,8 +14,7 @@ static class ProgressionTests
         Check.Equal("2,4,6,8,10,12,14,16,18,20", string.Join(",", r.ChoiceLevels()), "a pick every other level");
         Check.Equal("2,6,14", string.Join(",", r.ChoiceLevels().Where(l => r.ChoiceAt(l) == UpgradeKind.Trait)), "traits");
         Check.Equal("4,12,16,18", string.Join(",", r.ChoiceLevels().Where(l => r.ChoiceAt(l) == UpgradeKind.Talent)), "talents");
-        Check.Equal(UpgradeKind.Ultimate, r.ChoiceAt(8), "ultimate form at 8");
-        Check.Equal(8, Ruleset.Default.ultimateUnlockLevel, "the ultimate unlocks with its form");
+        Check.Equal(UpgradeKind.Ultimate, r.ChoiceAt(8), "ultimate upgrade at 8");
         Check.Equal(UpgradeKind.Passive, r.ChoiceAt(10), "the passive at 10, halfway");
         Check.Equal(UpgradeKind.Capstone, r.ChoiceAt(20), "capstone at 20");
         Check.Equal(9, r.BoostLevels(20), "nine levels give the automatic boost");
@@ -239,14 +238,14 @@ static class ProgressionTests
     }
 
     [Test]
-    static void UltimateNeedsItsForm()
+    static void UltimateUpgradeAtLevel8()
     {
         var p = new ProgressionHarness();
         int id = p.A[0];
         p.RaiseTo(id, 7);
-        Check.True(p.P.UltimateForm(id) == null, "no ultimate before level 8");
+        Check.True(p.P.UltimateForm(id) == null, "no ultimate upgrade before level 8");
         p.RaiseTo(id, 8);
-        Check.True(p.P.UltimateForm(id) == null, "level 8 reached, form not chosen");
+        Check.True(p.P.UltimateForm(id) == null, "level 8 reached, upgrade not chosen");
         Check.Equal("long_overdrive,wide_overdrive", string.Join(",", p.P.Options(id, 8).Select(u => u.id)), "two forms");
         p.P.Choose(id, 8, 1);
         Check.Equal("wide_overdrive", p.P.UltimateForm(id)?.id, "chosen form");

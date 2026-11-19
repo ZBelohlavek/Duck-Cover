@@ -35,7 +35,7 @@ namespace DuckAndCover.Core
 
         /// <summary>
         /// An extra check before an ability is used, set by whoever knows more than the ability rules
-        /// (HeroServer holds a hero's ultimate until its form is picked): returns why not, or null.
+        /// (the Flag Rush carrier rules, for example): returns why not, or null.
         /// </summary>
         public Func<int, string, string> UseCheck;
 
@@ -226,8 +226,6 @@ namespace DuckAndCover.Core
             var s = unit.slots[slot];
             if (!string.IsNullOrEmpty(abilityId) && abilityId != s.abilityId) return CommandResult.Reject("slot " + slot + " holds " + s.abilityId);
             var def = Resolved(unit, s.abilityId).def;
-            int needLevel = def.ultimate ? Math.Max(def.unlockLevel, Rules.ultimateUnlockLevel) : def.unlockLevel;
-            if (p.level < needLevel) return CommandResult.Reject("unlocks at level " + needLevel);
             string why = UseCheck == null ? null : UseCheck(playerId, def.id);
             if (!string.IsNullOrEmpty(why)) return CommandResult.Reject(why);
             if (IsSilenced(playerId)) return CommandResult.Reject(IsStunned(playerId) ? "stunned" : "silenced");
@@ -422,7 +420,7 @@ namespace DuckAndCover.Core
 
         void TickUltimate(HeroUnit unit, float dt) => AddUltimateCharge(unit, Rules.ultimateChargePerSecond * dt);
 
-        /// <summary>Add ultimate charge (scaled by the hero's ultimateChargeRate). Nothing before the unlock level.</summary>
+        /// <summary>Add ultimate charge (scaled by the hero's ultimateChargeRate), from level 1 on.</summary>
         public void AddUltimateCharge(int playerId, float amount)
         {
             var unit = Combat.Unit(playerId);
@@ -432,7 +430,7 @@ namespace DuckAndCover.Core
         void AddUltimateCharge(HeroUnit unit, float amount)
         {
             var p = Match.Player(unit.playerId);
-            if (amount <= 0f || p == null || p.level < Rules.ultimateUnlockLevel) return;
+            if (amount <= 0f || p == null) return;
             float before = unit.ultimateCharge;
             unit.ultimateCharge = Math.Min(Rules.ultimateChargeMax, before + amount * Math.Max(0f, Combat.Stat(unit.playerId, StatIds.UltimateChargeRate)));
             foreach (var s in unit.slots)

@@ -155,7 +155,7 @@ namespace DuckAndCover.Game
             if (state.phase == MatchPhase.Lobby || state.phase == MatchPhase.HeroPick)
                 GUILayout.Label("Pick a hero on the pick screen: keys 1 to 4 or click a card.");
             if (state.IsPlaying || state.phase == MatchPhase.Deploy)
-                GUILayout.Label("Click the game to take the mouse, Esc frees it. WASD, Shift sprint, Ctrl crouch, Space jump or vault, R reload, 1/2 weapons, E and F abilities, X ultimate, hold Z or V to take the left or right upgrade.");
+                GUILayout.Label("Click the game to take the mouse, Esc frees it. WASD, Shift sprint, Ctrl crouch, Space jump or vault, R reload, 1/2 weapons, E, F and X abilities, hold Z or V to take the left or right upgrade.");
             if (lastRejection != "") GUILayout.Label("Refused: " + lastRejection);
         }
     }

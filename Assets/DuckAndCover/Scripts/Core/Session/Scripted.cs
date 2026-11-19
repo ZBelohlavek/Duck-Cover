@@ -430,7 +430,7 @@ namespace DuckAndCover.Core
             if (mine == null || m == null || mine.slots.Count == 0) return;
             int slot = (plan / 3 + me.id) % Math.Min(2, mine.slots.Count);
             int ult = mine.slots.Count - 1;
-            if (mine.slots.Count > 2 && me.level >= rules.ultimateUnlockLevel && mine.ultimateCharge >= rules.ultimateChargeMax - 0.01f) slot = ult;
+            if (mine.slots.Count > 2 && mine.ultimateCharge >= rules.ultimateChargeMax - 0.01f) slot = ult;
             Vec3 eye = m.position + Vec3.Up * Hitboxes.EyeHeight(rules, m.crouched);
             Vec3 aim = Vec3.Forward;
             int enemy = FirstLivingEnemy(state, me);
