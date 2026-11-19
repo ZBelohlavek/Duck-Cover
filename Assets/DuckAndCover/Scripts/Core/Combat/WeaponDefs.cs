@@ -9,6 +9,11 @@ namespace DuckAndCover.Core
         Hitscan = 0,
         /// <summary>A travelling shot with gravity that hits directly and splashes.</summary>
         Projectile = 1,
+        /// <summary>
+        /// A swing: every enemy within <see cref="WeaponDef.range"/> metres and <see cref="WeaponDef.arcDegrees"/>
+        /// in front, as the swinger saw them. No ammo and no reload: the magazine is never spent.
+        /// </summary>
+        Melee = 2,
     }
 
     /// <summary>Hitbox regions. <see cref="HitInfo.bodyPart"/> carries one of these.</summary>
@@ -56,6 +61,12 @@ namespace DuckAndCover.Core
         /// </summary>
         public float allyHeal = 0f;
 
+        // ---- Melee (uses damage, range and the multipliers' body share is ignored: every hit is a body hit) ----
+        /// <summary>Width of the swing in degrees, left to right, around the swinger's aim.</summary>
+        public float arcDegrees = 0f;
+        /// <summary>Most enemies one swing hits, nearest first. 0 = everyone in the swing.</summary>
+        public int maxTargets = 0;
+
         // ---- Projectile ----
         public float projectileSpeed = 30f;
         /// <summary>Downward pull on the projectile, m/s². 0 flies straight.</summary>
@@ -95,7 +106,15 @@ namespace DuckAndCover.Core
             if (fireInterval <= 0f) e.Add(me + ": fireInterval must be positive");
             if (magazine < 1) e.Add(me + ": magazine must be at least 1");
             if (reloadSeconds < 0f) e.Add(me + ": reloadSeconds can't be negative");
-            if (kind == WeaponKind.Hitscan)
+            if (kind == WeaponKind.Melee)
+            {
+                if (damage <= 0f) e.Add(me + ": damage must be positive");
+                if (range <= 0f || range > 8f) e.Add(me + ": a swing's range must be 0..8 m");
+                if (arcDegrees <= 0f || arcDegrees > 360f) e.Add(me + ": arcDegrees must be 0..360");
+                if (maxTargets < 0) e.Add(me + ": maxTargets can't be negative");
+                if (allyHeal != 0f) e.Add(me + ": allyHeal works on hitscan weapons only");
+            }
+            else if (kind == WeaponKind.Hitscan)
             {
                 if (damage <= 0f) e.Add(me + ": damage must be positive");
                 if (pellets < 1) e.Add(me + ": pellets must be at least 1");
@@ -198,7 +217,7 @@ namespace DuckAndCover.Core
 
     /// <summary>
     /// The weapons and the starter heroes' loadouts (WP11): a rifle, an SMG, a shotgun, a pistol, a
-    /// grenade launcher (no hero carries it yet) and the Mender's sidearm (it heals only with the healing rounds his Mending Rounds load). Loadouts are keyed by
+    /// grenade launcher (no hero carries it yet), the Mender's sidearm and the war chief's greataxe (a melee weapon) (it heals only with the healing rounds his Mending Rounds load). Loadouts are keyed by
     /// hero id; heroId "" is the default. Data/Weapons/starter_weapons.json is the same table as data; a
     /// test keeps them equal.
     /// </summary>
@@ -219,6 +238,8 @@ namespace DuckAndCover.Core
                 new WeaponDef { id = "launcher", displayName = "Grenade launcher", kind = WeaponKind.Projectile, automatic = false, fireInterval = 0.75f, magazine = 4, reloadSeconds = 2.4f,
                     damage = 45f, headMultiplier = 1f, legsMultiplier = 1f, projectileSpeed = 32f, projectileGravity = 9f,
                     splashRadius = 3.5f, splashDamage = 70f, splashMinShare = 0.3f },
+                new WeaponDef { id = "greataxe", displayName = "Greataxe", kind = WeaponKind.Melee, automatic = true, fireInterval = 0.75f, magazine = 1, reloadSeconds = 0f,
+                    damage = 60f, headMultiplier = 1f, legsMultiplier = 1f, range = 3.2f, arcDegrees = 100f },
                 new WeaponDef { id = "mender_sidearm", displayName = "Mending sidearm", automatic = true, fireInterval = 0.16f, magazine = 18, reloadSeconds = 1.4f,
                     damage = 15f, headMultiplier = 1.5f, legsMultiplier = 0.85f, range = 60f, falloffStart = 15f, falloffEnd = 35f, falloffMinShare = 0.5f },
             },
@@ -229,6 +250,7 @@ namespace DuckAndCover.Core
                 new WeaponLoadout { heroId = "lancer", weapons = new[] { "rifle", "pistol" } },
                 new WeaponLoadout { heroId = "mender", weapons = new[] { "mender_sidearm" } },
                 new WeaponLoadout { heroId = "rigger", weapons = new[] { "smg", "pistol" } },
+                new WeaponLoadout { heroId = "warchief", weapons = new[] { "greataxe" } },
             },
         };
 

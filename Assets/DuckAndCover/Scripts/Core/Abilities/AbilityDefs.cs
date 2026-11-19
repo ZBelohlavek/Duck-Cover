@@ -59,6 +59,11 @@ namespace DuckAndCover.Core
         public bool held;
         /// <summary>A held ability: the hero can't fire their weapon while it is up.</summary>
         public bool blocksWeapon;
+        /// <summary>
+        /// Usable while stunned or silenced (a rage that shakes off control). A talent turns it on with the
+        /// param "breaksControl" (op set, value 1).
+        /// </summary>
+        public bool breaksControl;
 
         public AbilityDef Clone()
         {
@@ -93,6 +98,11 @@ namespace DuckAndCover.Core
         public string affects = Affects.Enemies;
         /// <summary>Most targets per ray or area. 0 = no limit. Nearest the area's centre first, ties to the lower id, so it is deterministic.</summary>
         public int maxTargets;
+        /// <summary>
+        /// Aimed spheres: the centre drops to the floor below where the aim lands (a leap's landing spot),
+        /// so aiming at a wall or into the air still lands on the ground.
+        /// </summary>
+        public bool ground;
 
         public TargetingDef Clone() => (TargetingDef)MemberwiseClone();
     }
@@ -101,7 +111,8 @@ namespace DuckAndCover.Core
     /// One standard effect. Which fields matter depends on <see cref="kind"/>:
     /// damage (amount), heal (amount), shield (amount, duration), status (status, amount = strength,
     /// duration), slow (amount = share of speed taken, duration), stun (duration), cleanse,
-    /// push (amount = metres, duration = seconds, direction), spawn (objectId), reload,
+    /// push (amount = metres, or the most metres for a leap; duration = seconds; direction; lift = metres
+    /// up at the top of the arc, so a push with only a lift is a knock-up), spawn (objectId), reload,
     /// healRounds (amount = health each round gives, radius = splash around the teammate hit).
     /// </summary>
     [Serializable]
@@ -123,6 +134,8 @@ namespace DuckAndCover.Core
         public string direction = PushDirections.Aim;
         /// <summary>An area around each target, for kinds that reach past it (healRounds: the splash). 0 = none.</summary>
         public float radius;
+        /// <summary>Push: metres the target rises at the top of the arc (a leap, a knock-up). 0 = level with the ground.</summary>
+        public float lift;
         /// <summary>
         /// Overrides who this effect reaches: empty = the ability's targets; "self" = the caster once,
         /// whatever was hit; otherwise filters the ability's targets (<see cref="Affects"/>).
@@ -370,7 +383,12 @@ namespace DuckAndCover.Core
         public const string Away = "away";
         /// <summary>Toward where the ability landed (a pull).</summary>
         public const string Toward = "toward";
-        public static bool IsKnown(string s) => s == Aim || s == Away || s == Toward;
+        /// <summary>
+        /// To where the ability landed (a leap, on the caster): as far as that spot, flat, up to the
+        /// effect's amount. Give it a lift so it arcs.
+        /// </summary>
+        public const string Leap = "leap";
+        public static bool IsKnown(string s) => s == Aim || s == Away || s == Toward || s == Leap;
     }
 
     /// <summary>

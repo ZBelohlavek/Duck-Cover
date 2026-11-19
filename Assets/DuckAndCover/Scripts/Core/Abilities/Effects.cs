@@ -79,12 +79,26 @@ namespace DuckAndCover.Core
             var e = ctx.effect;
             if (!ctx.runner.IsAlive(targetId)) return;
             Vec3 dir = Vec3.Zero;
+            float distance = e.amount * ctx.scale;
             if (e.direction == PushDirections.Aim) dir = ctx.aim.Normalized;
             else if (ctx.runner.TryGetPosition(targetId, out var pos))
             {
                 dir = (pos - ctx.point).Normalized;
                 if (e.direction == PushDirections.Toward) dir = -dir;
+                if (e.direction == PushDirections.Leap)
+                {
+                    // Flat, to the spot the ability landed on: no further than the amount.
+                    var flat = new Vec3(ctx.point.x - pos.x, 0f, ctx.point.z - pos.z);
+                    distance = Math.Min(distance, flat.Magnitude);
+                    dir = flat.Magnitude > 1e-4f ? flat.Normalized : Vec3.Zero;
+                }
             }
+            else if (e.direction == PushDirections.Leap)
+            {
+                // Without positions, leap along the aim for the full amount.
+                dir = new Vec3(ctx.aim.x, 0f, ctx.aim.z).Normalized;
+            }
+            if (distance <= 0f && e.lift <= 0f) return;
             ctx.runner.Publish(new PushedEvent
             {
                 targetId = targetId,
@@ -92,8 +106,9 @@ namespace DuckAndCover.Core
                 mode = e.direction,
                 origin = ctx.point,
                 direction = dir,
-                distance = e.amount * ctx.scale,
+                distance = Math.Max(0f, distance),
                 seconds = e.duration,
+                lift = Math.Max(0f, e.lift),
                 abilityId = ctx.abilityId,
             });
         }
