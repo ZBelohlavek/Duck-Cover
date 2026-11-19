@@ -51,105 +51,6 @@ static class WaveKitTests
         }
     }
 
-    /// <summary>The same hero with no floor: the test world's box floor would block a sentry's sight from its foot.</summary>
-    static HeroHarness NoFloor(string heroId)
-    {
-        var h = WaveHarness.Hero(heroId, 1, 0);
-        WaveHarness.AddKinds(h.Combat.Units);
-        h.Place(A1, 0f, 0f);
-        h.Tick();
-        h.Forget();
-        return h;
-    }
-
-    [Test]
-    static void RiggersSentryHoldsTheLaneAlone()
-    {
-        var h = NoFloor("rigger");
-        Check.True(h.Use(A1, 1, new Vec3(0f, -0.3f, 1f)).IsAccepted, "sentry set down");
-        h.Place(A1, -60f, 0f); // Rigger leaves the lane
-        h.Run(1.1f); // the sentry arms
-        var wave = WaveHarness.Spawn(U(h), TeamId.B, new Vec3(0f, 0f, 12f));
-        float wardenIn = 0f;
-        for (float t = 0f; t < 22f; t += Dt)
-        {
-            if (wardenIn <= 0f) { WaveHarness.WardenPulse(h.Combat, wave[3]); wardenIn += WaveHarness.WardenEvery; }
-            h.Tick();
-            wardenIn -= Dt;
-        }
-        float fromSentry = WaveDamage(h, wave, e => e.attackerId == A1 && e.objectId != 0);
-        int down = 4 - WaveHarness.Alive(U(h), wave);
-        Check.True(down >= 2, "with nobody there, the sentry destroys " + down + " of the wave (" + fromSentry.ToString("0") + " damage)");
-    }
-
-    [Test]
-    static void SentriesShootTheNearestEnemy()
-    {
-        var h = NoFloor("rigger");
-        Check.True(h.Use(A1, 1, new Vec3(0f, -0.3f, 1f)).IsAccepted, "sentry set down");
-        var sentry = h.Abilities.State.objects.First(o => o.defId == "rigger_sentry");
-        h.Place(B1, sentry.position.x + 12f, sentry.position.z); // an enemy hero near the edge of its reach
-        int scrapper = WaveHarness.Spawn(U(h), TeamId.B, sentry.position + new Vec3(0f, 0f, 4f))[0];
-        h.Run(1.6f);
-        var shots = h.Of<DamagedEvent>().Where(e => e.objectId == sentry.id).ToList();
-        Check.True(shots.Count > 0, "it fires");
-        Check.True(shots.All(e => e.targetId != B1), "not at the hero 12 m away while minions stand closer");
-        Check.True(shots.Any(e => U(h).Unit(e.targetId) != null), "at the minions in its face");
-    }
-
-    [Test]
-    static void RiggersMineSnaresAWalkingWave()
-    {
-        var h = OnGround("rigger");
-        Check.True(h.Use(A1, 0, new Vec3(0f, 0f, 8f) - h.Eye(A1)).IsAccepted, "mine placed on the lane");
-        var mine = h.Abilities.State.objects.First(o => o.defId == "rigger_mine");
-        h.Run(1.1f);
-        var wave = WaveHarness.Spawn(U(h), TeamId.B, new Vec3(0f, 0f, 18f));
-        var free = WaveHarness.Spawn(U(h), TeamId.B, new Vec3(30f, 0f, 18f)); // a wave on clear ground, to compare
-        float freeStart = U(h).Unit(free[0]).position.z;
-        for (int i = 0; i < 80 && !h.Of<ObjectTriggeredEvent>().Any(); i++)
-        {
-            WaveHarness.WalkTick(U(h), wave, -1f, Dt);
-            WaveHarness.WalkTick(U(h), free, -1f, Dt);
-            h.Tick();
-        }
-        var boom = h.Of<ObjectTriggeredEvent>().FirstOrDefault(e => e.objectId == mine.id);
-        Check.True(boom != null, "the wave walks onto the mine and sets it off");
-        if (boom == null) return;
-        Check.True(boom.targets.Count(wave.Contains) >= 2, "it catches the front of the wave, not one minion: " + boom.targets.Count(wave.Contains));
-        float zWave = U(h).Unit(wave[0]).position.z, zFree = U(h).Unit(free[0]).position.z;
-        for (int i = 0; i < 40; i++)
-        {
-            WaveHarness.WalkTick(U(h), wave, -1f, Dt);
-            WaveHarness.WalkTick(U(h), free, -1f, Dt);
-            h.Tick();
-        }
-        float snared = zWave - U(h).Unit(wave[0]).position.z, clear = zFree - U(h).Unit(free[0]).position.z;
-        Check.True(snared < clear * 0.6f, "the snared wave walks " + snared.ToString("0.0") + " m in 2 s, the free one " + clear.ToString("0.0") + " m");
-    }
-
-    [Test]
-    static void RiggersGateHoldsAWaveAndItsFire()
-    {
-        var h = OnGround("rigger", 8, 0);
-        h.Place(A1, 0f, 0f);
-        Check.True(h.Use(A1, 2, new Vec3(0f, 0f, 10f) - h.Eye(A1)).IsAccepted, "gate raised across the lane at z 10");
-        var gate = h.Abilities.State.objects.First(o => o.defId == "rigger_gate");
-        var wave = WaveHarness.Spawn(U(h), TeamId.B, new Vec3(0f, 0f, 16f));
-        for (int i = 0; i < 60; i++) { WaveHarness.WalkTick(U(h), wave, -1f, Dt); h.Tick(); }
-        foreach (int id in wave)
-            Check.True(U(h).Unit(id).position.z > gate.position.z, "minion " + id + " held behind the gate at z " + U(h).Unit(id).position.z.ToString("0.00"));
-        Check.False(U(h).LineOfFire(wave[0], A1), "and it can't shoot Rigger through it");
-        int ours = U(h).Spawn(WaveHarness.Scrapper, TeamId.A, new Vec3(0f, 0f, 7f));
-        h.Tick();
-        Check.True(U(h).LineOfFire(ours, wave[0]), "Rigger's own minions shoot out through it");
-
-        h.Run(12f); // Long Lockout: 10 s
-        Check.False(h.Abilities.State.objects.Contains(gate), "the gate comes down");
-        for (int i = 0; i < 60; i++) { WaveHarness.WalkTick(U(h), wave, -1f, Dt); h.Tick(); }
-        Check.True(U(h).IsAlive(wave[1]) && U(h).Unit(wave[1]).position.z < gate.position.z - 1f, "then the wave walks on");
-    }
-
     [Test]
     static void BulwarksRampartShieldsHimFromWaveFire()
     {
@@ -231,7 +132,7 @@ static class WaveKitTests
     [Test]
     static void AGateHoldsALaneMinionAndItsFire()
     {
-        // WP15's real minion walking and shooting (WaveRules.StepUnit and CanHit) against a Lockout Gate.
+        // WP15's real minion walking and shooting (WaveRules.StepUnit and CanHit) against a placed gate.
         var h = new LaneHarness(waves: false);
         var gateDef = new ObjectDef { id = "test_gate", lifetime = 6f, health = 1500f, blocksMovement = true, blocksShots = true, width = 8f, height = 4f };
         var gate = h.H.Combat.Abilities.SpawnObject(gateDef, CombatHarness.B1, new Vec3(0f, 0f, -80f), "", Vec3.Forward);

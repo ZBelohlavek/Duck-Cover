@@ -116,6 +116,8 @@ namespace DuckAndCover.Core
         public const string WeaponSlow = "weaponSlow";
         /// <summary>Capture speed multiplier on points, for the zone rules to read.</summary>
         public const string CaptureSpeed = "captureSpeed";
+        /// <summary>Seconds added to the ambush window (Ruleset.ambushSeconds) that attacking out of stealth opens.</summary>
+        public const string AmbushSeconds = "ambushSeconds";
 
         /// <summary>The starting value of a stat that the hero doesn't set.</summary>
         public static float DefaultBase(string stat)
@@ -160,8 +162,13 @@ namespace DuckAndCover.Core
         public const string LowHealth = "lowHealth";
         /// <summary>Has a shield up.</summary>
         public const string Shielded = "shielded";
+        /// <summary>Hidden by a stealth status (and not revealed).</summary>
+        public const string Stealthed = "stealthed";
+        /// <summary>Just attacked out of stealth: Ruleset.ambushSeconds plus the ambushSeconds stat.</summary>
+        public const string Ambush = "ambush";
 
         public static bool IsKnown(string when) =>
-            string.IsNullOrEmpty(when) || when == OnHeldPoint || when == OnPoint || when == LowHealth || when == Shielded;
+            string.IsNullOrEmpty(when) || when == OnHeldPoint || when == OnPoint || when == LowHealth || when == Shielded
+            || when == Stealthed || when == Ambush;
     }
 }
