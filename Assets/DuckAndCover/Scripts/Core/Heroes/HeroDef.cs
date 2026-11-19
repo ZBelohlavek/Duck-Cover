@@ -58,6 +58,33 @@ namespace DuckAndCover.Core
         }
     }
 
+    /// <summary>
+    /// Which key uses which ability slot. Slots are the hero's abilities in order, the third (X) last
+    /// (<see cref="HeroServer.Slots"/>). A hero with a base passive has one ability before X, so its second
+    /// slot is X and F is the passive's place (no key).
+    /// </summary>
+    public static class AbilityKeys
+    {
+        public const string E = "E", F = "F", X = "X";
+
+        /// <summary>"E", "F", "X", or "" for a slot no key uses.</summary>
+        public static string ForSlot(int slot, int count, bool basePassive)
+        {
+            if (slot < 0 || slot >= count) return "";
+            if (slot == count - 1 && (count > 2 || count == 2 && basePassive)) return X;
+            if (slot == 0) return E;
+            if (slot == 1) return F;
+            return "";
+        }
+
+        /// <summary>The slot a key uses, or -1.</summary>
+        public static int SlotFor(string key, int count, bool basePassive)
+        {
+            for (int i = 0; i < count; i++) if (ForSlot(i, count, basePassive) == key) return i;
+            return -1;
+        }
+    }
+
     /// <summary>The upgrades offered at one level. options[0] is the left choice, options[1] the right.</summary>
     [Serializable]
     public class HeroLevelChoice

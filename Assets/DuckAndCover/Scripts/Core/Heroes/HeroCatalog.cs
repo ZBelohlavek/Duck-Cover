@@ -59,7 +59,12 @@ namespace DuckAndCover.Core
             if (string.IsNullOrEmpty(hero.displayName)) errors.Add(who + " needs a displayName");
             if (string.IsNullOrEmpty(hero.role)) errors.Add(who + " needs a role");
             if (string.IsNullOrEmpty(hero.weaponId)) errors.Add(who + " needs a weaponId");
-            if (hero.abilities == null || hero.abilities.Length != 2) errors.Add(who + " needs exactly two abilities");
+            // E and F before the third ability (X); a hero with a base passive may have only E, the passive
+            // taking F's place.
+            bool basePassive = !string.IsNullOrEmpty(hero.passiveId);
+            int slots = hero.abilities == null ? 0 : hero.abilities.Length;
+            if (slots != 2 && !(basePassive && slots == 1))
+                errors.Add(who + (basePassive ? " needs one or two abilities besides its third (X)" : " needs exactly two abilities"));
             else foreach (var a in hero.abilities) if (string.IsNullOrEmpty(a)) errors.Add(who + " has an empty ability id");
             if (string.IsNullOrEmpty(hero.ultimateId)) errors.Add(who + " needs an ultimateId");
             if (hero.maxHealth < 0f) errors.Add(who + " has a negative maxHealth");

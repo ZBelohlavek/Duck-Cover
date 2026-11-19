@@ -89,8 +89,10 @@ namespace DuckAndCover.Core
                     if (a.stats == null || a.stats.Length == 0) errors.Add(w + "a passive needs stats");
                     if (a.effects != null && a.effects.Length > 0) errors.Add(w + "a passive is never cast, so it can't have effects");
                     ValidateStats(a.stats, w, errors);
+                    ValidateKills(a, w, errors);
                     continue;
                 }
+                ValidateKills(a, w, errors);
                 if (!a.held && a.stats != null && a.stats.Length > 0) errors.Add(w + "stats only work on a passive or a held ability");
                 if (a.cooldown < 0f) errors.Add(w + "cooldown can't be negative");
                 if (a.cooldown <= 0f) errors.Add(w + "needs a cooldown");
@@ -102,6 +104,7 @@ namespace DuckAndCover.Core
                 if (!Affects.IsKnown(t.affects)) errors.Add(w + "unknown targeting affects '" + t.affects + "'");
                 if (t.shape == Shapes.Ray && t.range <= 0f) errors.Add(w + "a ray needs a range");
                 if (t.shape == Shapes.Sphere && t.radius <= 0f) errors.Add(w + "a sphere needs a radius");
+                if (t.shape == Shapes.Arc && (t.range <= 0f || t.spreadDegrees <= 0f)) errors.Add(w + "an arc needs a range and a spreadDegrees");
                 if (t.shape == Shapes.Sphere && t.origin == Origins.AimPoint && t.range <= 0f) errors.Add(w + "an aimed sphere needs a range");
                 if (t.ground && (t.shape != Shapes.Sphere || t.origin != Origins.AimPoint)) errors.Add(w + "ground only works on an aimed sphere");
                 if (t.count < 1) errors.Add(w + "count must be at least 1");
@@ -151,6 +154,25 @@ namespace DuckAndCover.Core
             return errors;
         }
 
+        void ValidateKills(AbilityDef a, string w, List<string> errors)
+        {
+            if (a.notchDamage < 0f || a.maxNotches < 0) errors.Add(w + "notchDamage and maxNotches can't be negative");
+            if (a.onKill == null) return;
+            foreach (var k in a.onKill)
+            {
+                if (k == null) { errors.Add(w + "a kill reward is missing"); continue; }
+                string x = w + "kill reward '" + k.name + "': ";
+                if (string.IsNullOrEmpty(k.victims)) errors.Add(x + "needs victims");
+                else foreach (var v in k.victims.Split(',')) if (!KillVictims.IsKnown(v.Trim())) errors.Add(x + "unknown victim '" + v.Trim() + "'");
+                if (!KillScopes.IsKnown(k.scope)) errors.Add(x + "unknown scope '" + k.scope + "'");
+                if (k.notches < 0) errors.Add(x + "notches can't be negative");
+                if (k.notches > 0 && (a.passive || a.maxNotches <= 0)) errors.Add(x + "gives notches, but the ability holds none (maxNotches)");
+                if (a.passive && k.scope != KillScopes.Any) errors.Add(x + "a passive deals no damage of its own, so its scope must be 'any'");
+                if (k.notches == 0 && (k.effects == null || k.effects.Length == 0)) errors.Add(x + "does nothing (no notches or effects)");
+                ValidateEffects(k.effects, x, errors, 1);
+            }
+        }
+
         void ValidateEffects(EffectDef[] effects, string w, List<string> errors, int depth)
         {
             if (effects == null) return;
@@ -160,7 +182,7 @@ namespace DuckAndCover.Core
                 string x = w + e.kind + ": ";
                 if (!EffectKinds.IsKnown(e.kind)) { errors.Add(w + "unknown effect kind '" + e.kind + "'"); continue; }
                 if (e.amount < 0f || e.duration < 0f || e.delay < 0f || e.interval < 0f || e.radius < 0f) errors.Add(x + "amount, duration, delay, interval and radius can't be negative");
-                if (!string.IsNullOrEmpty(e.affects) && !Affects.IsKnown(e.affects)) errors.Add(x + "unknown affects '" + e.affects + "'");
+                if (!string.IsNullOrEmpty(e.affects) && !Affects.IsKnownForEffect(e.affects)) errors.Add(x + "unknown affects '" + e.affects + "'");
                 switch (e.kind)
                 {
                     case EffectKinds.Damage:

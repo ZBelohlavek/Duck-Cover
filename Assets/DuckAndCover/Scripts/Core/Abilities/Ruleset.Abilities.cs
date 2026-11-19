@@ -58,6 +58,12 @@ namespace DuckAndCover.Core
         /// </summary>
         public float stealthShimmerRange = 5f;
 
+        // ---- The jungle (StatConditions.Jungle, JungleArea) ----
+        /// <summary>A jungle trail counts this many metres past its own edge (half its width), so its verges count too.</summary>
+        public float jungleTrailMargin = 1f;
+        /// <summary>Everywhere within this many metres of a camp's pad is its clearing, and jungle.</summary>
+        public float jungleClearingRadius = 9f;
+
         // ---- Spawned objects ----
         /// <summary>First id given to spawned objects (turrets, mines, barriers), clear of map device ids.</summary>
         public int firstObjectId = 10000;
@@ -71,6 +77,7 @@ namespace DuckAndCover.Core
             if (defaultShieldSeconds <= 0f) e.Add("defaultShieldSeconds must be positive");
             if (regenDelaySeconds < 0f) e.Add("regenDelaySeconds can't be negative");
             if (lowHealthShare < 0f || lowHealthShare > 1f) e.Add("lowHealthShare must be between 0 and 1");
+            if (jungleTrailMargin < 0f || jungleClearingRadius < 0f) e.Add("jungle margins can't be negative");
             if (minCooldownSeconds < 0f) e.Add("minCooldownSeconds can't be negative");
             if (abilityCooldownFloor < 0f || abilityCooldownCeiling < abilityCooldownFloor) e.Add("abilityCooldownFloor must be between 0 and abilityCooldownCeiling");
             if (escortRadius < 0f) e.Add("escortRadius can't be negative");

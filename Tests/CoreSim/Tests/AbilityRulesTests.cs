@@ -52,7 +52,7 @@ static class AbilityRulesTests
         // The strict loader already refuses an "ultimate" key on an ability; upgrades can't lean on charge either.
         foreach (var hero in Roster())
         {
-            Check.True(HeroServer.Slots(hero).Length == 3, hero.id + " has three abilities, E, F and X");
+            Check.True(HeroServer.Slots(hero).Length + (string.IsNullOrEmpty(hero.passiveId) ? 0 : 1) == 3, hero.id + " has three abilities (a base passive counts as one)");
             foreach (var u in hero.upgrades)
                 foreach (var s in u.stats)
                     Check.True(s.stat != "ultimateChargeRate", hero.id + " upgrade " + u.id + " doesn't change ultimate charge (there is none)");

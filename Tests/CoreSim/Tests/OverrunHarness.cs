@@ -108,7 +108,8 @@ sealed class OverrunHarness
     public CommandResult FireAt(int shooter, Vec3 target) => Combat.Apply(new FireCommand
     {
         playerId = shooter, tick = S.tick, weaponId = Combat.Weapons.Weapons(shooter).CurrentId, origin = Eye(shooter),
-        direction = (target - Eye(shooter)).Normalized,
+        // Lobbed weapons aim on their arc so the throw lands where the bot points.
+        direction = Combat.Weapons.Library.Weapon(Combat.Weapons.Weapons(shooter).CurrentId)?.AimAt(Eye(shooter), target) ?? (target - Eye(shooter)).Normalized,
     });
 
     /// <summary>A Scrapper of <paramref name="team"/> standing still at a spot (not walking the lane).</summary>

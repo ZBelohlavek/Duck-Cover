@@ -277,6 +277,8 @@ static class UnitTests
                     foreach (bool ally in new[] { false, true })
                     {
                         string what = heroId + (path == 0 ? " left" : " right") + " path, " + (slot < 0 ? "weapon" : "slot " + slot) + (ally ? " on an ally" : " on an enemy");
+                        // Leeching Rot feeds on enemy heroes only (BoleteKitTests checks it), so its poison ticks harder on a hero.
+                        if (heroId == "bolete" && path == 1 && slot == 1 && !ally) continue;
                         Check.Equal(KitTrace(heroId, slot, ally, false, path), KitTrace(heroId, slot, ally, true, path), what);
                         compared++;
                     }
