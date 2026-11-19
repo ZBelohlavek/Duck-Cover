@@ -135,6 +135,17 @@ static class HeroKitTests
                 Check.True(h.Use(A1, f, Ahead).IsAccepted, heroId + ": F works at level 1");
                 h.Run(2f);
             }
+            if (h.Abilities.AbilityIn(A1, x).targeting.needsTarget)
+            {
+                // A buff for a teammate (Frenzy Cap) waits for one in its sights and spends nothing meanwhile.
+                Check.Equal("no target in reach", h.Use(A1, x, Ahead).reason, heroId + ": X needs a teammate to aim at");
+                h.Place(A1, 0f, 0f);
+                h.Place(A2, 0f, 6f);
+                h.Tick();
+                if (h.Abilities.AbilityIn(A1, x).ultimate) h.Unit(A1).ultimateCharge = 100f;
+                Check.True(h.UseAt(A1, x, A2).IsAccepted, heroId + ": X works at level 1 on a teammate");
+                continue;
+            }
             if (!h.Abilities.AbilityIn(A1, x).ultimate)
             {
                 Check.True(h.Use(A1, x, Ahead).IsAccepted, heroId + ": X runs on a cooldown and works at level 1");

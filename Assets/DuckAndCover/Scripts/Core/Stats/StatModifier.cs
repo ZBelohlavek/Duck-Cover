@@ -121,6 +121,15 @@ namespace DuckAndCover.Core
         /// (Ruleset.healRicochetRange, Ruleset.healRicochetShare of the heal). 0 = none.
         /// </summary>
         public const string HealRicochet = "healRicochet";
+        /// <summary>
+        /// Share of the healing this hero gives a teammate (a hero, not a minion) that heals this hero too
+        /// (0.3 = 30%). Healing themselves doesn't count, so it never feeds itself.
+        /// </summary>
+        public const string HealShare = "healShare";
+        /// <summary>Share of the damage this hero's damage-over-time statuses deal (poison, burns) that heals them.</summary>
+        public const string StatusLifeSteal = "statusLifeSteal";
+        /// <summary>Multiplier on the splash radius of this hero's projectile weapons.</summary>
+        public const string SplashRadius = "splashRadius";
         /// <summary>Capture speed multiplier on points, for the zone rules to read.</summary>
         public const string CaptureSpeed = "captureSpeed";
         /// <summary>Seconds added to the ambush window (Ruleset.ambushSeconds) that attacking out of stealth opens.</summary>
@@ -149,6 +158,7 @@ namespace DuckAndCover.Core
                 case WeaponDamage:
                 case MagazineSize:
                 case WeaponRange:
+                case SplashRadius:
                 case CaptureSpeed:
                     return 1f;
                 default:

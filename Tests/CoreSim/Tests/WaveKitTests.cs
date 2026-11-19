@@ -119,7 +119,7 @@ static class WaveKitTests
         // Bulwark is a close-range hero (shotgun), so he works from 3 m; the rest from 9 m.
         var limits = new Dictionary<string, (float at, float seconds)>
         {
-            ["bulwark"] = (3f, 20f), ["lancer"] = (9f, 10f), ["mender"] = (9f, 15f), ["rigger"] = (9f, 8f), ["warchief"] = (2f, 20f), ["skulk"] = (9f, 10f),
+            ["bulwark"] = (3f, 20f), ["lancer"] = (9f, 10f), ["mender"] = (9f, 15f), ["rigger"] = (9f, 8f), ["warchief"] = (2f, 20f), ["skulk"] = (9f, 10f), ["bolete"] = (9f, 15f),
         };
         foreach (var heroId in StarterIds)
         {

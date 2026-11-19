@@ -167,7 +167,8 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
   it over the network (scripted players join their wave with `ScriptedToLaneCommand`).
 - Teams are 4v4 (`Ruleset.maxPlayersPerTeam`). Recommended lineup, never a lock: tank, healer, DPS, utility or flex
   (`Core/Heroes/Roles.cs` maps them to the role ids in hero data; duplicates stay allowed).
-- Heroes (WP11): Bulwark (vanguard), Lancer (striker), Mender (support), Rigger (controller), and Gashrak the war chief (striker, melee only: `WeaponKind.Melee`), as data in
+- Heroes (WP11): Bulwark (vanguard), Lancer (striker), Mender (support), Rigger (controller), Gashrak the war chief
+  (striker, melee only: `WeaponKind.Melee`), Skulk the goblin lookout (striker) and Bolete (support, the fungal healer with lobbed spore bombs), as data in
   Data/Resources. `HeroServer` (Core/Heroes) gives a pick its kit, runs leveling beside the match and
   applies upgrades; `HeroKitTests` checks every ability and every upgrade. Levels run 1 to 20 (picks on even levels); each hero has two upgrade paths, left and right (`docs/HEROES.md`).
 - Skulk (striker, the goblin jungler) has a base passive, Jungle Stalker, in F's place: a hero with a base passive may

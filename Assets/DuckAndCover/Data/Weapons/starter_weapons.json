@@ -207,6 +207,32 @@
       "splashRadius": 0,
       "splashDamage": 0,
       "splashMinShare": 0.3
+    },
+    {
+      "id": "spore_bombs",
+      "displayName": "Spore bombs",
+      "kind": 1,
+      "automatic": false,
+      "fireInterval": 0.7,
+      "magazine": 6,
+      "reloadSeconds": 2.0,
+      "damage": 10,
+      "headMultiplier": 1,
+      "legsMultiplier": 1,
+      "pellets": 1,
+      "spreadDegrees": 0,
+      "range": 120,
+      "falloffStart": 25,
+      "falloffEnd": 50,
+      "falloffMinShare": 0.6,
+      "allyHeal": 0,
+      "arcDegrees": 0,
+      "maxTargets": 0,
+      "projectileSpeed": 24,
+      "projectileGravity": 12,
+      "splashRadius": 2.5,
+      "splashDamage": 25,
+      "splashMinShare": 0.4
     }
   ],
   "loadouts": [
@@ -254,6 +280,12 @@
       "heroId": "warchief",
       "weapons": [
         "greataxe"
+      ]
+    },
+    {
+      "heroId": "bolete",
+      "weapons": [
+        "spore_bombs"
       ]
     }
   ]

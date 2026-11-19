@@ -205,7 +205,20 @@ namespace DuckAndCover.Core
             if (e.affects == Affects.Self)
             {
                 if (areas.Count > 0) ctx.point = areas[0].point;
+                // An object's pulse reaches its owner only when they stand in it.
+                if (objectId != 0 && !areas.Exists(a => Array.IndexOf(a.targets, sourceId) >= 0)) return;
                 if (Combat.IsAlive(sourceId)) fx.Apply(ctx, sourceId);
+                return;
+            }
+            if (e.affects == Affects.SelfPerHero)
+            {
+                if (areas.Count > 0) ctx.point = areas[0].point;
+                var heroes = new List<int>();
+                foreach (var area in areas)
+                    foreach (int target in area.targets)
+                        if (target != sourceId && !UnitIds.IsUnit(target) && !heroes.Contains(target)) heroes.Add(target);
+                foreach (int unused in heroes)
+                    if (Combat.IsAlive(sourceId)) fx.Apply(ctx, sourceId);
                 return;
             }
             foreach (var area in areas)

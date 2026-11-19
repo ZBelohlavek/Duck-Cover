@@ -179,6 +179,11 @@ namespace DuckAndCover.Core
         /// so aiming at a wall or into the air still lands on the ground.
         /// </summary>
         public bool ground;
+        /// <summary>
+        /// The ability is refused (nothing spent) unless it would catch someone right now: a buff cast on a
+        /// teammate doesn't go to waste on an empty spot. Only checked for abilities without a wind-up.
+        /// </summary>
+        public bool needsTarget;
 
         public TargetingDef Clone() => (TargetingDef)MemberwiseClone();
     }
@@ -214,7 +219,9 @@ namespace DuckAndCover.Core
         public float lift;
         /// <summary>
         /// Overrides who this effect reaches: empty = the ability's targets; "self" = the caster once,
-        /// whatever was hit; otherwise filters the ability's targets (<see cref="Affects"/>).
+        /// whatever was hit (on an object's pulse: the owner, only when the pulse reached them);
+        /// "selfPerHero" = the caster once for each hero (not minion) the ability's targets hold, so a
+        /// stacking status grows with every hero hit; otherwise filters the ability's targets (<see cref="Affects"/>).
         /// </summary>
         public string affects = "";
         /// <summary>When set, the effect is off until a talent enables this tag (AbilityParamChange param "enable").</summary>
@@ -433,6 +440,14 @@ namespace DuckAndCover.Core
         public const string Self = "self";
         public const string All = "all";
         public static bool IsKnown(string s) => s == Enemies || s == Allies || s == AlliesAndSelf || s == Self || s == All;
+
+        /// <summary>
+        /// Effects only: the caster once per hero among the targets (see <see cref="EffectDef.affects"/>).
+        /// Not a targeting rule.
+        /// </summary>
+        public const string SelfPerHero = "selfPerHero";
+        /// <summary>What an effect's own affects may say: any rule above, or <see cref="SelfPerHero"/>.</summary>
+        public static bool IsKnownForEffect(string s) => IsKnown(s) || s == SelfPerHero;
     }
 
     public static class Triggers

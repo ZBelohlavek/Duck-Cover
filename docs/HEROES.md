@@ -1,4 +1,4 @@
-# Starter heroes
+# Heroes
 
 Generated from the hero and ability data in `Assets/DuckAndCover/Data/Resources`. The data files are
 the source of truth; numbers here are the ones the tests check. All names and kits are original.
@@ -179,6 +179,47 @@ enemies take more damage, and notches worth more.
 | 18 talent | **Satchel**: Shrapnel Charge holds two charges. | **Keen Edge**: Each Serrated Knife notch adds 2 more damage. |
 | 20 capstone | **Jungle King**: In the jungle you deal 15% more damage and move another 10% faster. | **Headhunter**: Hero kills give Serrated Knife two notches instead of one. |
 
+## Bolete (support)
+
+Health 200. Weapon: Spore bombs. A fungal healer: he lobs spore bombs, grows mushrooms that heal his team, rots the
+enemy and grows a frenzy mushroom out of a teammate.
+
+- **Primary: Spore bombs.** Lob a spotted spore bomb in an arc (it falls, so aim above far targets). It bursts where it
+  lands: 10 damage on a direct hit plus a 25 damage burst that reaches 2.5 m (down to 40% at the edge). Six bombs a
+  load, one every 0.7 s, 2 s to reload. Bombs never hurt or heal teammates. Because a burst can catch several enemies,
+  one bomb does less damage a second than Mender's sidearm does to one target: at most 50 a second on direct hits
+  (34 counting reloads) against the sidearm's 94 (63).
+- **E: Bloom Cap.** Plant a healing mushroom where you aim. For 6 seconds, you and teammates within 3.5 m of it heal 18
+  health a second, and keep healing for a second after stepping out. Cooldown 14 s.
+- **F: Rot Spore.** Throw a rotten spore pod where you aim. It bursts a second later: enemies within 3.5 m are poisoned
+  for 10 damage a second and Wilt (deal 20% less damage) for 5 seconds. Both are harmful effects, so a cleanse (Purge)
+  clears them (50 damage in all, so it never kills a healthy hero alone). Cooldown 15 s.
+- **X: Frenzy Cap.** Grow a frenzy mushroom on the teammate you aim at (within 1.5 m of where your aim
+  lands, up to 30 m): for 6 seconds they fire 25% faster and deal 15% more damage. With no teammate there it is
+  refused and spends nothing (`TargetingDef.needsTarget`). Cooldown 20 s (no ultimate charge).
+
+Left (Z) is the **Overgrowth** path: everything grows bigger, lasts longer and spreads. Right (V) is the **Symbiosis**
+path: Bolete gains from his own fungus, healed when he heals, feeding on his poison and sharing his Frenzy.
+
+| Level | Left (hold Z) | Right (hold V) |
+|---|---|---|
+| 2 trait | **Wide Spores**: Bloom Cap, Rot Spore and Frenzy Cap reach 10% further. | **Hardy Stalk**: +25 max health. |
+| 4 talent | **Lasting Bloom**: Bloom Cap lasts 2 seconds longer. | **Quick Spores**: Rot Spore recovers 2 seconds sooner. |
+| 6 trait | **Lingering Rot**: Everything your fungus puts on someone lasts 25% longer: poison, Wilt, Frenzy and Bloom Cap's healing. | **Potent Bombs**: Your spore bombs deal 8% more damage. |
+| 8 ultimate | **Wild Frenzy**: Frenzy Cap also makes its teammate move 20% faster. | **Kindred Frenzy**: Frenzy Cap also grows on you. |
+| 10 passive | **Fertile Ground**: Your healing is 10% stronger. | **Shared Roots**: Whenever your healing heals a teammate, you heal 30% as much. |
+| 12 talent | **Clinging Spores**: Anyone who steps into Bloom Cap carries its healing with them for 4 seconds after they leave. | **Leeching Rot**: Each enemy hero Rot Spore poisons gives you 6% more damage and 5% more speed for 6 seconds (up to 3 at once). |
+| 14 trait | **Big Bombs**: Your spore bombs burst 30% wider. | **Steady Growth**: Abilities recover 10% faster. |
+| 16 talent | **Creeping Rot**: Rot Spore's poison lasts 3 seconds longer and its cloud reaches 1 m further. | **Heart of the Bloom**: Take 15% less damage while you stand in your own Bloom Cap. |
+| 18 talent | **Shared Frenzy**: Frenzy Cap also grows on every teammate within 4 m of the one you aim at. | **Feeding Rot**: Your poison heals you for half the damage it deals. |
+| 20 capstone | **Great Bloom**: Bloom Cap reaches 2 m further and heals 30% more. | **Mycelial Link**: Shared Roots gives 60% instead of 30%, and Frenzy Cap lasts 3 seconds longer. |
+
+The rules behind the Symbiosis path are stats any hero could use: `healShare` (Shared Roots; healing teammate heroes,
+not minions, and never its own echo), `statusLifeSteal` (Feeding Rot; damage over time that heals its source), an
+effect reaching `selfPerHero` (Leeching Rot; once per enemy hero caught, never minions) and a "self" effect on an
+object's pulse, which reaches the owner only while they stand in it (Heart of the Bloom). Big Bombs is the
+`splashRadius` stat. Bots and tests aim lobbed weapons on their arc with `WeaponDef.AimAt`.
+
 ## Against minion waves (WP20)
 
 Every ability and weapon hits minions, Bastions and camp guards as it hits heroes. Each hero's job against a wave,
@@ -188,6 +229,8 @@ as `Tests/CoreSim/Tests/WaveKitTests.cs` checks it:
   and feet (`UnitRules.LineOfFire`, `UnitRules.Walk`) while his team shoots through. His shotgun clears a wave from close up.
 - **Lancer** clears: Incendiary Grenade catches a whole wave; Thermite destroys Scrappers outright.
 - **Mender** protects his own wave: Mending Canister regenerates minions, Purge frees them from slows, and Mending Rounds heal the minion he shoots.
+- **Bolete** clears with his bombs' bursts, which catch a clump of minions, while Rot Spore wilts a wave's fire and
+  Bloom Cap heals his own minions.
 - **Gashrak** cleaves: every swing hits every minion in front of him, so he clears a wave fastest of all from up
   close, but has to walk into it to do so.
 - **Skulk** clears with the Scrap Rifle and Shrapnel Charge, and every minion his knife finishes notches it for the match.
