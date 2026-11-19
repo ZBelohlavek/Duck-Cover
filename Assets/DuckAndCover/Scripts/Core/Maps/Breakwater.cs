@@ -262,13 +262,13 @@ namespace DuckAndCover.Core
             m.drops.Add(new MapDrop { name = "JuggernautDrop", top = P(-13f, ShelfHeight, 0f), bottom = P(-9.5f, 0f, 0f) });
 
             // ---- Camps: seven ----
-            m.camps.Add(Camp("Juggernaut", CampKind.Juggernaut, TeamId.None, P(-27f, ShelfHeight, 0f), 4f, 3.5f, 4));
+            m.camps.Add(Camp("Juggernaut", CampKind.Juggernaut, TeamId.None, P(-27f, ShelfHeight, 0f), 4f, 2f, 1)); // one boss
             foreach (var team in new[] { TeamId.A, TeamId.B })
             {
                 float s = team == TeamId.A ? 1f : -1f;
                 m.camps.Add(Camp("Damage" + team, CampKind.Damage, team, P(14f, 0f, -96f * s), 3.5f, 3f, 3));
                 m.camps.Add(Camp("Experience" + team, CampKind.Experience, team, P(35f, 0f, -80f * s), 3.5f, 2.5f, 3));
-                m.camps.Add(Camp("Speed" + team, CampKind.Speed, team, P(13f, 0f, -58f * s), 3f, 2f, 1));
+                m.camps.Add(Camp("Speed" + team, CampKind.Speed, team, P(13f, 0f, -58f * s), 3f, 2f, 2)); // a pair of runners
             }
             // A few rocks to fight around in the bigger clearings.
             Cover(m, "DamageRock", BlockKind.Wall, 9f, -97f, 2f, 2.4f, 3f, 0f, ShiftRole.None, 0, "rocks");
