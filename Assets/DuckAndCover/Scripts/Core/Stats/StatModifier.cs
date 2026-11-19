@@ -108,6 +108,8 @@ namespace DuckAndCover.Core
         public const string LifeSteal = "lifeSteal";
         /// <summary>Metres each weapon hit pushes an enemy along the shot (0 = none).</summary>
         public const string WeaponPush = "weaponPush";
+        /// <summary>Above 0: weaponPush only shoves enemies this many metres away or closer (a point-blank knockback). 0 = any distance.</summary>
+        public const string WeaponPushRange = "weaponPushRange";
         /// <summary>Extra healing given to someone at low health (Ruleset.lowHealthShare or less), as a share (0.3 = 30% more).</summary>
         public const string HealingToLowHealth = "healingToLowHealth";
         /// <summary>Above 0: a healing weapon's hits on teammates also clear their harmful statuses.</summary>
