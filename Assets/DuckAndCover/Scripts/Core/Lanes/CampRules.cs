@@ -120,10 +120,11 @@ namespace DuckAndCover.Core
                     spots.Add(d.pad + new Vec3((float)Math.Sin(a), 0f, (float)Math.Cos(a)) * Rules.guardRing);
                 }
             var ids = new List<int>();
-            foreach (var s in spots)
+            for (int i = 0; i < spots.Count; i++)
             {
+                var s = spots[i];
                 Vec3 face = LaneDef.Flat(d.pad - s);
-                int id = Units.Spawn(k.guardType, TeamId.None, s, face.Magnitude < 1e-4f ? 0f : WaveRules.Yaw(face));
+                int id = Units.Spawn(k.GuardTypeAt(i), TeamId.None, s, face.Magnitude < 1e-4f ? 0f : WaveRules.Yaw(face));
                 if (id < 0) continue;
                 ids.Add(id);
                 state.guardCamp[id] = c;

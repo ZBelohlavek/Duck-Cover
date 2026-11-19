@@ -16,6 +16,7 @@ namespace DuckAndCover.Core
             var def = Library.Status(statusId);
             if (def == null || !Match.IsPlaying || !Combat.IsAlive(targetId)) return false;
             var unit = Combat.Unit(targetId);
+            if (def.negative && BlockedByWard(unit, statusId, sourceId, abilityId)) return false;
             if (seconds <= 0f) seconds = def.duration;
             if (Combat.IsKnown(sourceId)) seconds *= Math.Max(0f, Combat.Stat(sourceId, StatIds.StatusDuration));
             if (def.stun) seconds = Math.Min(seconds, Rules.maxStunSeconds);
@@ -55,8 +56,27 @@ namespace DuckAndCover.Core
             s.duration = s.timeLeft;
             WriteStatusStats(unit, s, def);
             if (def.stun) CancelCasts(unit, "stunned");
+            UpdateStealth(unit);
             Publish(new StatusAppliedEvent { targetId = targetId, sourceId = sourceId, statusId = statusId, strength = s.strength, stacks = s.stacks, seconds = s.timeLeft, abilityId = abilityId ?? "" });
             return true;
+        }
+
+        /// <summary>
+        /// A ward on the target stops a harmful status from an enemy (or from the world) and is used up.
+        /// Harm from a teammate (friendly fire, a hero's own drawback) passes the ward.
+        /// </summary>
+        bool BlockedByWard(HeroUnit unit, string statusId, int sourceId, string abilityId)
+        {
+            if (sourceId >= 0 && Combat.IsKnown(sourceId) && Combat.SameTeam(sourceId, unit.playerId)) return false;
+            foreach (var w in unit.statuses)
+            {
+                var wardDef = Library.Status(w.statusId);
+                if (wardDef == null || !wardDef.ward) continue;
+                Publish(new StatusBlockedEvent { targetId = unit.playerId, sourceId = sourceId, statusId = statusId, wardId = w.statusId, abilityId = abilityId ?? "" });
+                EndStatus(unit, w, "used");
+                return true;
+            }
+            return false;
         }
 
         /// <summary>Take a status off early. False if the hero doesn't have it.</summary>
@@ -106,7 +126,52 @@ namespace DuckAndCover.Core
         {
             if (!unit.statuses.Remove(s)) return;
             Combat.RemoveModifiers(unit.playerId, StatusSource(s.statusId));
+            UpdateStealth(unit);
             Publish(new StatusEndedEvent { targetId = unit.playerId, statusId = s.statusId, reason = reason });
+        }
+
+        /// <summary>Keep <see cref="HeroUnit.stealthed"/> in step with the statuses: a stealth status and no reveal.</summary>
+        void UpdateStealth(HeroUnit unit)
+        {
+            bool stealth = false, reveal = false;
+            foreach (var s in unit.statuses)
+            {
+                var def = Library.Status(s.statusId);
+                if (def == null) continue;
+                stealth |= def.stealth;
+                reveal |= def.reveal;
+            }
+            bool now = stealth && !reveal;
+            if (now == unit.stealthed) return;
+            unit.stealthed = now;
+            Publish(new StealthChangedEvent { playerId = unit.playerId, stealthed = now });
+        }
+
+        /// <summary>
+        /// The hero attacked (fired, or used an ability that reaches past themselves): end their stealth
+        /// statuses and, if one was up, open the ambush window. Returns whether stealth was up.
+        /// The combat server calls it before each shot, and ability use calls it before the ability lands.
+        /// </summary>
+        public bool BreakStealth(int playerId, string reason = "attacked")
+        {
+            var unit = State.Unit(playerId);
+            if (unit == null) return false;
+            bool broke = false;
+            foreach (var s in unit.statuses.ToArray())
+            {
+                var def = Library.Status(s.statusId);
+                if (def == null || !def.stealth) continue;
+                EndStatus(unit, s, reason);
+                broke = true;
+            }
+            if (!broke) return false;
+            float window = Rules.ambushSeconds + Combat.Stat(playerId, StatIds.AmbushSeconds);
+            if (window > 0f)
+            {
+                unit.ambushLeft = window;
+                Publish(new AmbushEvent { playerId = playerId, seconds = window });
+            }
+            return true;
         }
 
         void ClearStatuses(HeroUnit unit, string reason)

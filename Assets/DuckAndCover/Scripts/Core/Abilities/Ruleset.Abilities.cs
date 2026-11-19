@@ -34,9 +34,7 @@ namespace DuckAndCover.Core
         public float minCooldownSeconds = 0.5f;
         /// <summary>Share of an ultimate's cost given back when a stun or death interrupts its wind-up.</summary>
         public float ultimateInterruptRefund = 0.5f;
-        /// <summary>Player level at which ultimates unlock (8, with the ultimate's form in ProgressionRuleset).</summary>
-        public int ultimateUnlockLevel = 8;
-        /// <summary>Ultimate charge gained per second while alive, once unlocked (100 = full for a cost-100 ultimate).</summary>
+        /// <summary>Ultimate charge gained per second while alive, from level 1 (100 = full for a cost-100 ultimate).</summary>
         public float ultimateChargePerSecond = 0.8f;
         /// <summary>Ultimate charge per point of damage dealt to enemies.</summary>
         public float ultimateChargePerDamage = 0.05f;
@@ -54,8 +52,19 @@ namespace DuckAndCover.Core
         // ---- Status effects ----
         /// <summary>Slows can't take a hero below this share of their move speed.</summary>
         public float minMoveSpeed = 0.3f;
+        /// <summary>An aimed sphere that lands on the ground (TargetingDef.ground) looks this far down for the floor.</summary>
+        public float groundProbeMetres = 30f;
+        /// <summary>...after stepping this far back toward the caster, so a wall the aim hit doesn't stand in the way.</summary>
+        public float groundProbeBack = 0.5f;
         /// <summary>Stuns longer than this are cut short.</summary>
         public float maxStunSeconds = 2f;
+        /// <summary>Seconds of the ambush window that attacking out of stealth opens (StatConditions.Ambush), before the ambushSeconds stat.</summary>
+        public float ambushSeconds = 2.5f;
+        /// <summary>
+        /// A stealthed enemy closer than this is drawn as a shimmer instead of not at all (the Game layer
+        /// reads it), so a cloak can't stand on top of someone unseen.
+        /// </summary>
+        public float stealthShimmerRange = 5f;
 
         // ---- Spawned objects ----
         /// <summary>First id given to spawned objects (turrets, mines, barriers), clear of map device ids.</summary>
@@ -72,13 +81,14 @@ namespace DuckAndCover.Core
             if (lowHealthShare < 0f || lowHealthShare > 1f) e.Add("lowHealthShare must be between 0 and 1");
             if (minCooldownSeconds < 0f) e.Add("minCooldownSeconds can't be negative");
             if (ultimateInterruptRefund < 0f || ultimateInterruptRefund > 1f) e.Add("ultimateInterruptRefund must be between 0 and 1");
-            if (ultimateUnlockLevel < 1) e.Add("ultimateUnlockLevel must be at least 1");
             if (ultimateChargePerSecond < 0f || ultimateChargePerDamage < 0f || ultimateChargePerHealing < 0f) e.Add("ultimate charge rates can't be negative");
             if (ultimateChargeUnitShare < 0f) e.Add("ultimateChargeUnitShare can't be negative");
             if (escortRadius < 0f) e.Add("escortRadius can't be negative");
             if (ultimateChargeMax <= 0f) e.Add("ultimateChargeMax must be positive");
             if (minMoveSpeed < 0f || minMoveSpeed > 1f) e.Add("minMoveSpeed must be between 0 and 1");
             if (maxStunSeconds <= 0f) e.Add("maxStunSeconds must be positive");
+            if (ambushSeconds < 0f) e.Add("ambushSeconds can't be negative");
+            if (stealthShimmerRange < 0f) e.Add("stealthShimmerRange can't be negative");
             if (firstObjectId < 1) e.Add("firstObjectId must be positive");
             return e;
         }

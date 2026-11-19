@@ -209,7 +209,8 @@ namespace DuckAndCover.Game
         /// <summary>
         /// Our own placeholder robots, facing +z: a Scrapper is a squat box on two legs with one eye, a
         /// Warden a taller capsule under a glowing ring (its shield pulse), a Juggernaut a broad block with
-        /// heavy shoulders, and camp guards horned boxes in the jungle's colour.
+        /// heavy shoulders, and camp creatures horned boxes in the jungle's colour (the Experience camp's corrupted
+        /// Scrappers keep the Scrapper shape).
         /// </summary>
         static void BuildFigure(Transform f, string typeId, float size, Ruleset r, Color main)
         {
@@ -232,6 +233,8 @@ namespace DuckAndCover.Game
                     break;
                 case LaneRuleset.CampGuard:
                 case LaneRuleset.CampBrute:
+                case LaneRuleset.CampRunner:
+                case LaneRuleset.CampBoss:
                     Paint.Block(f, "Body", new Vector3(0f, h * 0.45f, 0f), new Vector3(h * 0.45f, h * 0.9f, h * 0.35f), main, false);
                     Paint.Block(f, "HornLeft", new Vector3(-h * 0.17f, h * 0.97f, 0f), new Vector3(h * 0.07f, h * 0.18f, h * 0.07f), Dark, false);
                     Paint.Block(f, "HornRight", new Vector3(h * 0.17f, h * 0.97f, 0f), new Vector3(h * 0.07f, h * 0.18f, h * 0.07f), Dark, false);

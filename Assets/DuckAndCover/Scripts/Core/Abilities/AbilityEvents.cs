@@ -48,6 +48,20 @@ namespace DuckAndCover.Core
         public float rechargeLeft;
     }
 
+    /// <summary>A hero went into stealth or came out of it (a stealth status began or ended, or a reveal covered it).</summary>
+    public sealed class StealthChangedEvent : GameEvent
+    {
+        public int playerId;
+        public bool stealthed;
+    }
+
+    /// <summary>A hero attacked out of stealth: for <see cref="seconds"/> their "ambush" upgrades count.</summary>
+    public sealed class AmbushEvent : GameEvent
+    {
+        public int playerId;
+        public float seconds;
+    }
+
     /// <summary>The server refused an ability request. Sent so the caster's client can undo its prediction.</summary>
     public sealed class AbilityRejectedEvent : GameEvent
     {
@@ -72,8 +86,20 @@ namespace DuckAndCover.Core
     {
         public int targetId;
         public string statusId;
-        /// <summary>"expired", "cleansed", "eliminated" or "respawned".</summary>
+        /// <summary>"expired", "cleansed", "eliminated", "respawned" or "used" (a ward that blocked something).</summary>
         public string reason;
+    }
+
+    /// <summary>A ward on the target stopped a harmful status (and was used up).</summary>
+    public sealed class StatusBlockedEvent : GameEvent
+    {
+        public int targetId;
+        public int sourceId;
+        /// <summary>The harmful status that was stopped.</summary>
+        public string statusId;
+        /// <summary>The ward that stopped it.</summary>
+        public string wardId;
+        public string abilityId;
     }
 
     /// <summary>
@@ -86,12 +112,14 @@ namespace DuckAndCover.Core
     {
         public int targetId;
         public int sourceId;
-        /// <summary>One of PushDirections: "aim", "away" or "toward".</summary>
+        /// <summary>One of PushDirections: "aim", "away", "toward" or "leap".</summary>
         public string mode;
         public Vec3 origin;
         public Vec3 direction;
         public float distance;
         public float seconds;
+        /// <summary>Metres the target rises at the top of the arc (a leap or a knock-up); 0 = level.</summary>
+        public float lift;
         public string abilityId;
     }
 

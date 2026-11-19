@@ -102,7 +102,7 @@ static class WaveHarness
     /// <summary>
     /// A simple bot clearing a standing wave: the hero stands <paramref name="distance"/> m away,
     /// fires at the first living unit, and uses every ability and the ultimate at the wave whenever
-    /// they are ready. The Warden pulses its shield. Nothing shoots back (minion attacks are WP15's).
+    /// they are ready (except loading healing rounds, which only heal). The Warden pulses its shield. Nothing shoots back (minion attacks are WP15's).
     /// </summary>
     public static ClearResult Clear(string heroId, int level, int path, float distance = 9f, float cap = 40f)
     {
@@ -115,14 +115,24 @@ static class WaveHarness
         h.Forget();
         float t = 0f, wardenIn = 0f;
         var waveIds = new HashSet<int>(wave);
+        bool melee = h.Combat.Weapons.Library.Weapon(h.Combat.Weapons.Weapons(A1).CurrentId).kind == WeaponKind.Melee;
         while (t < cap && Alive(h.Combat.Units, wave) > 0)
         {
             if (wardenIn <= 0f) { WardenPulse(h.Combat, wave[3]); wardenIn += WardenEvery; }
             int target = wave.First(h.Combat.Units.IsAlive);
+            if (melee)
+            {
+                // A melee hero walks up to the unit he is hitting, `distance` metres short of it.
+                var at = h.Combat.Units.Unit(target).position;
+                h.Place(A1, at.x, at.z - distance);
+            }
             var chest = Hitboxes.Chest(h.R, h.Combat.Units.Unit(target).Pose());
             var center = Center(h.Combat.Units, wave) + Vec3.Up * 0.6f;
             for (int slot = 0; slot < h.Unit(A1).slots.Count; slot++)
             {
+                // Healing rounds only heal, and there is nobody to heal here.
+                var def = h.Abilities.AbilityIn(A1, slot);
+                if (def != null && def.effects.Any(e => e != null && e.kind == EffectKinds.HealRounds)) continue;
                 // Aimed abilities at the wave's middle, Tracer Mark at the target.
                 var aim = heroId == "lancer" && slot == 1 ? chest : center;
                 h.Use(A1, slot, aim - h.Eye(A1));

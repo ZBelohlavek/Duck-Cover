@@ -37,6 +37,10 @@ namespace DuckAndCover.Core
                 def = def.Clone(),
                 radius = def.radius * (owner != null ? Math.Max(0f, Combat.Stat(ownerId, StatIds.AbilityRadius)) : 1f),
             };
+            if (def.followOwner) obj.followId = ownerId;
+            else if (def.followAlly) obj.followId = NearestHeroAlly(obj);
+            Follow(obj);
+            position = obj.position;
             State.objects.Add(obj);
             Publish(new ObjectSpawnedEvent
             {
@@ -45,6 +49,24 @@ namespace DuckAndCover.Core
                 blocksMovement = def.blocksMovement, blocksShots = def.blocksShots, width = def.width, height = def.height,
             });
             return obj;
+        }
+
+        /// <summary>
+        /// The owner's teammate (or the owner) nearest an object, within its radius: heroes only, not
+        /// minions. Ties go to the lower id. -1 when nobody is in reach.
+        /// </summary>
+        int NearestHeroAlly(ObjectState obj)
+        {
+            var area = Query(obj.position, obj.radius, Affects.AlliesAndSelf, obj.ownerId, obj.team, 0, Match.tick);
+            int best = -1;
+            float bestDist = float.MaxValue;
+            foreach (int id in area.targets)
+            {
+                if (UnitIds.IsUnit(id)) continue;
+                float d = TryGetPosition(id, out var at) ? Vec3.Distance(at, obj.position) : float.MaxValue - 1f;
+                if (d < bestDist) { best = id; bestDist = d; }
+            }
+            return best;
         }
 
         /// <summary>
@@ -81,6 +103,7 @@ namespace DuckAndCover.Core
             obj.health -= taken;
             Publish(new ObjectDamagedEvent { objectId = obj.id, attackerId = attackerId, amount = taken, healthLeft = obj.health });
             if (obj.health <= 0f) RemoveObject(obj, "destroyed", attackerId);
+            Reflect(obj, taken, attackerId);
             return taken;
         }
 
@@ -96,6 +119,7 @@ namespace DuckAndCover.Core
         void RemoveObject(ObjectState obj, string reason, int byPlayerId)
         {
             if (!State.objects.Remove(obj)) return;
+            ObjectGone(obj, reason);
             Publish(new ObjectRemovedEvent { objectId = obj.id, defId = obj.defId, ownerId = obj.ownerId, reason = reason, byPlayerId = byPlayerId });
         }
 
@@ -112,6 +136,8 @@ namespace DuckAndCover.Core
                 var def = obj.def;
                 var owner = Match.Player(obj.ownerId);
                 if (owner != null && !owner.connected) { RemoveObject(obj, "ownerLeft", -1); continue; } // left while waiting to respawn
+                obj.age += dt;
+                Follow(obj);
                 if (def.lifetime > 0f)
                 {
                     obj.timeLeft -= dt;
@@ -161,6 +187,8 @@ namespace DuckAndCover.Core
                 ids.RemoveAll(id => !caster.HasLineOfSightFor(obj.ownerId, obj.position, id, Match.tick));
             else if (obj.def.needsLineOfSight && world is ILineOfSightQuery los)
                 ids.RemoveAll(id => !los.HasLineOfSight(obj.position, id, Match.tick));
+            // A turret picks its targets, and it can't pick one it can't see: stealthed enemies are skipped.
+            if (obj.def.maxTargets > 0) ids.RemoveAll(id => Combat.IsHidden(id) && !Combat.SameTeam(id, obj.ownerId));
             if (obj.def.maxTargets > 0 && ids.Count > obj.def.maxTargets)
             {
                 // A turret with a target limit takes the nearest ("shoots the nearest enemy it can see"),

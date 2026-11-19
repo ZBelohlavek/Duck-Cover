@@ -64,6 +64,8 @@ namespace DuckAndCover.UI
         readonly List<Text> zoneLetters = new List<Text>();
         GameObject statusRow;
         Text statusText;
+        /// <summary>The player's own state above the ability slots: cloaked, ambush, silenced.</summary>
+        Text selfStateText;
         GameObject overrunRow;
         sealed class BastionCard
         {
@@ -182,6 +184,7 @@ namespace DuckAndCover.UI
                 slot.name = UIKit.Readout(f, "AbilityName" + i, new Vector2(slot.x, SlotY - 16f), new Vector2(170f, 22f), "", 17, UITheme.TextDim, TextAnchor.MiddleCenter, true);
                 slots.Add(slot);
             }
+            selfStateText = UIKit.Readout(f, "SelfState", new Vector2(960f, SlotY + 128f), new Vector2(420f, 28f), "", 22, UITheme.Visor, TextAnchor.MiddleCenter, true);
         }
 
         void BuildChoice(Transform f)
@@ -491,29 +494,21 @@ namespace DuckAndCover.UI
         void ShowWeapon(LocalPlayer local)
         {
             weaponText.text = local.WeaponName.ToUpperInvariant();
-            ammoText.text = local.Ammo.ToString();
-            ammoText.color = local.Reloading ? UITheme.TextDim : local.Ammo == 0 ? UITheme.Danger : UITheme.Text;
-            magazineText.text = "/ " + local.Magazine;
-            reloadText.text = local.Reloading ? "RELOADING" : local.Ammo == 0 ? "RELOAD (R)" : "";
-            reloadText.color = local.Reloading ? UITheme.Warning : UITheme.Danger;
+            ammoText.text = local.Melee ? "" : local.Ammo.ToString();
+            ammoText.color = local.Reloading ? UITheme.TextDim : local.Ammo == 0 ? UITheme.Danger : local.HealRounds ? UITheme.Health : UITheme.Text;
+            magazineText.text = local.Melee ? "MELEE" : "/ " + local.Magazine;
+            reloadText.text = local.Reloading ? "RELOADING" : local.Ammo == 0 ? "RELOAD (R)" : local.HealRounds ? "HEALING ROUNDS" : "";
+            reloadText.color = local.Reloading ? UITheme.Warning : local.HealRounds && local.Ammo > 0 ? UITheme.Health : UITheme.Danger;
 
             // One cell per round for magazines up to 40, else 20 cells that each stand for several.
             int mag = Mathf.Max(1, local.Magazine);
             int cells = mag <= 40 ? mag : 20;
             var g = ammoRow;
             g.Clear();
+            if (local.Melee) { g.Commit(); return; } // a swing spends nothing: no ammo bar
             g.SegmentedBar(1884f - 300f, 164f, 300f, 14f, 3f, cells, cells > 24 ? 2f : 3f, (float)local.Ammo / mag,
-                           local.Ammo * 4 <= mag ? UITheme.Warning : UITheme.Visor, UITheme.VisorFaint, true);
+                           local.HealRounds ? UITheme.Health : local.Ammo * 4 <= mag ? UITheme.Warning : UITheme.Visor, UITheme.VisorFaint, true);
             g.Commit();
-        }
-
-        /// <summary>Whether the player has picked their ultimate's form, if their hero offers one (the server holds the ultimate until then).</summary>
-        static bool FormPicked(MatchSnapshot snapshot, PlayerState me, Ruleset rules)
-        {
-            var progression = rules.progression == null ? new ProgressionRuleset() : rules.progression;
-            if (!HeroServer.OffersUltimateForm(HeroData.Catalog.Resolve(me.heroId), progression)) return true;
-            var mine = snapshot == null || snapshot.progression == null ? null : snapshot.progression.Player(me.id);
-            return mine != null && mine.HasPicked(progression.UltimateFormLevel());
         }
 
         void ShowAbilities(MatchSnapshot snapshot, PlayerState me, HeroUnit unit)
@@ -521,6 +516,7 @@ namespace DuckAndCover.UI
             var lib = HeroData.Abilities;
             var rules = SessionRunner.Instance.ClientRules;
             Color hero = UITheme.ForHero(me.heroId);
+            ShowSelfState(unit);
             for (int i = 0; i < slots.Count; i++)
             {
                 var s = slots[i];
@@ -534,7 +530,7 @@ namespace DuckAndCover.UI
                     continue;
                 }
                 var def = AbilityParams.Resolve(baseDef, unit.changes, lib, rules.minCooldownSeconds).def;
-                s.key.text = def.ultimate ? AbilityKeys[2] : i < 2 ? AbilityKeys[i] : "";
+                s.key.text = i < AbilityKeys.Length ? AbilityKeys[i] : "";
                 s.name.text = def.displayName.ToUpperInvariant();
 
                 // How full the slot is (recharge or ultimate charge), whether it is ready, and what it says.
@@ -545,12 +541,18 @@ namespace DuckAndCover.UI
                 Color edge = UITheme.VisorFaint, text = UITheme.Text;
                 if (def.ultimate)
                 {
-                    int need = Mathf.Max(def.unlockLevel, rules.ultimateUnlockLevel);
                     fill = Mathf.Clamp01(unit.ultimateCharge / Mathf.Max(1f, def.ultimateCost));
-                    if (me.level < need) { status = "LV " + need; text = UITheme.TextDim; fill = 0f; }
-                    else if (!FormPicked(snapshot, me, rules)) { status = "Z / V"; text = UITheme.TextDim; }
-                    else if (unit.ultimateCharge >= def.ultimateCost - 0.01f) { status = "READY"; text = UITheme.Warning; edge = UITheme.Warning; ready = true; }
+                    if (unit.ultimateCharge >= def.ultimateCost - 0.01f) { status = "READY"; text = UITheme.Warning; edge = UITheme.Warning; ready = true; }
                     else status = Mathf.FloorToInt(100f * fill) + "%";
+                }
+                else if (def.held && (slot.raised || slot.charges > 0))
+                {
+                    // A held shield: how much strength it has, and whether it is up.
+                    fill = Mathf.Clamp01(slot.raised ? ShieldShare(snapshot, slot) : slot.reserve);
+                    ready = true;
+                    edge = hero;
+                    status = slot.raised ? "UP " + Mathf.RoundToInt(100f * fill) + "%" : fill < 0.999f ? Mathf.RoundToInt(100f * fill) + "%" : "";
+                    if (slot.raised) text = UITheme.Warning;
                 }
                 else if (slot.casting) { status = "CAST"; fill = 1f; edge = hero; }
                 else if (slot.charges > 0)
@@ -572,6 +574,28 @@ namespace DuckAndCover.UI
                 s.name.color = UITheme.Text;
                 DrawSlot(s, fill, ready, pips, edge, def.ultimate ? UITheme.Warning : hero);
             }
+        }
+
+        /// <summary>Cloaked (hidden from the other team), the ambush window after attacking out of it, or silenced.</summary>
+        void ShowSelfState(HeroUnit unit)
+        {
+            string text = "";
+            Color color = UITheme.Visor;
+            if (unit != null)
+            {
+                if (unit.HasStatus(AbilityLibrary.SilenceStatus)) { text = "SILENCED"; color = UITheme.Danger; }
+                else if (unit.stealthed) text = "CLOAKED  //  HIDDEN FROM ENEMIES";
+                else if (unit.ambushLeft > 0f) { text = "AMBUSH  " + unit.ambushLeft.ToString("0.0"); color = UITheme.Warning; }
+            }
+            selfStateText.text = text;
+            selfStateText.color = color;
+        }
+
+        /// <summary>A raised held ability's object health as a share of full.</summary>
+        static float ShieldShare(MatchSnapshot snapshot, AbilitySlotState slot)
+        {
+            var obj = snapshot.abilities == null ? null : snapshot.abilities.Object(slot.heldObjectId);
+            return obj == null || obj.def == null || obj.def.health <= 0f ? slot.reserve : obj.health / obj.def.health;
         }
 
         void DrawSlot(AbilitySlot s, float fill, bool ready, int pips, Color edge, Color tone)

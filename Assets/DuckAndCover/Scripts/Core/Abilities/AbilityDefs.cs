@@ -19,7 +19,7 @@ namespace DuckAndCover.Core
         public string displayName = "";
         public string description = "";
 
-        /// <summary>Uses ultimate charge instead of a cooldown, and unlocks at Ruleset.ultimateUnlockLevel.</summary>
+        /// <summary>Uses ultimate charge instead of a cooldown. Like every ability, usable from level 1.</summary>
         public bool ultimate;
         /// <summary>Charge an ultimate costs.</summary>
         public float ultimateCost = 100f;
@@ -34,8 +34,6 @@ namespace DuckAndCover.Core
         /// own use it, and a scripted ability stays active (its Tick runs) this long after landing.
         /// </summary>
         public float duration;
-        /// <summary>Lowest player level that can use it.</summary>
-        public int unlockLevel = 1;
 
         public TargetingDef targeting = new TargetingDef();
         public EffectDef[] effects = new EffectDef[0];
@@ -45,8 +43,27 @@ namespace DuckAndCover.Core
 
         /// <summary>Always on: takes no slot and is never cast. It is just <see cref="stats"/>.</summary>
         public bool passive;
-        /// <summary>A passive's stat changes (talents change them with the param "stat.NAME").</summary>
+        /// <summary>
+        /// A passive's stat changes, or a held ability's while it is up (talents change them with the
+        /// param "stat.NAME").
+        /// </summary>
         public StatModifier[] stats = new StatModifier[0];
+
+        /// <summary>
+        /// Raised and lowered rather than cast (a shield held up): using it puts its object out, and
+        /// using it again (or <see cref="UseAbilityCommand.lower"/>) takes it back. It spends no charge.
+        /// The object keeps its health between raises and regains it while down
+        /// (<see cref="ObjectDef.regen"/>); if it is destroyed, the slot waits out its cooldown before it can
+        /// go up again. Stuns and going down lower it. <see cref="stats"/> apply while it is up.
+        /// </summary>
+        public bool held;
+        /// <summary>A held ability: the hero can't fire their weapon while it is up.</summary>
+        public bool blocksWeapon;
+        /// <summary>
+        /// Usable while stunned or silenced (a rage that shakes off control). A talent turns it on with the
+        /// param "breaksControl" (op set, value 1).
+        /// </summary>
+        public bool breaksControl;
 
         public AbilityDef Clone()
         {
@@ -79,8 +96,13 @@ namespace DuckAndCover.Core
         public float spreadDegrees;
         /// <summary>Who counts as a target, one of <see cref="Affects"/>.</summary>
         public string affects = Affects.Enemies;
-        /// <summary>Most targets per ray or area. 0 = no limit. Lowest player ids first, so it is deterministic.</summary>
+        /// <summary>Most targets per ray or area. 0 = no limit. Nearest the area's centre first, ties to the lower id, so it is deterministic.</summary>
         public int maxTargets;
+        /// <summary>
+        /// Aimed spheres: the centre drops to the floor below where the aim lands (a leap's landing spot),
+        /// so aiming at a wall or into the air still lands on the ground.
+        /// </summary>
+        public bool ground;
 
         public TargetingDef Clone() => (TargetingDef)MemberwiseClone();
     }
@@ -89,7 +111,9 @@ namespace DuckAndCover.Core
     /// One standard effect. Which fields matter depends on <see cref="kind"/>:
     /// damage (amount), heal (amount), shield (amount, duration), status (status, amount = strength,
     /// duration), slow (amount = share of speed taken, duration), stun (duration), cleanse,
-    /// push (amount = metres, duration = seconds, direction), spawn (objectId).
+    /// push (amount = metres, or the most metres for a leap; duration = seconds; direction; lift = metres
+    /// up at the top of the arc, so a push with only a lift is a knock-up), spawn (objectId), reload,
+    /// healRounds (amount = health each round gives, radius = splash around the teammate hit).
     /// </summary>
     [Serializable]
     public class EffectDef
@@ -108,6 +132,10 @@ namespace DuckAndCover.Core
         public string objectId = "";
         /// <summary>Push: one of <see cref="PushDirections"/>.</summary>
         public string direction = PushDirections.Aim;
+        /// <summary>An area around each target, for kinds that reach past it (healRounds: the splash). 0 = none.</summary>
+        public float radius;
+        /// <summary>Push: metres the target rises at the top of the arc (a leap, a knock-up). 0 = level with the ground.</summary>
+        public float lift;
         /// <summary>
         /// Overrides who this effect reaches: empty = the ability's targets; "self" = the caster once,
         /// whatever was hit; otherwise filters the ability's targets (<see cref="Affects"/>).
@@ -147,8 +175,20 @@ namespace DuckAndCover.Core
         public bool silence;
         /// <summary>Can't move.</summary>
         public bool root;
+        /// <summary>
+        /// A ward: the next harmful status an enemy puts on the bearer is blocked, and the ward is used up
+        /// (<see cref="StatusBlockedEvent"/>).
+        /// </summary>
+        public bool ward;
         /// <summary>Visible to the other team through walls (the Game layer draws it).</summary>
         public bool reveal;
+        /// <summary>
+        /// Hidden from the other team (a cloak): enemy turrets, minions and Bastions don't pick the bearer,
+        /// and the Game layer doesn't draw them beyond Ruleset.stealthShimmerRange. It ends early when the
+        /// bearer fires or uses an ability that reaches past themselves, which opens their ambush window
+        /// (StatConditions.Ambush). A reveal status on the bearer wins over it.
+        /// </summary>
+        public bool stealth;
         /// <summary>What a second application does, one of <see cref="Stacking"/>.</summary>
         public string stacking = Stacking.Refresh;
         public int maxStacks = 1;
@@ -206,11 +246,44 @@ namespace DuckAndCover.Core
         public float width;
         public float height;
 
+        /// <summary>
+        /// Moves with its owner every tick (a shield held up, a drone at their shoulder): it stands
+        /// <see cref="followAhead"/> metres along the way they face (negative = behind) and
+        /// <see cref="followRise"/> metres above their feet, facing where they face.
+        /// </summary>
+        public bool followOwner;
+        public float followAhead;
+        public float followRise;
+        /// <summary>
+        /// Latch onto the owner's teammate (or the owner) nearest where it lands, within its radius, and
+        /// follow them like <see cref="followOwner"/> follows the owner. Nobody in reach: it stays put.
+        /// A talent turns it on with the param "object.followAlly" (op set, value 1).
+        /// </summary>
+        public bool followAlly;
+        /// <summary>
+        /// Above 0: a ball this big around its spot that shots and ability rays can hit (a drone).
+        /// Its team's own shots pass it like their barriers. Balls never block line of sight.
+        /// </summary>
+        public float hitRadius;
+        /// <summary>
+        /// A wall that opens out: it appears this share of its <see cref="width"/> wide and reaches full
+        /// width over <see cref="expandTime"/> seconds. 0 = full width at once.
+        /// </summary>
+        public float expandFrom;
+        public float expandTime;
+        /// <summary>Share of the damage it takes that goes back to whoever dealt it (0.25 = a quarter).</summary>
+        public float reflect;
+        /// <summary>Held abilities' objects: health regained per second while lowered, after <see cref="regenDelay"/> seconds down.</summary>
+        public float regen;
+        public float regenDelay;
+
         /// <summary>Thickness of every solid object (metres).</summary>
         public const float SolidDepth = 0.3f;
 
         /// <summary>Has a wall shape that blocks shots.</summary>
         public bool IsSolid => blocksShots && width > 0f && height > 0f;
+        /// <summary>A ball that shots can hit (see <see cref="hitRadius"/>).</summary>
+        public bool IsBall => hitRadius > 0f && health > 0f;
         public EffectDef[] effects = new EffectDef[0];
 
         public ObjectDef Clone()
@@ -243,8 +316,13 @@ namespace DuckAndCover.Core
         public const string Spawn = "spawn";
         /// <summary>Refills the magazine of the weapon in the target's hand (the combat server provides it).</summary>
         public const string Reload = "reload";
+        /// <summary>
+        /// Refills the target's magazine with healing rounds (the combat server provides it): until that
+        /// magazine is spent or reloaded, a round that hits a teammate heals them by the amount.
+        /// </summary>
+        public const string HealRounds = "healRounds";
 
-        public static readonly string[] All = { Damage, Heal, Shield, Status, Slow, Stun, Cleanse, Push, Spawn, Reload };
+        public static readonly string[] All = { Damage, Heal, Shield, Status, Slow, Stun, Cleanse, Push, Spawn, Reload, HealRounds };
         public static bool IsKnown(string kind) => Array.IndexOf(All, kind) >= 0;
     }
 
@@ -305,7 +383,12 @@ namespace DuckAndCover.Core
         public const string Away = "away";
         /// <summary>Toward where the ability landed (a pull).</summary>
         public const string Toward = "toward";
-        public static bool IsKnown(string s) => s == Aim || s == Away || s == Toward;
+        /// <summary>
+        /// To where the ability landed (a leap, on the caster): as far as that spot, flat, up to the
+        /// effect's amount. Give it a lift so it arcs.
+        /// </summary>
+        public const string Leap = "leap";
+        public static bool IsKnown(string s) => s == Aim || s == Away || s == Toward || s == Leap;
     }
 
     /// <summary>

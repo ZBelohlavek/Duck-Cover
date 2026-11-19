@@ -63,8 +63,20 @@ namespace DuckAndCover.Core
                 return team != TeamId.None && team == o.team && !Rules.friendlyFire;
             };
             Weapons.DamageObject = (objectId, amount, attackerId) => Abilities.DamageObject(objectId, amount, attackerId);
+            Weapons.FireCheck = Abilities.WeaponBlocked;
+            // Objects that move with their owner (a raised shield, a drone) follow the movement rules' copy.
+            Abilities.OwnerPose = (int id, out Vec3 feet, out Vec3 facing) =>
+            {
+                var m = Movement.Motion(id);
+                feet = m == null ? Vec3.Zero : m.position;
+                facing = m == null ? Vec3.Forward : MoveMath.Forward(m.yaw);
+                return m != null;
+            };
             Abilities.RegisterEffect(EffectKinds.Reload, new ReloadEffect(Weapons));
+            Abilities.RegisterEffect(EffectKinds.HealRounds, new HealRoundsEffect(Weapons));
             Weapons.Cleanse = targetId => Abilities.Cleanse(targetId);
+            // Firing gives a cloak away; the shot itself already counts as an ambush.
+            Weapons.BeforeShot = shooterId => Abilities.BreakStealth(shooterId, "fired");
             Weapons.Slow = (targetId, sourceId, share, seconds) =>
                 Abilities.ApplyStatus(targetId, AbilityLibrary.SlowStatus, sourceId, share, seconds, 0f, StatIds.WeaponSlow);
             events.Subscribe(OnEvent);
@@ -201,5 +213,13 @@ namespace DuckAndCover.Core
         readonly WeaponRules weapons;
         public ReloadEffect(WeaponRules weapons) { this.weapons = weapons; }
         public void Apply(EffectContext ctx, int targetId) => weapons.RefillCurrent(targetId);
+    }
+
+    /// <summary>The "healRounds" effect: loads the target's magazine with healing rounds (amount = heal per round, radius = splash).</summary>
+    public sealed class HealRoundsEffect : IEffect
+    {
+        readonly WeaponRules weapons;
+        public HealRoundsEffect(WeaponRules weapons) { this.weapons = weapons; }
+        public void Apply(EffectContext ctx, int targetId) => weapons.LoadHealRounds(targetId, ctx.effect.amount * ctx.scale, ctx.effect.radius);
     }
 }

@@ -108,14 +108,23 @@ namespace DuckAndCover.Core
         public const string LifeSteal = "lifeSteal";
         /// <summary>Metres each weapon hit pushes an enemy along the shot (0 = none).</summary>
         public const string WeaponPush = "weaponPush";
+        /// <summary>Above 0: weaponPush only shoves enemies this many metres away or closer (a point-blank knockback). 0 = any distance.</summary>
+        public const string WeaponPushRange = "weaponPushRange";
         /// <summary>Extra healing given to someone at low health (Ruleset.lowHealthShare or less), as a share (0.3 = 30% more).</summary>
         public const string HealingToLowHealth = "healingToLowHealth";
         /// <summary>Above 0: a healing weapon's hits on teammates also clear their harmful statuses.</summary>
         public const string WeaponCleanse = "weaponCleanse";
         /// <summary>How much each weapon hit slows an enemy, as a share of speed (0.15 = 15% slower; 0 = none).</summary>
         public const string WeaponSlow = "weaponSlow";
+        /// <summary>
+        /// How many times a healing round that heals a teammate jumps on to the next hurt teammate nearby
+        /// (Ruleset.healRicochetRange, Ruleset.healRicochetShare of the heal). 0 = none.
+        /// </summary>
+        public const string HealRicochet = "healRicochet";
         /// <summary>Capture speed multiplier on points, for the zone rules to read.</summary>
         public const string CaptureSpeed = "captureSpeed";
+        /// <summary>Seconds added to the ambush window (Ruleset.ambushSeconds) that attacking out of stealth opens.</summary>
+        public const string AmbushSeconds = "ambushSeconds";
 
         /// <summary>The starting value of a stat that the hero doesn't set.</summary>
         public static float DefaultBase(string stat)
@@ -160,8 +169,13 @@ namespace DuckAndCover.Core
         public const string LowHealth = "lowHealth";
         /// <summary>Has a shield up.</summary>
         public const string Shielded = "shielded";
+        /// <summary>Hidden by a stealth status (and not revealed).</summary>
+        public const string Stealthed = "stealthed";
+        /// <summary>Just attacked out of stealth: Ruleset.ambushSeconds plus the ambushSeconds stat.</summary>
+        public const string Ambush = "ambush";
 
         public static bool IsKnown(string when) =>
-            string.IsNullOrEmpty(when) || when == OnHeldPoint || when == OnPoint || when == LowHealth || when == Shielded;
+            string.IsNullOrEmpty(when) || when == OnHeldPoint || when == OnPoint || when == LowHealth || when == Shielded
+            || when == Stealthed || when == Ambush;
     }
 }

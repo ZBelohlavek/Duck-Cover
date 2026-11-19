@@ -35,7 +35,7 @@ namespace DuckAndCover.Core
 
         /// <summary>
         /// An extra check before an ability is used, set by whoever knows more than the ability rules
-        /// (HeroServer holds a hero's ultimate until its form is picked): returns why not, or null.
+        /// (the Flag Rush carrier rules, for example): returns why not, or null.
         /// </summary>
         public Func<int, string, string> UseCheck;
 
@@ -123,6 +123,7 @@ namespace DuckAndCover.Core
             unit.passiveId = passiveId ?? "";
 
             foreach (var slot in unit.slots) if (slot.casting) slot.casting = false;
+            for (int i = 0; i < unit.slots.Count; i++) Lower(unit, i, "lowered");
             unit.slots.Clear();
             foreach (var id in abilityIds)
                 unit.slots.Add(new AbilitySlotState { abilityId = id, charges = Resolved(unit, id).def.charges });
@@ -203,6 +204,8 @@ namespace DuckAndCover.Core
         public bool IsSilenced(int playerId) => HasFlag(playerId, s => s.stun || s.silence);
         public bool IsRooted(int playerId) => HasFlag(playerId, s => s.stun || s.root);
         public bool IsRevealed(int playerId) => HasFlag(playerId, s => s.reveal);
+        /// <summary>Hidden by a stealth status, and not revealed.</summary>
+        public bool IsStealthed(int playerId) => Combat.IsHidden(playerId);
 
         /// <summary>The speed multiplier the movement code should use: 0 while stunned or rooted.</summary>
         public float MoveSpeed(int playerId) => IsRooted(playerId) ? 0f : Combat.MoveSpeed(playerId);
@@ -226,11 +229,9 @@ namespace DuckAndCover.Core
             var s = unit.slots[slot];
             if (!string.IsNullOrEmpty(abilityId) && abilityId != s.abilityId) return CommandResult.Reject("slot " + slot + " holds " + s.abilityId);
             var def = Resolved(unit, s.abilityId).def;
-            int needLevel = def.ultimate ? Math.Max(def.unlockLevel, Rules.ultimateUnlockLevel) : def.unlockLevel;
-            if (p.level < needLevel) return CommandResult.Reject("unlocks at level " + needLevel);
             string why = UseCheck == null ? null : UseCheck(playerId, def.id);
             if (!string.IsNullOrEmpty(why)) return CommandResult.Reject(why);
-            if (IsSilenced(playerId)) return CommandResult.Reject(IsStunned(playerId) ? "stunned" : "silenced");
+            if (IsSilenced(playerId) && !def.breaksControl) return CommandResult.Reject(IsStunned(playerId) ? "stunned" : "silenced");
             foreach (var other in unit.slots) if (other.casting) return CommandResult.Reject("already casting");
             if (def.ultimate)
             {
@@ -266,12 +267,23 @@ namespace DuckAndCover.Core
 
         CommandResult Use(UseAbilityCommand use)
         {
+            // A held ability that is up comes down whatever else is going on (silenced, out of charges).
+            var holder = Combat.Unit(use.playerId);
+            if (holder != null && use.slot >= 0 && use.slot < holder.slots.Count && (string.IsNullOrEmpty(use.abilityId) || use.abilityId == holder.slots[use.slot].abilityId))
+            {
+                var held = holder.slots[use.slot];
+                if (held.raised) { Lower(holder, use.slot, "lowered"); return CommandResult.Accepted; }
+                if (use.lower) return CommandResult.Accepted; // released before it went up: nothing to do
+            }
+            else if (use.lower) return CommandResult.Accepted;
+
             var can = CanUse(use.playerId, use.slot, use.abilityId);
             if (!can.IsAccepted) return can;
             var unit = Combat.Unit(use.playerId);
             var s = unit.slots[use.slot];
             var ability = Resolved(unit, s.abilityId);
             var def = ability.def;
+            if (def.held) return Raise(unit, use.slot, use);
 
             Vec3 dir = use.aimDirection.Normalized;
             if (dir == Vec3.Zero) dir = Vec3.Forward;
@@ -285,6 +297,10 @@ namespace DuckAndCover.Core
                 script = scripts[def.scriptId];
                 if (!script.CanActivate(Context(unit, use.slot, ability, null))) return CommandResult.Reject("can't be used right now");
             }
+
+            // Anything that reaches past the caster gives a cloak away (and opens the ambush window first,
+            // so the ability that breaks it already counts as an ambush).
+            if (!SelfOnly(def)) BreakStealth(unit.playerId, "attacked");
 
             // Spend.
             if (def.ultimate) unit.ultimateCharge = Math.Max(0f, unit.ultimateCharge - def.ultimateCost);
@@ -356,6 +372,22 @@ namespace DuckAndCover.Core
             }
         }
 
+        /// <summary>
+        /// An ability that only touches its caster (a stim, a cloak): it keeps stealth up. Anything aimed,
+        /// thrown, placed or shared with teammates does not.
+        /// </summary>
+        static bool SelfOnly(AbilityDef def)
+        {
+            if (def.targeting == null || def.targeting.shape != Shapes.Self || def.targeting.affects != Affects.Self) return false;
+            foreach (var e in def.effects)
+            {
+                if (e == null) continue;
+                if (e.kind == EffectKinds.Spawn) return false;
+                if (!string.IsNullOrEmpty(e.affects) && e.affects != Affects.Self) return false;
+            }
+            return true;
+        }
+
         static bool LastsForAbility(string kind) =>
             kind == EffectKinds.Status || kind == EffectKinds.Slow || kind == EffectKinds.Shield;
 
@@ -385,6 +417,7 @@ namespace DuckAndCover.Core
                 TickSlots(unit, dt);
                 if (!Combat.IsAlive(unit.playerId)) continue;
                 TickUltimate(unit, dt);
+                if (unit.ambushLeft > 0f) unit.ambushLeft = Math.Max(0f, unit.ambushLeft - dt);
                 TickStatuses(unit, dt);
             }
             TickPending(dt);
@@ -407,6 +440,7 @@ namespace DuckAndCover.Core
                         s.rechargeLeft = s.charges < def.charges ? s.rechargeLeft + def.cooldown : 0f;
                     }
                 }
+                if (def.held) TickHeld(unit, i, Resolved(unit, s.abilityId), dt);
                 if (s.casting)
                 {
                     s.castLeft -= dt;
@@ -422,7 +456,7 @@ namespace DuckAndCover.Core
 
         void TickUltimate(HeroUnit unit, float dt) => AddUltimateCharge(unit, Rules.ultimateChargePerSecond * dt);
 
-        /// <summary>Add ultimate charge (scaled by the hero's ultimateChargeRate). Nothing before the unlock level.</summary>
+        /// <summary>Add ultimate charge (scaled by the hero's ultimateChargeRate), from level 1 on.</summary>
         public void AddUltimateCharge(int playerId, float amount)
         {
             var unit = Combat.Unit(playerId);
@@ -432,7 +466,7 @@ namespace DuckAndCover.Core
         void AddUltimateCharge(HeroUnit unit, float amount)
         {
             var p = Match.Player(unit.playerId);
-            if (amount <= 0f || p == null || p.level < Rules.ultimateUnlockLevel) return;
+            if (amount <= 0f || p == null) return;
             float before = unit.ultimateCharge;
             unit.ultimateCharge = Math.Min(Rules.ultimateChargeMax, before + amount * Math.Max(0f, Combat.Stat(unit.playerId, StatIds.UltimateChargeRate)));
             foreach (var s in unit.slots)
@@ -454,9 +488,10 @@ namespace DuckAndCover.Core
                     var unit = Combat.Unit(spawned.playerId);
                     if (unit == null) return;
                     ClearStatuses(unit, "respawned");
+                    unit.ambushLeft = 0f;
                     Combat.OnSpawned(spawned.playerId);
                     if (Rules.resetCooldownsOnRespawn)
-                        foreach (var s in unit.slots) { s.charges = Resolved(unit, s.abilityId).def.charges; s.rechargeLeft = 0f; s.activeLeft = 0f; }
+                        foreach (var s in unit.slots) { s.charges = Resolved(unit, s.abilityId).def.charges; s.rechargeLeft = 0f; s.activeLeft = 0f; s.reserve = 1f; s.downFor = 0f; }
                     break;
                 }
                 case PlayerEliminatedEvent down:
@@ -464,7 +499,9 @@ namespace DuckAndCover.Core
                     var unit = Combat.Unit(down.playerId);
                     if (unit == null) return;
                     CancelCasts(unit, "eliminated");
+                    for (int i = 0; i < unit.slots.Count; i++) Lower(unit, i, "lowered");
                     ClearStatuses(unit, "eliminated");
+                    unit.ambushLeft = 0f;
                     Combat.OnEliminated(down.playerId);
                     foreach (var s in unit.slots) s.activeLeft = 0f;
                     if (down.disconnected) RemoveObjectsOf(down.playerId, "ownerLeft");

@@ -73,10 +73,18 @@ namespace DuckAndCover.Core
         public float selfSplashShare = 0f;
         /// <summary>Projectiles that hit nothing are removed after this many seconds.</summary>
         public float projectileMaxSeconds = 4f;
+        /// <summary>A melee swing reaches chests this far above or below the swinger's eye (metres).</summary>
+        public float meleeReachUp = 1.6f;
         /// <summary>Seconds a weapon hit's push (the weaponPush stat) takes to play out.</summary>
         public float weaponPushSeconds = 0.12f;
         /// <summary>Seconds a weapon hit's slow (the weaponSlow stat) lasts; each hit refreshes it.</summary>
         public float weaponSlowSeconds = 1f;
+        /// <summary>Share of a healing round's heal that its splash (the healRounds effect's radius) gives teammates near the one hit.</summary>
+        public float healSplashShare = 0.5f;
+        /// <summary>How far a healing round jumps to the next hurt teammate (the healRicochet stat), metres between chests.</summary>
+        public float healRicochetRange = 6f;
+        /// <summary>Share of the healing round's heal each jump gives.</summary>
+        public float healRicochetShare = 0.6f;
 
         // ---- Personal shield (regenerates; ability shields stack on top, up to maxShield) ----
         /// <summary>Every hero's own shield. 0 turns personal shields off.</summary>
@@ -99,10 +107,12 @@ namespace DuckAndCover.Core
             if (headRadius <= 0f || torsoRadius <= 0f || legsRadius <= 0f) e.Add("hitbox radii must be positive");
             if (torsoTop <= torsoBottom || legsTop <= legsBottom) e.Add("hitbox capsules must have a top above the bottom");
             if (maxRewindSeconds < 0f || shotOriginTolerance <= 0f) e.Add("lag compensation numbers are wrong");
+            if (meleeReachUp <= 0f) e.Add("meleeReachUp must be positive");
             if (fireBurstShots < 1f || weaponSwitchSeconds < 0f) e.Add("fireBurstShots must be at least 1");
             if (selfSplashShare < 0f || selfSplashShare > 1f) e.Add("selfSplashShare must be 0..1");
             if (projectileMaxSeconds <= 0f) e.Add("projectileMaxSeconds must be positive");
             if (weaponPushSeconds <= 0f || weaponSlowSeconds <= 0f) e.Add("weaponPushSeconds and weaponSlowSeconds must be positive");
+            if (healSplashShare < 0f || healRicochetShare < 0f || healRicochetRange < 0f) e.Add("healSplashShare, healRicochetShare and healRicochetRange can't be negative");
             if (personalShield < 0f || personalShieldDelaySeconds < 0f || personalShieldRegenPerSecond < 0f) e.Add("personal shield numbers can't be negative");
             return e;
         }

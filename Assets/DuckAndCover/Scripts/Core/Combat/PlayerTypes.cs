@@ -54,6 +54,14 @@ namespace DuckAndCover.Core
         /// <summary>Shots the fire-rate check will still allow right now (refills at the weapon's rate).</summary>
         public float fireCredit;
         public int shotsFired;
+        /// <summary>
+        /// Healing rounds left in the magazine in hand (an ability's healRounds effect loads them): each
+        /// one that hits a teammate heals <see cref="healPerRound"/>. A reload or a weapon switch empties them.
+        /// </summary>
+        public int healRounds;
+        public float healPerRound;
+        /// <summary>Metres around the teammate hit that a healing round also heals (Ruleset.healSplashShare). 0 = none.</summary>
+        public float healSplash;
 
         public string CurrentId => current >= 0 && current < weapons.Length ? weapons[current] : "";
         public int CurrentAmmo => current >= 0 && current < ammo.Length ? ammo[current] : 0;
@@ -208,6 +216,21 @@ namespace DuckAndCover.Core
         /// <summary>Per pellet: the BodyParts value, or 0.</summary>
         public int[] hitParts = new int[0];
         public int ammoLeft;
+    }
+
+    /// <summary>A melee swing (WeaponKind.Melee): who it reached. Damage follows as DamagedEvents.</summary>
+    public sealed class MeleeSwungEvent : GameEvent
+    {
+        public int playerId;
+        public string weaponId = "";
+        /// <summary>The swinger's eye.</summary>
+        public Vec3 origin;
+        /// <summary>Level direction of the swing.</summary>
+        public Vec3 direction;
+        public float reach;
+        public float arcDegrees;
+        /// <summary>Enemies (players or units) the swing reached, nearest first.</summary>
+        public int[] hitIds = new int[0];
     }
 
     public sealed class ProjectileLaunchedEvent : GameEvent

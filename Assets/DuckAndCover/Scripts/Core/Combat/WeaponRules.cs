@@ -36,6 +36,13 @@ namespace DuckAndCover.Core
         /// Set by <see cref="CombatServer"/> to the ability rules; null = shots don't hurt objects.
         /// </summary>
         public Func<int, float, int, float> DamageObject;
+        /// <summary>
+        /// Told the shooter's id just before a shot is checked for hits (after it is accepted), so a cloak
+        /// can end and its ambush window count for that shot. Set by <see cref="CombatServer"/>.
+        /// </summary>
+        public Action<int> BeforeShot;
+        /// <summary>Why a player may not fire right now beyond the weapon's own rules (a shield held up), or null. Set by CombatServer.</summary>
+        public Func<int, string> FireCheck;
         Ruleset Rules => match.Rules;
         MatchState State => match.State;
 
@@ -98,6 +105,7 @@ namespace DuckAndCover.Core
             s.reloadLeft = 0f;
             s.switchLeft = 0f;
             s.fireCredit = Rules.fireBurstShots;
+            s.healRounds = 0;
         }
 
         WeaponDef Current(WeaponState s) => Library.Weapon(s.CurrentId);
@@ -126,7 +134,7 @@ namespace DuckAndCover.Core
 
         public CommandResult Fire(FireCommand cmd)
         {
-            string why = CanAct(cmd.playerId);
+            string why = CanAct(cmd.playerId) ?? (FireCheck == null ? null : FireCheck(cmd.playerId));
             if (why != null) return CommandResult.Reject(why);
             var s = Weapons(cmd.playerId);
             var w = Current(s);
@@ -134,7 +142,8 @@ namespace DuckAndCover.Core
             if (!string.IsNullOrEmpty(cmd.weaponId) && cmd.weaponId != w.id) return CommandResult.Reject(cmd.weaponId + " is not in hand");
             if (s.switchLeft > 0f) return CommandResult.Reject("still raising the weapon");
             if (s.Reloading) return CommandResult.Reject("reloading");
-            if (s.CurrentAmmo <= 0) return CommandResult.Reject("empty");
+            bool melee = w.kind == WeaponKind.Melee;
+            if (!melee && s.CurrentAmmo <= 0) return CommandResult.Reject("empty");
             if (s.fireCredit < 1f - 1e-3f) return CommandResult.Reject("firing faster than the weapon allows");
 
             Vec3 dir = cmd.direction.Normalized;
@@ -147,10 +156,18 @@ namespace DuckAndCover.Core
             }
 
             s.fireCredit -= 1f;
-            s.ammo[s.current]--;
             s.shotsFired++;
+            if (BeforeShot != null) BeforeShot(cmd.playerId);
+            if (melee)
+            {
+                Swing(cmd, w, dir);
+                return CommandResult.Accepted;
+            }
+            s.ammo[s.current]--;
+            bool healRound = s.healRounds > 0;
+            if (healRound) s.healRounds--;
             if (w.kind == WeaponKind.Projectile) Launch(cmd, w, s, dir);
-            else Hitscan(cmd, w, s, dir);
+            else Hitscan(cmd, w, s, dir, healRound);
             if (s.CurrentAmmo <= 0) StartReload(s, w);
             return CommandResult.Accepted;
         }
@@ -164,7 +181,7 @@ namespace DuckAndCover.Core
             return Math.Max(now - window, clientTick);
         }
 
-        void Hitscan(FireCommand cmd, WeaponDef w, WeaponState s, Vec3 dir)
+        void Hitscan(FireCommand cmd, WeaponDef w, WeaponState s, Vec3 dir, bool healRound)
         {
             int tick = RewindTick(cmd.tick);
             var shot = new ShotFiredEvent
@@ -176,8 +193,9 @@ namespace DuckAndCover.Core
             var amounts = new List<float>();
             var objects = new List<int>();
             var objectAmounts = new List<float>();
-            // A healing weapon stops on teammates (to heal them) instead of passing through.
-            var passThrough = w.allyHeal > 0f ? null : PassThrough(cmd.playerId);
+            // A healing weapon (or a healing round) stops on teammates (to heal them) instead of passing through.
+            float allyHeal = healRound ? s.healPerRound : w.allyHeal;
+            var passThrough = allyHeal > 0f ? null : PassThrough(cmd.playerId);
             float scale = WeaponDamage(cmd.playerId);
             float reach = Math.Max(0.1f, combat.Stat(cmd.playerId, StatIds.WeaponRange));
             float range = w.range * reach;
@@ -193,16 +211,19 @@ namespace DuckAndCover.Core
                 shot.ends[i] = hit.point;
                 if (hit.kind == HitKind.Device)
                 {
-                    Add(objects, objectAmounts, hit.deviceId, w.damage * scale * w.Falloff(hit.distance / reach));
+                    // Healing rounds only heal: they don't hurt enemies or their objects.
+                    if (!healRound) Add(objects, objectAmounts, hit.deviceId, w.damage * scale * w.Falloff(hit.distance / reach));
                     continue;
                 }
                 if (hit.kind != HitKind.Player) continue;
                 shot.hitPlayers[i] = hit.playerId;
                 shot.hitParts[i] = hit.bodyPart;
+                bool teammate = IsTeammate(cmd.playerId, hit.playerId);
+                if (healRound && !teammate) continue; // a healing round stops on an enemy and does nothing
                 float share = w.Falloff(hit.distance / reach) * w.PartMultiplier(hit.bodyPart);
                 // Heal shots on teammates are kept as negative amounts until the end.
                 // weaponDamage makes a healing weapon heal harder too.
-                float amount = w.allyHeal > 0f && IsTeammate(cmd.playerId, hit.playerId) ? -w.allyHeal * scale * share : w.damage * scale * share;
+                float amount = allyHeal > 0f && teammate ? -allyHeal * scale * share : w.damage * scale * share;
                 Add(targets, amounts, hit.playerId, amount);
             }
             Publish(shot);
@@ -211,12 +232,135 @@ namespace DuckAndCover.Core
             {
                 if (amounts[i] < 0f)
                 {
-                    combat.Heal(cmd.playerId, targets[i], -amounts[i], w.id);
-                    if (Cleanse != null && combat.Stat(cmd.playerId, StatIds.WeaponCleanse) > 0f) Cleanse(targets[i]);
+                    HealTeammate(cmd.playerId, targets[i], -amounts[i], w.id);
+                    if (healRound) SpreadHeal(cmd.playerId, targets[i], -amounts[i], s.healSplash, w.id, tick);
                 }
                 else AfterHit(cmd.playerId, targets[i], combat.Damage(cmd.playerId, targets[i], amounts[i], w.id), dir);
             }
             HurtObjects(cmd.playerId, objects, objectAmounts);
+        }
+
+        /// <summary>
+        /// A melee swing, judged against bodies as the swinger saw them: every enemy (player or unit) whose
+        /// chest is within the weapon's reach (times the weaponRange stat) of the swinger's eye, inside the
+        /// arc around their level aim and no more than <see cref="Ruleset.meleeReachUp"/> above or below,
+        /// with nothing of the map or an enemy barrier in between. Nearest first, up to maxTargets. Every hit
+        /// is a body hit with no falloff. An enemy object straight ahead within reach (a shield, a drone, a
+        /// wall) takes the swing too, and a solid one stops it from reaching anyone behind.
+        /// </summary>
+        void Swing(FireCommand cmd, WeaponDef w, Vec3 dir)
+        {
+            int tick = RewindTick(cmd.tick);
+            float reach = w.range * Math.Max(0.1f, combat.Stat(cmd.playerId, StatIds.WeaponRange));
+            Vec3 level = new Vec3(dir.x, 0f, dir.z);
+            if (level.Magnitude < 1e-4f) level = Vec3.Forward; // looking straight up or down: swing ahead
+            level = level.Normalized;
+            float halfArc = w.arcDegrees * 0.5f;
+
+            var found = new List<int>();
+            var dist = new List<float>();
+            foreach (int id in world.PlayersInSphere(cmd.origin, reach + Rules.meleeReachUp, tick))
+            {
+                if (id == cmd.playerId || !combat.IsAlive(id) || IsTeammate(cmd.playerId, id)) continue;
+                if (!world.History.PoseAt(id, tick, out var pose)) continue;
+                Vec3 chest = Hitboxes.Chest(Rules, pose);
+                Vec3 to = chest - cmd.origin;
+                if (Math.Abs(to.y) > Rules.meleeReachUp) continue;
+                Vec3 flat = new Vec3(to.x, 0f, to.z);
+                float d = flat.Magnitude;
+                // The body's own width counts: a chest just past the reach still takes the edge of the blade.
+                if (d > reach + Rules.bodyRadius) continue;
+                if (d > 1e-3f && halfArc < 180f)
+                {
+                    float cos = Vec3.Dot(flat / d, level);
+                    double angle = Math.Acos(Math.Max(-1f, Math.Min(1f, cos))) * 180.0 / Math.PI;
+                    if (angle > halfArc) continue;
+                }
+                if (!world.HasLineOfSightFor(cmd.playerId, cmd.origin, id, tick)) continue;
+                int k = 0;
+                while (k < dist.Count && (dist[k] < d || (dist[k] == d && found[k] < id))) k++;
+                found.Insert(k, id);
+                dist.Insert(k, d);
+            }
+            if (w.maxTargets > 0 && found.Count > w.maxTargets) found.RemoveRange(w.maxTargets, found.Count - w.maxTargets);
+
+            float scale = WeaponDamage(cmd.playerId);
+            var objects = new List<int>();
+            var objectAmounts = new List<float>();
+            if (world.RaycastFrom(cmd.playerId, cmd.origin, level, reach, tick, out var hit, PassThrough(cmd.playerId)) && hit.kind == HitKind.Device)
+                Add(objects, objectAmounts, hit.deviceId, w.damage * scale);
+
+            Publish(new MeleeSwungEvent
+            {
+                playerId = cmd.playerId, weaponId = w.id, origin = cmd.origin, direction = level,
+                reach = reach, arcDegrees = w.arcDegrees, hitIds = found.ToArray(),
+            });
+            foreach (int id in found)
+            {
+                Vec3 away = level;
+                if (world.History.PoseAt(id, tick, out var at)) away = at.position - cmd.origin;
+                AfterHit(cmd.playerId, id, combat.Damage(cmd.playerId, id, w.damage * scale, w.id), away);
+            }
+            HurtObjects(cmd.playerId, objects, objectAmounts);
+        }
+
+        /// <summary>A weapon's heal on a teammate, with the cleansing that the weaponCleanse stat adds.</summary>
+        void HealTeammate(int shooterId, int targetId, float amount, string weaponId)
+        {
+            combat.Heal(shooterId, targetId, amount, weaponId);
+            if (Cleanse != null && combat.Stat(shooterId, StatIds.WeaponCleanse) > 0f) Cleanse(targetId);
+        }
+
+        /// <summary>
+        /// Where a healing round goes after the teammate it hit: a splash on teammates within
+        /// <paramref name="splash"/> metres of them (Ruleset.healSplashShare), then, for each point of the
+        /// shooter's healRicochet stat, a jump to the nearest hurt teammate within Ruleset.healRicochetRange
+        /// that the round can reach (Ruleset.healRicochetShare). Nobody is healed twice by one round, and
+        /// the shooter never heals themselves.
+        /// </summary>
+        void SpreadHeal(int shooterId, int hitId, float amount, float splash, string weaponId, int tick)
+        {
+            var done = new List<int> { shooterId, hitId };
+            if (!world.History.PoseAt(hitId, tick, out var hitPose)) return;
+            Vec3 center = Hitboxes.Chest(Rules, hitPose);
+            if (splash > 0f && Rules.healSplashShare > 0f)
+            {
+                foreach (int id in world.PlayersInSphere(center, splash, tick))
+                {
+                    if (done.Contains(id) || !IsTeammate(shooterId, id) || !combat.IsAlive(id)) continue;
+                    done.Add(id);
+                    HealTeammate(shooterId, id, amount * Rules.healSplashShare, weaponId);
+                }
+            }
+
+            int jumps = (int)Math.Round(Math.Max(0f, combat.Stat(shooterId, StatIds.HealRicochet)));
+            int from = hitId;
+            Vec3 at = center;
+            for (int j = 0; j < jumps && Rules.healRicochetShare > 0f; j++)
+            {
+                int next = -1;
+                float best = float.MaxValue;
+                Vec3 nextAt = Vec3.Zero;
+                foreach (int id in world.PlayersInSphere(at, Rules.healRicochetRange, tick))
+                {
+                    if (done.Contains(id) || !IsTeammate(shooterId, id) || !combat.IsAlive(id)) continue;
+                    var u = combat.Unit(id);
+                    if (u == null || u.health >= combat.MaxHealth(id) - 1e-3f) continue;
+                    if (!world.History.PoseAt(id, tick, out var pose)) continue;
+                    Vec3 chest = Hitboxes.Chest(Rules, pose);
+                    float d = Vec3.Distance(chest, at);
+                    if (d >= best || !world.HasLineOfSightFor(shooterId, at, id, tick)) continue;
+                    next = id;
+                    best = d;
+                    nextAt = chest;
+                }
+                if (next < 0) break;
+                done.Add(next);
+                Publish(new HealRoundBouncedEvent { shooterId = shooterId, fromId = from, toId = next, from = at, to = nextAt });
+                HealTeammate(shooterId, next, amount * Rules.healRicochetShare, weaponId);
+                from = next;
+                at = nextAt;
+            }
         }
 
         static void Add(List<int> ids, List<float> amounts, int id, float amount)
@@ -267,6 +411,7 @@ namespace DuckAndCover.Core
             var s = Weapons(playerId);
             var w = Current(s);
             if (w == null) return CommandResult.Reject("no weapon in hand");
+            if (w.kind == WeaponKind.Melee) return CommandResult.Reject("nothing to reload");
             if (s.Reloading) return CommandResult.Accepted;
             if (s.CurrentAmmo >= Magazine(playerId, w)) return CommandResult.Reject("already full");
             StartReload(s, w);
@@ -296,6 +441,24 @@ namespace DuckAndCover.Core
             if (w == null || s.current >= s.ammo.Length) return;
             s.reloadLeft = 0f;
             s.ammo[s.current] = Magazine(playerId, w);
+            s.healRounds = 0;
+        }
+
+        /// <summary>
+        /// Fill the magazine of the weapon in hand with healing rounds at once (an ability's "healRounds"
+        /// effect): each heals a teammate it hits by <paramref name="perRound"/> (times the weaponDamage stat),
+        /// and splashes <paramref name="splash"/> metres around them. They don't hurt enemies.
+        /// </summary>
+        public void LoadHealRounds(int playerId, float perRound, float splash)
+        {
+            var s = Weapons(playerId);
+            if (s == null || perRound <= 0f || !State.IsAlive(playerId)) return;
+            RefillCurrent(playerId);
+            if (Current(s) == null) return;
+            s.healRounds = s.CurrentAmmo;
+            s.healPerRound = perRound;
+            s.healSplash = Math.Max(0f, splash);
+            Publish(new HealRoundsLoadedEvent { playerId = playerId, weaponId = s.CurrentId, rounds = s.healRounds });
         }
 
         /// <summary>Rounds in a full magazine for this player: the weapon's, times their magazineSize stat (at least 1).</summary>
@@ -305,6 +468,7 @@ namespace DuckAndCover.Core
         /// <summary>
         /// What a weapon hit does beyond its damage, from the shooter's stats: life steal heals them by a
         /// share of what the target lost, weaponPush shoves the target along <paramref name="direction"/>
+        /// (only within weaponPushRange metres, when that is set)
         /// and weaponSlow slows them. Only hits on someone else that did damage count.
         /// </summary>
         void AfterHit(int shooterId, int targetId, float dealt, Vec3 direction)
@@ -314,6 +478,8 @@ namespace DuckAndCover.Core
             if (steal > 0f) combat.Heal(shooterId, shooterId, dealt * steal, StatIds.LifeSteal);
             if (!combat.IsAlive(targetId)) return;
             float push = combat.Stat(shooterId, StatIds.WeaponPush);
+            float pushRange = combat.Stat(shooterId, StatIds.WeaponPushRange);
+            if (push > 0f && pushRange > 0f && !Within(shooterId, targetId, pushRange)) push = 0f; // a point-blank push only
             if (push > 0f && direction.Magnitude > 1e-4f)
             {
                 Vec3 flat = new Vec3(direction.x, 0f, direction.z);
@@ -328,6 +494,11 @@ namespace DuckAndCover.Core
             if (slow > 0f && Slow != null) Slow(targetId, shooterId, Math.Min(1f, slow), Rules.weaponSlowSeconds);
         }
 
+        /// <summary>Whether the target stands within <paramref name="metres"/> of the shooter right now (unknown positions: no).</summary>
+        bool Within(int shooterId, int targetId, float metres) =>
+            world.TryGetPosition(shooterId, State.tick, out var from) && world.TryGetPosition(targetId, State.tick, out var to)
+            && Vec3.Distance(from, to) <= metres;
+
         /// <summary>The player's weaponDamage stat (1 = the weapon's own numbers).</summary>
         float WeaponDamage(int playerId) => Math.Max(0f, combat.Stat(playerId, StatIds.WeaponDamage));
 
@@ -339,6 +510,7 @@ namespace DuckAndCover.Core
             if (slot == s.current) return CommandResult.Accepted;
             s.current = slot;
             s.reloadLeft = 0f; // putting a weapon away cancels its reload
+            s.healRounds = 0; // and drops its healing rounds
             s.switchLeft = Rules.weaponSwitchSeconds;
             s.fireCredit = Math.Min(s.fireCredit, 1f);
             Publish(new WeaponSwitchedEvent { playerId = playerId, slot = slot, weaponId = s.CurrentId });
@@ -377,7 +549,7 @@ namespace DuckAndCover.Core
                 if (s.reloadLeft > 0f)
                 {
                     s.reloadLeft -= dt;
-                    if (s.reloadLeft <= 0f) { s.reloadLeft = 0f; s.ammo[s.current] = Magazine(s.playerId, w); }
+                    if (s.reloadLeft <= 0f) { s.reloadLeft = 0f; s.ammo[s.current] = Magazine(s.playerId, w); s.healRounds = 0; }
                 }
                 // Keep the full sizes current (a trait can change them mid-life); rounds in hand stay until a reload.
                 for (int i = 0; i < s.weapons.Length && i < s.magazines.Length; i++)

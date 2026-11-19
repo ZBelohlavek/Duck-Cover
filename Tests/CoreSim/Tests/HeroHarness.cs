@@ -26,7 +26,7 @@ sealed class HeroHarness
     public Ruleset R => Match.Rules;
     public AbilityRunner Abilities => Combat.Abilities;
 
-    public static string[] StarterIds = { "bulwark", "lancer", "mender", "rigger" };
+    public static string[] StarterIds = { "bulwark", "lancer", "mender", "rigger", "warchief" };
 
     /// <summary>Every ability file, loaded the strict way (an unknown key fails).</summary>
     public static AbilityLibrary DataLibrary() =>
@@ -125,7 +125,7 @@ sealed class HeroHarness
         if (fillUltimate) Unit(id).ultimateCharge = R.ultimateChargeMax;
     }
 
-    /// <summary>Pick an ultimate form through leveling (the ultimate waits for it).</summary>
+    /// <summary>Pick an ultimate upgrade through leveling.</summary>
     public CommandResult PickForm(int id, string upgradeId)
     {
         int level = Heroes.Progression.Rules.UltimateFormLevel();

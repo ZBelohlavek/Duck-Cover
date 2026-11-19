@@ -132,15 +132,17 @@ namespace DuckAndCover.Game
                 var b = pair.Value;
                 var p = snapshot.match.Player(pair.Key);
                 bool show = b.hasPose && p != null && p.alive && p.connected;
+                var unit = snapshot.abilities == null ? null : snapshot.abilities.Unit(pair.Key);
+                Vector3 feet = Vector3.Lerp(b.from, b.to, k);
+                if (show && unit != null && unit.stealthed && Hidden(snapshot, p.team, feet, runner.ClientRules)) show = false;
                 if (b.view.gameObject.activeSelf != show) b.view.gameObject.SetActive(show);
                 if (!show) continue;
-                b.view.Pose(Vector3.Lerp(b.from, b.to, k), Mathf.LerpAngle(b.yawFrom, b.yawTo, k), b.crouched);
+                b.view.Pose(feet, Mathf.LerpAngle(b.yawFrom, b.yawTo, k), b.crouched);
                 if (b.motion != null)
                 {
                     var weapons = snapshot.Weapons(pair.Key);
                     b.view.Drive(b.motion.velocity.ToVector3(), b.motion.pitch, b.motion.grounded, b.motion.sprinting, b.motion.vaulting, weapons != null && weapons.Reloading);
                 }
-                var unit = snapshot.abilities == null ? null : snapshot.abilities.Unit(pair.Key);
                 float max = unit == null ? 1f : Mathf.Max(1f, unit.stats.Get(StatIds.MaxHealth));
                 b.view.ShowBars(unit == null ? 1f : unit.health / max, unit == null ? 0f : unit.Shield / Mathf.Max(1f, runner.ClientRules.maxShield), cam);
             }
@@ -156,6 +158,18 @@ namespace DuckAndCover.Game
 
             // Out of the fight (waiting to respawn, or not deployed yet): watch from above.
             if (local != null && !local.Active) ResetCamera();
+        }
+
+        /// <summary>
+        /// A cloaked player is drawn for their own team, and for an enemy only within the shimmer range of
+        /// this machine's player (so a cloak can't stand on top of someone unseen).
+        /// </summary>
+        bool Hidden(MatchSnapshot snapshot, TeamId team, Vector3 feet, Ruleset rules)
+        {
+            var me = snapshot.match.Player(client.PlayerId);
+            if (me == null || me.team == team) return false;
+            if (local == null || !local.Active) return true;
+            return (feet - local.transform.position).sqrMagnitude > rules.stealthShimmerRange * rules.stealthShimmerRange;
         }
 
         void OnSnapshot()
@@ -221,6 +235,10 @@ namespace DuckAndCover.Game
                 case AbilityUsedEvent used:
                     if (bodies.TryGetValue(used.playerId, out var caster) && caster.view != null && caster.view.Model != null) caster.view.Model.UsedAbility(used.abilityId);
                     break;
+                case MeleeSwungEvent swung:
+                    if (swung.playerId == client.PlayerId) break; // drawn already, the moment it was swung
+                    DrawSwing(swung.playerId, swung.reach, swung.arcDegrees, swung.origin, swung.direction);
+                    break;
                 case ProjectileLaunchedEvent launched:
                 {
                     var go = Paint.Shape(PrimitiveType.Sphere, effects, "Projectile " + launched.projectileId, launched.origin.ToVector3(), Vector3.one * 0.22f, BlastColor, false);
@@ -269,6 +287,39 @@ namespace DuckAndCover.Game
                 if (UnitView.Instance != null && UnitView.Instance.Raycast(rules, client.Team, origin, d, reach, out float unitHit)) reach = unitHit;
                 Tracer(muzzle, (origin + d * reach).ToVector3());
             }
+        }
+
+        /// <summary>
+        /// A melee swing: a short-lived fan of blade streaks across the arc, at chest height in front of the
+        /// swinger, so other players see where the axe went. Placeholder until swing animations.
+        /// </summary>
+        public void DrawSwing(int playerId, float reach, float arcDegrees, Vec3 origin, Vec3 direction)
+        {
+            Vector3 eye = origin.ToVector3() + Vector3.down * 0.35f;
+            Vector3 level = direction.ToVector3();
+            level.y = 0f;
+            if (level.sqrMagnitude < 1e-6f) return;
+            level = level.normalized;
+            const int Streaks = 7;
+            float half = Mathf.Min(arcDegrees, 160f) * 0.5f;
+            Vector3 last = Vector3.zero;
+            for (int i = 0; i < Streaks; i++)
+            {
+                float a = Mathf.Lerp(-half, half, i / (float)(Streaks - 1));
+                Vector3 tip = eye + Quaternion.Euler(0f, a, 0f) * level * Mathf.Max(0.5f, reach) + Vector3.down * (0.3f * i / (Streaks - 1));
+                if (i > 0) Streak(last, tip, 0.12f + 0.02f * i);
+                last = tip;
+            }
+        }
+
+        void Streak(Vector3 from, Vector3 to, float life)
+        {
+            Vector3 along = to - from;
+            float length = along.magnitude;
+            if (length < 0.05f) return;
+            var go = Paint.Block(effects, "Swing", (from + to) * 0.5f, new Vector3(0.06f, 0.06f, length), TracerColor, false);
+            go.transform.rotation = Quaternion.LookRotation(along);
+            Destroy(go, life);
         }
 
         void Tracer(Vector3 from, Vector3 to)

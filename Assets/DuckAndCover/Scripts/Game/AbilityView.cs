@@ -7,7 +7,7 @@ namespace DuckAndCover.Game
     /// <summary>
     /// Draws what abilities do, from what the server sends (WP11): the objects heroes place
     /// (barriers and gates as walls in the owner's team colour, fields as discs on the ground, mines,
-    /// sentries), a flash where an ability lands (a disc for areas, a beam for rays), wind-ups, and
+    /// sentries, drones as balls; shields and drones that ride on a hero follow the body drawn here), a flash where an ability lands (a disc for areas, a beam for rays), wind-ups, and
     /// mines going off. Placeholder art; it decides nothing.
     ///
     /// Walls get a collider on the players' layer, so this machine's player bumps into them while the
@@ -21,6 +21,9 @@ namespace DuckAndCover.Game
         {
             public GameObject go;
             public TeamId team;
+            /// <summary>A wall's panel and top edge, rescaled as it opens out.</summary>
+            public Transform wall, frame;
+            public float drawnWidth;
         }
 
         readonly Dictionary<int, Placed> placed = new Dictionary<int, Placed>();
@@ -59,8 +62,13 @@ namespace DuckAndCover.Game
             foreach (var o in state.objects)
             {
                 scratch.Remove(o.id);
-                if (placed.ContainsKey(o.id)) continue;
-                placed[o.id] = new Placed { go = Build(o), team = o.team };
+                if (!placed.TryGetValue(o.id, out var p))
+                {
+                    p = new Placed { team = o.team };
+                    p.go = Build(o, p);
+                    placed[o.id] = p;
+                }
+                Refresh(o, p);
             }
             foreach (int gone in scratch)
             {
@@ -73,7 +81,40 @@ namespace DuckAndCover.Game
 
         static Color TeamColor(TeamId team) => PlaceholderBody.ColorFor(team);
 
-        GameObject Build(ObjectState o)
+        /// <summary>
+        /// Objects that move or grow: a shield or drone follows the body it rides on as drawn on this
+        /// machine (the local player's own body, or another's between state copies), and a wall that
+        /// opens out is rescaled to its width now.
+        /// </summary>
+        void Refresh(ObjectState o, Placed p)
+        {
+            if (p.go == null || o.def == null) return;
+            var view = CombatView.Instance;
+            if (o.followId >= 0 && view != null && view.DrawnFeet(o.followId, out Vector3 feet))
+            {
+                Vector3 facing = o.facing.ToVector3();
+                if (client != null && o.followId == client.PlayerId && view.Local != null) facing = Quaternion.Euler(0f, view.Local.Yaw, 0f) * Vector3.forward;
+                facing.y = 0f;
+                if (facing.sqrMagnitude < 1e-6f) facing = Vector3.forward;
+                facing = facing.normalized;
+                p.go.transform.position = feet + facing * o.def.followAhead + Vector3.up * o.def.followRise;
+                p.go.transform.rotation = Quaternion.LookRotation(facing);
+            }
+            float width = o.Width;
+            if (p.wall != null && Mathf.Abs(width - p.drawnWidth) > 1e-3f)
+            {
+                p.drawnWidth = width;
+                var ws = p.wall.localScale;
+                p.wall.localScale = new Vector3(width, ws.y, ws.z);
+                if (p.frame != null)
+                {
+                    var fs = p.frame.localScale;
+                    p.frame.localScale = new Vector3(width + 0.1f, fs.y, fs.z);
+                }
+            }
+        }
+
+        GameObject Build(ObjectState o, Placed p)
         {
             var root = new GameObject("Object " + o.id + " " + o.defId);
             root.transform.SetParent(transform, false);
@@ -88,10 +129,32 @@ namespace DuckAndCover.Game
                 if (facing.sqrMagnitude < 1e-6f) facing = Vector3.forward;
                 root.transform.position = at;
                 root.transform.rotation = Quaternion.LookRotation(facing.normalized);
+                float width = o.Width;
                 var wall = Paint.Block(root.transform, "Wall", new Vector3(0f, def.height * 0.5f, 0f),
-                    new Vector3(def.width, def.height, ObjectDef.SolidDepth), Color.Lerp(team, Color.white, 0.25f), def.blocksMovement);
+                    new Vector3(width, def.height, ObjectDef.SolidDepth), Color.Lerp(team, Color.white, def.followOwner ? 0.5f : 0.25f), def.blocksMovement);
                 wall.layer = PhysicsWorld.PlayerLayer;
-                Paint.Block(root.transform, "Frame", new Vector3(0f, def.height, 0f), new Vector3(def.width + 0.1f, 0.12f, ObjectDef.SolidDepth + 0.1f), team, false);
+                var frame = Paint.Block(root.transform, "Frame", new Vector3(0f, def.height, 0f), new Vector3(width + 0.1f, 0.12f, ObjectDef.SolidDepth + 0.1f), team, false);
+                p.wall = wall.transform;
+                p.frame = frame.transform;
+                // Your own raised shield stands a metre in front of your eyes: draw only its top edge
+                // so you can still see what you are blocking (a placeholder for a see-through shield).
+                if (client != null && o.followId == client.PlayerId)
+                {
+                    var r = wall.GetComponent<Renderer>();
+                    if (r != null) r.enabled = false;
+                }
+                p.drawnWidth = width;
+                return root;
+            }
+
+            if (def.hitRadius > 0f)
+            {
+                // A drone: a ball with a ring around it, at its spot (not on the floor).
+                root.transform.position = at;
+                float d = def.hitRadius * 2f;
+                Paint.Shape(PrimitiveType.Sphere, root.transform, "Body", Vector3.zero, Vector3.one * d, Color.Lerp(team, Color.white, 0.3f), false);
+                Paint.Block(root.transform, "Ring", Vector3.zero, new Vector3(d * 1.6f, d * 0.12f, d * 1.6f), Color.Lerp(team, Color.black, 0.4f), false);
+                Paint.Block(root.transform, "Eye", new Vector3(0f, 0f, def.hitRadius * 0.9f), Vector3.one * d * 0.25f, Color.white, false);
                 return root;
             }
 
@@ -139,6 +202,17 @@ namespace DuckAndCover.Game
                     Vector3 at = cast.aimOrigin.ToVector3() + cast.aimDirection.ToVector3() * 0.8f;
                     var glow = Paint.Shape(PrimitiveType.Sphere, flashes, "WindUp", at, Vector3.one * 0.35f, Color.Lerp(TeamColorOf(cast.playerId), Color.white, 0.5f), false);
                     Destroy(glow, Mathf.Max(0.1f, cast.castTime));
+                    break;
+                }
+                case HealRoundBouncedEvent bounce:
+                {
+                    // A healing round jumping between teammates: a short green streak.
+                    Vector3 from = bounce.from.ToVector3(), to = bounce.to.ToVector3();
+                    Vector3 along = to - from;
+                    if (along.magnitude < 0.05f) break;
+                    var streak = Paint.Block(flashes, "Ricochet", (from + to) * 0.5f, new Vector3(0.05f, 0.05f, along.magnitude), new Color(0.40f, 0.95f, 0.55f), false);
+                    streak.transform.rotation = Quaternion.LookRotation(along);
+                    Destroy(streak, FlashSeconds * 0.6f);
                     break;
                 }
                 case ObjectTriggeredEvent triggered:

@@ -1,110 +1,64 @@
 {
   "abilities": [
     {
-      "id": "bulwark_panel",
-      "displayName": "Bastion Panel",
-      "description": "Plant a 3 m wide armoured panel where you aim. It stops shots and bodies until it breaks or runs out. Teammates shoot through it.",
+      "id": "bulwark_rampart",
+      "displayName": "Rampart",
+      "description": "Hold to raise a wide shield in front of you. It opens out from your arm to 5 m across and stops enemy shots and abilities while your team shoots through it. It holds 900 damage and regains 180 a second once it has been down for 1.5 seconds; if it breaks, it needs 5 seconds before it can go up again. While it is up you move 35% slower and can't fire.",
+      "cooldown": 5,
+      "held": true,
+      "blocksWeapon": true,
+      "targeting": {
+        "shape": "self",
+        "affects": "self"
+      },
+      "effects": [
+        {
+          "kind": "spawn",
+          "objectId": "bulwark_rampart"
+        }
+      ],
+      "stats": [
+        {
+          "stat": "moveSpeed",
+          "op": "percent",
+          "value": -0.35,
+          "when": ""
+        }
+      ]
+    },
+    {
+      "id": "bulwark_drone",
+      "displayName": "Patch Drone",
+      "description": "Launch a repair drone that hovers behind your shoulder for 10 seconds and heals you 20 a second. Enemies can shoot it down (100 health).",
       "cooldown": 14,
+      "targeting": {
+        "shape": "self",
+        "affects": "self"
+      },
+      "effects": [
+        {
+          "kind": "spawn",
+          "objectId": "bulwark_drone"
+        }
+      ]
+    },
+    {
+      "id": "bulwark_bulkhead",
+      "displayName": "Bulkhead",
+      "description": "Ultimate. Drop a 9 m wide, 3.5 m high wall where you aim, up to 20 m away, for 8 seconds. Nobody walks through it and enemy shots stop on it, but your team shoots through. Use it as cover or to cut off an escape.",
+      "ultimate": true,
+      "ultimateCost": 100,
       "targeting": {
         "shape": "sphere",
         "origin": "aimPoint",
-        "range": 4,
+        "range": 20,
         "radius": 0.5,
         "affects": "enemies"
       },
       "effects": [
         {
           "kind": "spawn",
-          "objectId": "bulwark_panel"
-        },
-        {
-          "kind": "spawn",
-          "objectId": "bulwark_aura",
-          "tag": "bastionAura"
-        }
-      ]
-    },
-    {
-      "id": "bulwark_rush",
-      "displayName": "Breach Rush",
-      "description": "Charge 7 m along your aim. Enemies where you land take damage and are knocked back.",
-      "cooldown": 9,
-      "targeting": {
-        "shape": "sphere",
-        "origin": "aimPoint",
-        "range": 7,
-        "radius": 3,
-        "affects": "enemies"
-      },
-      "effects": [
-        {
-          "kind": "push",
-          "amount": 7,
-          "duration": 0.35,
-          "direction": "aim",
-          "affects": "self"
-        },
-        {
-          "kind": "damage",
-          "amount": 35,
-          "delay": 0.35
-        },
-        {
-          "kind": "push",
-          "amount": 3,
-          "duration": 0.2,
-          "direction": "away",
-          "delay": 0.35
-        },
-        {
-          "kind": "stun",
-          "duration": 0.6,
-          "delay": 0.35,
-          "tag": "rushStun"
-        },
-        {
-          "kind": "shield",
-          "amount": 60,
-          "duration": 3,
-          "affects": "self",
-          "tag": "rushShield"
-        }
-      ]
-    },
-    {
-      "id": "bulwark_hold",
-      "displayName": "Hold the Line",
-      "description": "Ultimate. Lock down the ground around you for 6 seconds: enemies inside are slowed and worn down, and you gain a 100 shield.",
-      "ultimate": true,
-      "ultimateCost": 100,
-      "duration": 6,
-      "targeting": {
-        "shape": "sphere",
-        "origin": "caster",
-        "radius": 8,
-        "affects": "enemies"
-      },
-      "effects": [
-        {
-          "kind": "spawn",
-          "objectId": "bulwark_hold_field"
-        },
-        {
-          "kind": "shield",
-          "amount": 100,
-          "duration": 6,
-          "affects": "self"
-        },
-        {
-          "kind": "status",
-          "status": "root",
-          "duration": 1.5,
-          "tag": "holdRoot"
-        },
-        {
-          "kind": "spawn",
-          "objectId": "bulwark_fortress",
-          "tag": "fortress"
+          "objectId": "bulwark_bulkhead"
         }
       ]
     }
@@ -112,70 +66,62 @@
   "statuses": [],
   "objects": [
     {
-      "id": "bulwark_panel",
-      "displayName": "Bastion Panel",
+      "id": "bulwark_rampart",
+      "displayName": "Rampart",
+      "health": 900,
+      "trigger": "none",
+      "maxPerOwner": 1,
+      "blocksMovement": false,
+      "blocksShots": true,
+      "width": 5,
+      "height": 2.6,
+      "expandFrom": 0.4,
+      "expandTime": 0.35,
+      "followOwner": true,
+      "followAhead": 1.0,
+      "regen": 180,
+      "regenDelay": 1.5
+    },
+    {
+      "id": "bulwark_drone",
+      "displayName": "Patch Drone",
       "lifetime": 10,
-      "health": 500,
+      "health": 100,
+      "hitRadius": 0.35,
+      "followOwner": true,
+      "followAhead": -0.9,
+      "followRise": 2.3,
+      "maxPerOwner": 1,
+      "trigger": "pulse",
+      "interval": 0.5,
+      "radius": 5,
+      "affects": "self",
+      "effects": [
+        {
+          "kind": "heal",
+          "amount": 10
+        },
+        {
+          "kind": "shield",
+          "amount": 6,
+          "duration": 2,
+          "tag": "droneShield"
+        }
+      ]
+    },
+    {
+      "id": "bulwark_bulkhead",
+      "displayName": "Bulkhead",
+      "lifetime": 8,
+      "health": 2000,
       "trigger": "none",
       "maxPerOwner": 1,
       "blocksMovement": true,
       "blocksShots": true,
-      "width": 3,
-      "height": 2.2
-    },
-    {
-      "id": "bulwark_hold_field",
-      "displayName": "Held Ground",
-      "lifetime": 6,
-      "radius": 8,
-      "trigger": "pulse",
-      "interval": 0.5,
-      "affects": "enemies",
-      "effects": [
-        {
-          "kind": "slow",
-          "amount": 0.4,
-          "duration": 1
-        },
-        {
-          "kind": "damage",
-          "amount": 8
-        }
-      ]
-    },
-    {
-      "id": "bulwark_aura",
-      "displayName": "Bastion Aura",
-      "lifetime": 10,
-      "radius": 4,
-      "trigger": "pulse",
-      "interval": 1,
-      "affects": "allies",
-      "maxPerOwner": 1,
-      "effects": [
-        {
-          "kind": "shield",
-          "amount": 15,
-          "duration": 2
-        }
-      ]
-    },
-    {
-      "id": "bulwark_fortress",
-      "displayName": "Fortress",
-      "lifetime": 6,
-      "radius": 8,
-      "trigger": "pulse",
-      "interval": 1,
-      "affects": "allies",
-      "maxPerOwner": 1,
-      "effects": [
-        {
-          "kind": "shield",
-          "amount": 20,
-          "duration": 2
-        }
-      ]
+      "width": 9,
+      "height": 3.5,
+      "expandFrom": 0.2,
+      "expandTime": 0.5
     }
   ]
 }

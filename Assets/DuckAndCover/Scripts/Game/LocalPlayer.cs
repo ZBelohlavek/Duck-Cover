@@ -13,7 +13,7 @@ namespace DuckAndCover.Game
     ///
     /// Keys: WASD move, mouse look, Shift sprint, Ctrl or C crouch, Space jump (vaults a low wall
     /// when facing one), left mouse fire, R reload, 1/2 or the wheel or Q switch weapon,
-    /// E and F the hero's abilities, X the ultimate, hold Z or V to take the left or right upgrade
+    /// E, F and X the hero's three abilities, hold Z or V to take the left or right upgrade
     /// on offer (a stand-in until the level-up prompt, WP12), Esc frees the mouse.
     ///
     /// Abilities are requests too: the server decides, and a dash or knockback comes back as a
@@ -38,8 +38,12 @@ namespace DuckAndCover.Game
         public bool Vaulting => vaultTime >= 0f;
         public int Ammo { get; private set; }
         public int Magazine { get; private set; }
+        /// <summary>The weapon in hand is a melee weapon: no ammo to show, nothing to reload.</summary>
+        public bool Melee { get; private set; }
         public string WeaponName { get; private set; } = "";
         public bool Reloading { get; private set; }
+        /// <summary>The magazine in hand holds healing rounds (Mender's Mending Rounds).</summary>
+        public bool HealRounds { get; private set; }
         /// <summary>Time.time of the last hit the server confirmed on an enemy, and whether it took them down.</summary>
         public float LastHitAt { get; private set; } = -10f;
         public bool LastHitWasHead { get; private set; }
@@ -166,18 +170,27 @@ namespace DuckAndCover.Game
             if (!correction) { yaw = newYaw; pitch = 0f; }
         }
 
-        /// <summary>A dash (along the aim) or a knockback: moved over its seconds, level with the ground.</summary>
+        /// <summary>
+        /// A dash (along the aim), a knockback or a leap: moved over its seconds along the ground. A push with
+        /// a lift also throws the body up that many metres (a leap's arc, or a knock-up with no distance),
+        /// and gravity brings it down.
+        /// </summary>
         void StartPush(PushedEvent pushed)
         {
             Vector3 dir = pushed.direction.ToVector3();
-            if (pushed.mode != PushDirections.Aim && dir.sqrMagnitude < 1e-6f) dir = transform.position - pushed.origin.ToVector3();
+            if (pushed.mode != PushDirections.Aim && pushed.mode != PushDirections.Leap && dir.sqrMagnitude < 1e-6f) dir = transform.position - pushed.origin.ToVector3();
             dir.y = 0f;
-            if (dir.sqrMagnitude < 1e-6f || pushed.distance <= 0f) return;
+            bool moves = dir.sqrMagnitude >= 1e-6f && pushed.distance > 0f;
+            if (!moves && pushed.lift <= 0f) return;
             float seconds = Mathf.Max(0.05f, pushed.seconds);
-            pushVelocity = dir.normalized * (pushed.distance / seconds);
+            pushVelocity = moves ? dir.normalized * (pushed.distance / seconds) : Vector3.zero;
             pushLeft = seconds;
+            pushLifting = pushed.lift > 0f;
+            if (pushLifting) velocity.y = Mathf.Sqrt(2f * rules.gravity * pushed.lift);
             vaultTime = -1f;
         }
+
+        bool pushLifting;
 
         void SetActive(bool on)
         {
@@ -226,7 +239,7 @@ namespace DuckAndCover.Game
             Report();
             bool stunned = unit != null && unit.HasStatus(AbilityLibrary.StunStatus);
             fireRate = unit == null ? 1f : Mathf.Max(0.1f, unit.stats.Get(StatIds.FireRate));
-            Weapons(keyboard, mouse, focused, snapshot.Weapons(me.id), stunned);
+            Weapons(keyboard, mouse, focused, snapshot.Weapons(me.id), stunned || WeaponHeldBack(unit));
             Abilities(keyboard, focused, unit);
             Choices(keyboard, focused, snapshot, me);
             DriveViewModel();
@@ -251,13 +264,61 @@ namespace DuckAndCover.Game
 
         void Abilities(Keyboard keyboard, bool focused, HeroUnit unit)
         {
-            if (!focused || scripted || keyboard == null || unit == null || Time.time < abilityBlockUntil) return;
+            if (scripted || keyboard == null || unit == null) return;
+            // Held abilities (a shield): up while the key is down, down when it is let go.
+            for (int i = 0; i < unit.slots.Count; i++)
+            {
+                var key = AbilityKey(keyboard, i, unit.slots.Count);
+                var def = key == null ? null : HeroData.Abilities.Ability(unit.slots[i].abilityId);
+                if (def == null || !def.held) continue;
+                if (focused && key.wasPressedThisFrame) UseAbility(i, def.id);
+                else if (key.wasReleasedThisFrame || !focused && heldDown[i]) LowerAbility(i, def.id);
+                heldDown[i] = focused && key.isPressed;
+            }
+            if (!focused || Time.time < abilityBlockUntil) return;
             int slot = -1;
             if (keyboard.eKey.wasPressedThisFrame) slot = 0;
             else if (keyboard.fKey.wasPressedThisFrame) slot = 1;
             else if (keyboard.xKey.wasPressedThisFrame) slot = unit.slots.Count - 1;
             if (slot < 0 || slot >= unit.slots.Count) return;
+            var chosen = HeroData.Abilities.Ability(unit.slots[slot].abilityId);
+            if (chosen != null && chosen.held) return; // handled above
             UseAbility(slot, unit.slots[slot].abilityId);
+        }
+
+        readonly bool[] heldDown = new bool[8];
+
+        /// <summary>E is the first ability, F the second, X the last (the ultimate).</summary>
+        static UnityEngine.InputSystem.Controls.KeyControl AbilityKey(Keyboard keyboard, int slot, int count)
+        {
+            if (slot == count - 1 && count > 2) return keyboard.xKey;
+            if (slot == 0) return keyboard.eKey;
+            if (slot == 1) return keyboard.fKey;
+            return null;
+        }
+
+        /// <summary>Whether one of the hero's held abilities that stops the weapon (Rampart) is up.</summary>
+        static bool WeaponHeldBack(HeroUnit unit)
+        {
+            if (unit == null) return false;
+            foreach (var s in unit.slots)
+            {
+                if (!s.raised) continue;
+                var def = HeroData.Abilities.Ability(s.abilityId);
+                if (def != null && def.blocksWeapon) return true;
+            }
+            return false;
+        }
+
+        /// <summary>Let go of a held ability (the server ignores it if it isn't up).</summary>
+        public void LowerAbility(int slot, string abilityId)
+        {
+            if (client == null) return;
+            client.Send(new UseAbilityCommand
+            {
+                slot = slot, abilityId = abilityId ?? "", lower = true, tick = view != null ? view.RenderTick : 0,
+                aimOrigin = (transform.position + Vector3.up * eyeHeight).ToVec3(), aimDirection = MoveMath.AimDirection(yaw, pitch),
+            });
         }
 
         /// <summary>Ask the server to use the ability in a slot, aimed where the camera looks.</summary>
@@ -361,8 +422,9 @@ namespace DuckAndCover.Game
             {
                 float step = Mathf.Min(dt, pushLeft);
                 pushLeft -= step;
-                velocity.y = Mathf.Min(velocity.y, 0f) - rules.gravity * step;
-                controller.Move(pushVelocity * step + Vector3.up * (velocity.y * step));
+                velocity.y = (pushLifting ? velocity.y : Mathf.Min(velocity.y, 0f)) - rules.gravity * step;
+                var pushFlags = controller.Move(pushVelocity * step + Vector3.up * (velocity.y * step));
+                if ((pushFlags & CollisionFlags.Above) != 0 && velocity.y > 0f) velocity.y = 0f;
                 Sprinting = false;
                 return;
             }
@@ -522,6 +584,9 @@ namespace DuckAndCover.Game
             Magazine = state.CurrentMagazine > 0 ? state.CurrentMagazine : def.magazine;
             Reloading = state.Reloading;
             Ammo = Reloading ? 0 : Mathf.Max(0, state.CurrentAmmo - unacknowledged);
+            HealRounds = !Reloading && state.healRounds > 0;
+            Melee = def.kind == WeaponKind.Melee;
+            if (Melee) { Ammo = Magazine; shotsSent = 0; } // a swing spends nothing
             if (!focused || scripted || stunned) return;
 
             int slot = SlotAsked(keyboard, mouse, state);
@@ -532,7 +597,7 @@ namespace DuckAndCover.Game
                 client.Send(new SwitchWeaponCommand { slot = slot });
                 return;
             }
-            if (keyboard != null && keyboard.rKey.wasPressedThisFrame && !Reloading && Ammo < Magazine)
+            if (keyboard != null && keyboard.rKey.wasPressedThisFrame && !Reloading && Ammo < Magazine && !Melee)
             {
                 client.Send(new ReloadCommand());
                 return;
@@ -569,7 +634,7 @@ namespace DuckAndCover.Game
             var cam = Camera.main;
             if (cam == null) return false;
             nextFireAt = Time.time + def.fireInterval / fireRate;
-            shotsSent++;
+            if (def.kind != WeaponKind.Melee) shotsSent++;
 
             Vec3 origin = (transform.position + Vector3.up * eyeHeight).ToVec3();
             Vec3 direction = MoveMath.AimDirection(yaw, pitch);
@@ -577,6 +642,7 @@ namespace DuckAndCover.Game
             client.Send(new FireCommand { weaponId = def.id, origin = origin, direction = direction, tick = view != null ? view.RenderTick : 0 });
             if (viewModel != null) viewModel.Fired();
             if (view != null && def.kind == WeaponKind.Hitscan) view.DrawOwnShot(def, origin, direction, Muzzle);
+            if (view != null && def.kind == WeaponKind.Melee) view.DrawSwing(client.PlayerId, def.range, def.arcDegrees, origin, direction);
             return true;
         }
 

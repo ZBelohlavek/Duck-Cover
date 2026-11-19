@@ -155,13 +155,37 @@ static class OverrunSim
 
         int target = PickTarget(h, b, m.position);
         if (target < 0) return;
-        Vec3 aim = h.ChestOf(target);
+        // Healing rounds (Mender's Mending Rounds) only heal: a bot loads them when a teammate is hurt, shoots that
+        // teammate while they last, and reloads back to plain rounds when nobody needs them.
+        int patient = PickPatient(h, b, m.position);
+        var weapons = h.Combat.Weapons.Weapons(b.id);
+        Vec3 aim = h.ChestOf(weapons.healRounds > 0 && patient >= 0 ? patient : target);
         if (rng.Next() > b.accuracy) aim = aim + right * 3f + Vec3.Up * 1.5f; // a miss
         Vec3 eye = h.Eye(b.id);
         var hero = h.Combat.Damage.Unit(b.id);
         for (int slot = 0; slot < hero.slots.Count; slot++)
+        {
+            var def = h.Combat.Abilities.AbilityIn(b.id, slot);
+            if (patient < 0 && def != null && def.effects.Any(e => e != null && e.kind == EffectKinds.HealRounds)) continue;
             h.Combat.Apply(new UseAbilityCommand { playerId = b.id, slot = slot, abilityId = "", aimOrigin = eye, aimDirection = (h.ChestOf(target) - eye).Normalized, tick = h.S.tick });
+        }
+        if (weapons.healRounds > 0 && patient < 0) { h.Combat.Apply(new ReloadCommand { playerId = b.id }); return; }
         h.FireAt(b.id, aim);
+    }
+
+    /// <summary>The nearest teammate hero under 70% health within 20 m, or -1.</summary>
+    static int PickPatient(OverrunHarness h, Bot b, Vec3 at)
+    {
+        int best = -1;
+        float bestDist = 20f;
+        foreach (var p in h.S.players)
+        {
+            if (p.team != b.team || p.id == b.id || !h.S.IsAlive(p.id)) continue;
+            if (h.Combat.Damage.Unit(p.id).health >= 0.7f * h.Combat.Damage.MaxHealth(p.id)) continue;
+            float d = Vec3.Distance(at, h.M(p.id).position);
+            if (d < bestDist) { best = p.id; bestDist = d; }
+        }
+        return best;
     }
 
     static int PickTarget(OverrunHarness h, Bot b, Vec3 at)

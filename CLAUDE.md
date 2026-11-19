@@ -149,7 +149,7 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
   by block kind and never adds colliders; see `docs/ENVIRONMENTS.md` for its fair-play rules and sources.
 - The host can add practice dummies in the lobby. Controls: WASD, mouse, Shift sprint, Ctrl or C crouch,
   Space jump or vault, left mouse fire, R reload, 1/2 or Q or the wheel switch weapon, E and F the
-  hero's abilities, X the ultimate, hold Z or V to take the left or right upgrade, Esc frees the mouse.
+  hero's abilities, X the third ability, hold Z or V to take the left or right upgrade, Esc frees the mouse.
 - Flag Rush (WP21) is `ModeDef.FlagRush()` (objective "flag"): `Core/Flag/FlagServer` runs the one flag on the
   host (seeded spot picks, pick up by touch, carrier can't sprint or dash, drop, reset, capture through
   `MatchRules.ScoreFlagCapture`). A map carries it with a "bases" zone set (one capture zone per base, its
@@ -167,15 +167,20 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
   it over the network (scripted players join their wave with `ScriptedToLaneCommand`).
 - Teams are 4v4 (`Ruleset.maxPlayersPerTeam`). Recommended lineup, never a lock: tank, healer, DPS, utility or flex
   (`Core/Heroes/Roles.cs` maps them to the role ids in hero data; duplicates stay allowed).
-- Heroes (WP11): Bulwark (vanguard), Lancer (striker), Mender (support), Rigger (controller), as data in
+- Heroes (WP11): Bulwark (vanguard), Lancer (striker), Mender (support), Rigger (controller), and Gashrak the war chief (striker, melee only: `WeaponKind.Melee`), as data in
   Data/Resources. `HeroServer` (Core/Heroes) gives a pick its kit, runs leveling beside the match and
-  applies upgrades; `HeroKitTests` checks every ability and all 80 upgrades. Levels run 1 to 20 (picks on even levels); each hero has two upgrade paths, left and right (`docs/HEROES.md`).
+  applies upgrades; `HeroKitTests` checks every ability and every upgrade. Levels run 1 to 20 (picks on even levels); each hero has two upgrade paths, left and right (`docs/HEROES.md`).
 - Hero models live in `Assets/DuckAndCover/Art/Resources/HeroArt/<heroId>/`: `art.json` (`Game/Heroes/HeroArt.cs`:
   scale to the hitboxes, clip loops and speeds, jump timings, which clip each ability plays), the rigged FBX with every
   clip, a first-person FBX made in camera space, and baked paint PNGs (FBX and PNG through LFS). `Editor/HeroArtImport`
   sets their import (Generic, no material import). `HeroModel` animates other players' bodies through a PlayableGraph
   evaluated by hand (no Animator Controller asset); `FirstPersonRig` moves the local arms. A hero without a folder keeps
   the stand-in body and block gun. Lancer's files come from the Blender rig in the project's `art/lancer-anim-v1`, exported
-  by the scripts in `art/lancer-unity-v1`.
+  by the scripts in `art/lancer-unity-v2` (red dot sight, first-person hold).
+- Stealth (Rigger's Cloak) is a status flag, `StatusDef.stealth`: `HeroUnit.stealthed` is on while a stealth status is
+  up and no reveal status is. Turrets (objects with maxTargets), minions and Bastions skip a stealthed enemy
+  (`DamageRules.IsHidden`); `CombatView` hides them beyond `Ruleset.stealthShimmerRange`. Firing (`WeaponRules.BeforeShot`)
+  or any ability that isn't self-only ends it (`AbilityRunner.BreakStealth`) and opens the ambush window, which the
+  stat condition "ambush" reads.
 - F1 in the Boot scene shows a developer panel to host, join, pick a team and hero and start a match.
   Two copies on one PC: host in one, join `127.0.0.1` in the other.

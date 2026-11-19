@@ -37,6 +37,24 @@ namespace DuckAndCover.Core
         public int objectId;
     }
 
+    /// <summary>A hero loaded a magazine of healing rounds.</summary>
+    public sealed class HealRoundsLoadedEvent : GameEvent
+    {
+        public int playerId;
+        public string weaponId;
+        public int rounds;
+    }
+
+    /// <summary>A healing round jumped from one teammate to the next (the healRicochet stat). Drawn as a streak.</summary>
+    public sealed class HealRoundBouncedEvent : GameEvent
+    {
+        public int shooterId;
+        public int fromId;
+        public int toId;
+        public Vec3 from;
+        public Vec3 to;
+    }
+
     /// <summary>A hero received a shield.</summary>
     public sealed class ShieldedEvent : GameEvent
     {

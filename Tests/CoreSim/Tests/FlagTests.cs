@@ -397,7 +397,7 @@ static class FlagTests
         var h = new FlagHarness();
         h.Flag.Dispose();
         Check.True(h.Combat.Movement.NoSprint == null, "sprint check removed");
-        Check.True(h.Combat.Abilities.UseCheck == (Func<int, string, string>)h.Heroes.UltimateHeld, "the hero check is back");
+        Check.True(h.Combat.Abilities.UseCheck == null, "the ability check is back to none");
     }
 
     [Test]

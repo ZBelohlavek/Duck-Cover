@@ -5,94 +5,94 @@
     "weaponId": "mender_sidearm",
     "maxHealth": 200,
     "abilities": [
-        "mender_field",
+        "mender_canister",
         "mender_purge"
     ],
-    "ultimateId": "mender_aegis",
+    "ultimateId": "mender_rounds",
     "passiveId": "",
     "levels": [
         {
             "level": 2,
             "options": [
-                "mender_steady_dose",
+                "mender_steady_aim",
                 "mender_wide_reach"
             ]
         },
         {
             "level": 4,
             "options": [
-                "mender_spare_vials",
-                "mender_lasting_field"
+                "mender_quick_load",
+                "mender_lasting_canister"
             ]
         },
         {
             "level": 6,
             "options": [
-                "mender_fast_reload",
-                "mender_efficient"
+                "mender_spare_vials",
+                "mender_healing_hands"
             ]
         },
         {
             "level": 8,
             "options": [
-                "mender_long_aegis",
-                "mender_broad_aegis"
+                "mender_potent_rounds",
+                "mender_splash_rounds"
             ]
         },
         {
             "level": 10,
             "options": [
-                "mender_fieldkit",
-                "mender_charged"
+                "mender_field_kit",
+                "mender_steady_supply"
             ]
         },
         {
             "level": 12,
             "options": [
                 "mender_triage",
-                "mender_quickening_purge"
+                "mender_tethered_canister"
             ]
         },
         {
             "level": 14,
             "options": [
-                "mender_battle_medic",
-                "mender_healing_hands"
+                "mender_long_barrel",
+                "mender_lingering_care"
             ]
         },
         {
             "level": 16,
             "options": [
                 "mender_second_opinion",
-                "mender_rich_field"
+                "mender_warding_purge"
             ]
         },
         {
             "level": 18,
             "options": [
-                "mender_steady_hands",
-                "mender_twin_fields"
+                "mender_ricochet",
+                "mender_twin_canisters"
             ]
         },
         {
             "level": 20,
             "options": [
                 "mender_lifeline",
-                "mender_sanctuary"
+                "mender_overflow"
             ]
         }
     ],
     "upgrades": [
         {
-            "id": "mender_steady_dose",
-            "displayName": "Steady Dose",
-            "description": "Your sidearm hits 10% harder: more healing and more damage.",
+            "id": "mender_steady_aim",
+            "displayName": "Steady Aim",
+            "description": "Your gun hits 8% harder, and Mending Rounds heal 8% more.",
             "kind": "trait",
             "stats": [
                 {
                     "stat": "weaponDamage",
                     "op": "percent",
-                    "value": 0.1,
+                    "value": 0.08,
                     "when": ""
                 }
             ],
@@ -102,7 +102,7 @@
         {
             "id": "mender_wide_reach",
             "displayName": "Wide Reach",
-            "description": "Mending Field and Purge reach 10% further.",
+            "description": "Mending Canister and Purge reach 10% further.",
             "kind": "trait",
             "stats": [
                 {
@@ -116,30 +116,31 @@
             "scriptId": ""
         },
         {
-            "id": "mender_spare_vials",
-            "displayName": "Spare Vials",
-            "description": "Your magazine holds 20% more rounds.",
-            "kind": "talent",
-            "stats": [
-                {
-                    "stat": "magazineSize",
-                    "op": "percent",
-                    "value": 0.2,
-                    "when": ""
-                }
-            ],
-            "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "mender_lasting_field",
-            "displayName": "Lasting Field",
-            "description": "Mending Field lasts 2 seconds longer.",
+            "id": "mender_quick_load",
+            "displayName": "Quick Load",
+            "description": "Mending Rounds recover 1.5 seconds sooner.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
-                    "ability": "mender_field",
+                    "ability": "mender_rounds",
+                    "param": "cooldown",
+                    "op": "add",
+                    "value": -1.5,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_lasting_canister",
+            "displayName": "Lasting Canister",
+            "description": "Mending Canister lasts 2 seconds longer.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "mender_canister",
                     "param": "object.lifetime",
                     "op": "add",
                     "value": 2,
@@ -149,146 +150,15 @@
             "scriptId": ""
         },
         {
-            "id": "mender_fast_reload",
-            "displayName": "Fast Reload",
-            "description": "Reload 20% faster.",
+            "id": "mender_spare_vials",
+            "displayName": "Spare Vials",
+            "description": "Your magazine holds 20% more rounds, healing rounds too.",
             "kind": "trait",
             "stats": [
                 {
-                    "stat": "reloadSpeed",
+                    "stat": "magazineSize",
                     "op": "percent",
                     "value": 0.2,
-                    "when": ""
-                }
-            ],
-            "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "mender_efficient",
-            "displayName": "Efficient",
-            "description": "Abilities recover 10% faster.",
-            "kind": "trait",
-            "stats": [
-                {
-                    "stat": "cooldownRate",
-                    "op": "percent",
-                    "value": 0.1,
-                    "when": ""
-                }
-            ],
-            "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "mender_long_aegis",
-            "displayName": "Long Aegis",
-            "description": "Aegis Pulse shields last 4 seconds longer.",
-            "kind": "ultimate",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "mender_aegis",
-                    "param": "effect.shield.duration",
-                    "op": "add",
-                    "value": 4,
-                    "text": ""
-                }
-            ],
-            "scriptId": ""
-        },
-        {
-            "id": "mender_broad_aegis",
-            "displayName": "Broad Aegis",
-            "description": "Aegis Pulse reaches 6 m further.",
-            "kind": "ultimate",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "mender_aegis",
-                    "param": "radius",
-                    "op": "add",
-                    "value": 6,
-                    "text": ""
-                }
-            ],
-            "scriptId": ""
-        },
-        {
-            "id": "mender_fieldkit",
-            "displayName": "Field Kit",
-            "description": "Passive. Regain 6 health a second when you haven't been hit for a while.",
-            "kind": "passive",
-            "stats": [
-                {
-                    "stat": "healthRegen",
-                    "op": "add",
-                    "value": 6,
-                    "when": ""
-                }
-            ],
-            "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "mender_charged",
-            "displayName": "Charged",
-            "description": "Passive. Your ultimate charges 20% faster.",
-            "kind": "passive",
-            "stats": [
-                {
-                    "stat": "ultimateChargeRate",
-                    "op": "percent",
-                    "value": 0.2,
-                    "when": ""
-                }
-            ],
-            "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "mender_triage",
-            "displayName": "Triage",
-            "description": "Healing teammates at half health or less is 30% stronger.",
-            "kind": "talent",
-            "stats": [
-                {
-                    "stat": "healingToLowHealth",
-                    "op": "add",
-                    "value": 0.3,
-                    "when": ""
-                }
-            ],
-            "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "mender_quickening_purge",
-            "displayName": "Quickening Purge",
-            "description": "Purge also speeds everyone it reaches up by 25% for 3 seconds.",
-            "kind": "talent",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "mender_purge",
-                    "param": "enable",
-                    "op": "set",
-                    "value": 0,
-                    "text": "purgeHaste"
-                }
-            ],
-            "scriptId": ""
-        },
-        {
-            "id": "mender_battle_medic",
-            "displayName": "Battle Medic",
-            "description": "Your sidearm hits 15% harder: more healing and more damage.",
-            "kind": "trait",
-            "stats": [
-                {
-                    "stat": "weaponDamage",
-                    "op": "percent",
-                    "value": 0.15,
                     "when": ""
                 }
             ],
@@ -312,9 +182,140 @@
             "scriptId": ""
         },
         {
+            "id": "mender_potent_rounds",
+            "displayName": "Potent Rounds",
+            "description": "Mending Rounds heal 25% more.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "mender_rounds",
+                    "param": "effect.healRounds.amount",
+                    "op": "percent",
+                    "value": 0.25,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_splash_rounds",
+            "displayName": "Splash Rounds",
+            "description": "A Mending Round also heals teammates within 2.5 m of the one it hits, for half.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "mender_rounds",
+                    "param": "effect.healRounds.radius",
+                    "op": "add",
+                    "value": 2.5,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_field_kit",
+            "displayName": "Field Kit",
+            "description": "Passive. Regain 6 health a second when you haven't been hit for a while.",
+            "kind": "passive",
+            "stats": [
+                {
+                    "stat": "healthRegen",
+                    "op": "add",
+                    "value": 6,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_steady_supply",
+            "displayName": "Steady Supply",
+            "description": "Passive. Abilities recover 10% faster.",
+            "kind": "passive",
+            "stats": [
+                {
+                    "stat": "cooldownRate",
+                    "op": "percent",
+                    "value": 0.1,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_triage",
+            "displayName": "Triage",
+            "description": "Healing teammates at half health or less is 30% stronger.",
+            "kind": "talent",
+            "stats": [
+                {
+                    "stat": "healingToLowHealth",
+                    "op": "add",
+                    "value": 0.3,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_tethered_canister",
+            "displayName": "Tethered Canister",
+            "description": "Mending Canister latches onto the teammate nearest where it lands (or you) and follows them.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "mender_canister",
+                    "param": "object.followAlly",
+                    "op": "set",
+                    "value": 1,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_long_barrel",
+            "displayName": "Long Barrel",
+            "description": "Your shots keep full strength (damage and healing) 30% further out.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "weaponRange",
+                    "op": "percent",
+                    "value": 0.3,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "mender_lingering_care",
+            "displayName": "Lingering Care",
+            "description": "Your regen and wards last 25% longer.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "statusDuration",
+                    "op": "percent",
+                    "value": 0.25,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
             "id": "mender_second_opinion",
             "displayName": "Second Opinion",
-            "description": "Your sidearm's heals also clear slows, stuns and marks.",
+            "description": "Your healing rounds also clear harmful effects from the teammates they heal.",
             "kind": "talent",
             "stats": [
                 {
@@ -328,32 +329,32 @@
             "scriptId": ""
         },
         {
-            "id": "mender_rich_field",
-            "displayName": "Rich Field",
-            "description": "Mending Field heals 10 more each second.",
+            "id": "mender_warding_purge",
+            "displayName": "Warding Purge",
+            "description": "Purge also wards everyone it reaches for 8 seconds: the next harmful effect an enemy puts on them is blocked.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
-                    "ability": "mender_field",
-                    "param": "object.effect.heal.amount",
-                    "op": "add",
-                    "value": 10,
-                    "text": ""
+                    "ability": "mender_purge",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "ward"
                 }
             ],
             "scriptId": ""
         },
         {
-            "id": "mender_steady_hands",
-            "displayName": "Steady Hands",
-            "description": "Heal yourself for 10% of the damage your sidearm deals.",
+            "id": "mender_ricochet",
+            "displayName": "Ricochet",
+            "description": "A healing round that heals a teammate jumps to the nearest hurt teammate within 6 m and heals them 60% as much.",
             "kind": "talent",
             "stats": [
                 {
-                    "stat": "lifeSteal",
+                    "stat": "healRicochet",
                     "op": "add",
-                    "value": 0.1,
+                    "value": 1,
                     "when": ""
                 }
             ],
@@ -361,14 +362,14 @@
             "scriptId": ""
         },
         {
-            "id": "mender_twin_fields",
-            "displayName": "Twin Fields",
-            "description": "Mending Field holds two charges.",
+            "id": "mender_twin_canisters",
+            "displayName": "Twin Canisters",
+            "description": "Mending Canister holds two charges.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
-                    "ability": "mender_field",
+                    "ability": "mender_canister",
                     "param": "charges",
                     "op": "add",
                     "value": 1,
@@ -380,19 +381,19 @@
         {
             "id": "mender_lifeline",
             "displayName": "Lifeline",
-            "description": "Your healing and shields are 20% stronger.",
+            "description": "Ricochets jump twice, and your healing is 15% stronger.",
             "kind": "capstone",
             "stats": [
                 {
-                    "stat": "healingDone",
-                    "op": "percent",
-                    "value": 0.2,
+                    "stat": "healRicochet",
+                    "op": "add",
+                    "value": 1,
                     "when": ""
                 },
                 {
-                    "stat": "shieldStrength",
+                    "stat": "healingDone",
                     "op": "percent",
-                    "value": 0.2,
+                    "value": 0.15,
                     "when": ""
                 }
             ],
@@ -400,18 +401,25 @@
             "scriptId": ""
         },
         {
-            "id": "mender_sanctuary",
-            "displayName": "Sanctuary",
-            "description": "Mending Field also gives everyone inside it 15 shield a second.",
+            "id": "mender_overflow",
+            "displayName": "Overflow",
+            "description": "Mending Canister reaches 1.5 m further and its regen is 50% stronger.",
             "kind": "capstone",
             "stats": [],
             "abilityChanges": [
                 {
-                    "ability": "mender_field",
-                    "param": "enable",
-                    "op": "set",
-                    "value": 0,
-                    "text": "sanctuary"
+                    "ability": "mender_canister",
+                    "param": "object.radius",
+                    "op": "add",
+                    "value": 1.5,
+                    "text": ""
+                },
+                {
+                    "ability": "mender_canister",
+                    "param": "object.effect.mender_regen.amount",
+                    "op": "percent",
+                    "value": 0.5,
+                    "text": ""
                 }
             ],
             "scriptId": ""

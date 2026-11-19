@@ -50,6 +50,13 @@ namespace DuckAndCover.Core
         public Vec3 aimOrigin;
         public Vec3 aimDirection;
         public int castTick;
+        /// <summary>A held ability (<see cref="AbilityDef.held"/>) is up: its object is <see cref="heldObjectId"/>.</summary>
+        public bool raised;
+        public int heldObjectId;
+        /// <summary>A held ability's object health, as a share of full, kept while it is down.</summary>
+        public float reserve = 1f;
+        /// <summary>Seconds since a held ability went down (its regen waits for ObjectDef.regenDelay).</summary>
+        public float downFor;
 
         public AbilitySlotState Clone() => (AbilitySlotState)MemberwiseClone();
     }
@@ -68,6 +75,10 @@ namespace DuckAndCover.Core
         /// <summary>Seconds since this hero last took damage (health regen waits on it).</summary>
         public float sinceDamaged;
         public float ultimateCharge;
+        /// <summary>Hidden from the other team right now: a stealth status is on and no reveal status (AbilityRunner keeps it).</summary>
+        public bool stealthed;
+        /// <summary>Seconds left in the ambush window that opens when the hero attacks out of stealth (StatConditions.Ambush).</summary>
+        public float ambushLeft;
         /// <summary>The hero's passive (an ability definition marked passive), or empty.</summary>
         public string passiveId = "";
         public StatBlock stats = new StatBlock();
