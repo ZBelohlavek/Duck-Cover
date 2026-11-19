@@ -97,7 +97,7 @@ namespace DuckAndCover.UI
             }
         }
 
-        /// <summary>The hero's abilities, one a line, the ultimate last.</summary>
+        /// <summary>The hero's abilities, one a line: E, F, then X.</summary>
         static string Kit(HeroDef hero)
         {
             var lib = HeroData.Abilities;

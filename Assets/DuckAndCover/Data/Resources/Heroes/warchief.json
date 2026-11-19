@@ -250,7 +250,7 @@
         {
             "id": "warchief_crushing_landing",
             "displayName": "Crushing Landing",
-            "description": "War Leap's landing deals 40 more damage.",
+            "description": "War Leap's landing deals 30 more damage.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
@@ -258,7 +258,7 @@
                     "ability": "warchief_leap",
                     "param": "effect.damage.amount",
                     "op": "add",
-                    "value": 40,
+                    "value": 30,
                     "text": ""
                 }
             ],

@@ -24,12 +24,13 @@
           "value": -0.35,
           "when": ""
         }
-      ]
+      ],
+      "shortCooldownReason": "A held shield, not a cast: it spends no charge and its 900 strength is what limits it. The 5 s is only the wait after it breaks."
     },
     {
       "id": "bulwark_drone",
       "displayName": "Patch Drone",
-      "description": "Launch a repair drone that hovers behind your shoulder for 10 seconds and heals you 20 a second. Enemies can shoot it down (100 health).",
+      "description": "Launch a repair drone that hovers behind your shoulder for 10 seconds and heals you 20 a second. Enemies can shoot it down (100 health). Cooldown 14 s.",
       "cooldown": 14,
       "targeting": {
         "shape": "self",
@@ -45,9 +46,8 @@
     {
       "id": "bulwark_bulkhead",
       "displayName": "Bulkhead",
-      "description": "Ultimate. Drop a 9 m wide, 3.5 m high wall where you aim, up to 20 m away, for 8 seconds. Nobody walks through it and enemy shots stop on it, but your team shoots through. Use it as cover or to cut off an escape.",
-      "ultimate": true,
-      "ultimateCost": 100,
+      "description": "Drop a 9 m wide, 3.5 m high wall where you aim, up to 20 m away, for 8 seconds. Nobody walks through it and enemy shots stop on it, but your team shoots through. Use it as cover or to cut off an escape. Cooldown 20 s.",
+      "cooldown": 20,
       "targeting": {
         "shape": "sphere",
         "origin": "aimPoint",

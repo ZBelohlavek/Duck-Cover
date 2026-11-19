@@ -168,13 +168,13 @@
         {
             "id": "lancer_quick_fuse",
             "displayName": "Quick Fuse",
-            "description": "Your ultimate charges 15% faster.",
+            "description": "Your abilities recharge 10% faster (never quicker than 13 seconds).",
             "kind": "trait",
             "stats": [
                 {
-                    "stat": "ultimateChargeRate",
+                    "stat": "cooldownRate",
                     "op": "percent",
-                    "value": 0.15,
+                    "value": 0.1,
                     "when": ""
                 }
             ],
@@ -184,7 +184,7 @@
         {
             "id": "lancer_thermite",
             "displayName": "Thermite",
-            "description": "Incendiary Grenade hits much harder where it lands (120 damage), but its fire is smaller.",
+            "description": "Incendiary Grenade hits harder where it lands (55 damage), but its fire is smaller and burns 25% less.",
             "kind": "ultimate",
             "stats": [],
             "abilityChanges": [
@@ -192,12 +192,19 @@
                     "ability": "lancer_firebomb",
                     "param": "effect.damage.amount",
                     "op": "add",
-                    "value": 80,
+                    "value": 30,
                     "text": ""
                 },
                 {
                     "ability": "lancer_firebomb",
                     "param": "object.radius",
+                    "op": "multiply",
+                    "value": 0.75,
+                    "text": ""
+                },
+                {
+                    "ability": "lancer_firebomb",
+                    "param": "object.effect.damage.amount",
                     "op": "multiply",
                     "value": 0.75,
                     "text": ""
@@ -336,7 +343,7 @@
         {
             "id": "lancer_twin_marks",
             "displayName": "Twin Marks",
-            "description": "Tracer Mark holds two charges and recovers 30% sooner.",
+            "description": "Tracer Mark holds two charges.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
@@ -345,13 +352,6 @@
                     "param": "charges",
                     "op": "add",
                     "value": 1,
-                    "text": ""
-                },
-                {
-                    "ability": "lancer_mark",
-                    "param": "cooldown",
-                    "op": "multiply",
-                    "value": 0.7,
                     "text": ""
                 }
             ],
@@ -440,7 +440,7 @@
         {
             "id": "lancer_inferno",
             "displayName": "Inferno",
-            "description": "Incendiary Grenade's fire reaches 1.5 m further, lasts 3 seconds longer and burns 30% harder.",
+            "description": "Incendiary Grenade's fire reaches 1.5 m further and lasts 3 seconds longer.",
             "kind": "capstone",
             "stats": [],
             "abilityChanges": [
@@ -456,20 +456,6 @@
                     "param": "object.lifetime",
                     "op": "add",
                     "value": 3,
-                    "text": ""
-                },
-                {
-                    "ability": "lancer_firebomb",
-                    "param": "object.effect.damage.amount",
-                    "op": "percent",
-                    "value": 0.3,
-                    "text": ""
-                },
-                {
-                    "ability": "lancer_firebomb",
-                    "param": "object.effect.lancer_burning.amount",
-                    "op": "percent",
-                    "value": 0.3,
                     "text": ""
                 }
             ],

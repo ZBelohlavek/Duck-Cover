@@ -183,7 +183,7 @@
         {
             "id": "rigger_sharp_hush",
             "displayName": "Sharp Hush",
-            "description": "Hush Grenade deals 25 more damage and recovers 4 seconds sooner, to open an ambush.",
+            "description": "Hush Grenade deals 25 more damage, to open an ambush.",
             "kind": "ultimate",
             "stats": [],
             "abilityChanges": [
@@ -192,13 +192,6 @@
                     "param": "effect.damage.amount",
                     "op": "add",
                     "value": 25,
-                    "text": ""
-                },
-                {
-                    "ability": "rigger_hush",
-                    "param": "cooldown",
-                    "op": "add",
-                    "value": -4,
                     "text": ""
                 }
             ],

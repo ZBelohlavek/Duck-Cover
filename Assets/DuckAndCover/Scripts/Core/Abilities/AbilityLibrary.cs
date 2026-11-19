@@ -95,9 +95,8 @@ namespace DuckAndCover.Core
                 ValidateKills(a, w, errors);
                 if (!a.held && a.stats != null && a.stats.Length > 0) errors.Add(w + "stats only work on a passive or a held ability");
                 if (a.cooldown < 0f) errors.Add(w + "cooldown can't be negative");
-                if (!a.ultimate && a.cooldown <= 0f) errors.Add(w + "needs a cooldown (or ultimate: true)");
+                if (a.cooldown <= 0f) errors.Add(w + "needs a cooldown");
                 if (a.charges < 1) errors.Add(w + "charges must be at least 1");
-                if (a.ultimate && a.ultimateCost <= 0f) errors.Add(w + "ultimateCost must be positive");
                 if (a.castTime < 0f || a.duration < 0f) errors.Add(w + "castTime and duration can't be negative");
                 var t = a.targeting ?? new TargetingDef();
                 if (!Shapes.IsKnown(t.shape)) errors.Add(w + "unknown targeting shape '" + t.shape + "'");
@@ -116,7 +115,7 @@ namespace DuckAndCover.Core
                 ValidateEffects(a.effects, w, errors, 0);
                 if (a.held)
                 {
-                    if (a.ultimate || a.passive) errors.Add(w + "a held ability can't be an ultimate or a passive");
+                    if (a.passive) errors.Add(w + "a held ability can't be a passive");
                     var held = HeldObject(a);
                     if (held == null) errors.Add(w + "a held ability needs to spawn an object");
                     else if (held.health <= 0f) errors.Add(w + "a held ability's object needs health");
