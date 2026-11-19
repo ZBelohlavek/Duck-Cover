@@ -373,15 +373,27 @@ namespace DuckAndCover.Game
             {
                 int dummy = CombatServer.FirstDummyId + i;
                 if (!runner.Heroes.GiveKit(dummy, DummyHeroes[i]).IsAccepted) continue;
-                // Bulwark: a panel toward the player. Rigger: a mine and a sentry on the floor ahead. Mender: a field near its feet.
+                // Bulwark: turns to the player, raises Rampart and sends out Patch Drone. Rigger: a mine and a
+                // sentry on the floor ahead. Mender: a field near its feet.
+                if (i == 0) FaceTarget(runner, dummy, me);
                 if (DummyCast(runner, dummy, 0, me, i == 0 ? 0f : i == 1 ? -0.3f : -0.6f)) used++;
-                if (i == 1 && DummyCast(runner, dummy, 1, me, -0.5f)) used++;
+                if ((i == 0 || i == 1) && DummyCast(runner, dummy, 1, me, -0.5f)) used++;
             }
             // The player's Lancer marks the first dummy (the camera already faces it).
             var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
             if (local != null) local.UseAbility(1, "lancer_mark");
-            if (used < 4) Debug.LogError("Duck and Cover: the capture's dummies used " + used + " abilities, expected 4.");
+            if (used < 5) Debug.LogError("Duck and Cover: the capture's dummies used " + used + " abilities, expected 5.");
             WatchFrom(new Vector3(-8f, 6f, -14f), new Vector3(-1f, 0f, 2f));
+        }
+
+        /// <summary>Turn a dummy (server side) to face a player, so what it holds up faces them.</summary>
+        static void FaceTarget(SessionRunner runner, int dummy, int targetId)
+        {
+            var from = runner.Combat.Movement.Motion(dummy);
+            var to = runner.Combat.Movement.Motion(targetId);
+            if (from == null || to == null) return;
+            Vec3 d = to.position - from.position;
+            from.yaw = (float)(Math.Atan2(d.x, d.z) * 180.0 / Math.PI);
         }
 
         static void DummyRaisesGate()

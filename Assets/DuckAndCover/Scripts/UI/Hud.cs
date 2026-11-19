@@ -540,6 +540,15 @@ namespace DuckAndCover.UI
                     if (unit.ultimateCharge >= def.ultimateCost - 0.01f) { status = "READY"; text = UITheme.Warning; edge = UITheme.Warning; ready = true; }
                     else status = Mathf.FloorToInt(100f * fill) + "%";
                 }
+                else if (def.held && (slot.raised || slot.charges > 0))
+                {
+                    // A held shield: how much strength it has, and whether it is up.
+                    fill = Mathf.Clamp01(slot.raised ? ShieldShare(snapshot, slot) : slot.reserve);
+                    ready = true;
+                    edge = hero;
+                    status = slot.raised ? "UP " + Mathf.RoundToInt(100f * fill) + "%" : fill < 0.999f ? Mathf.RoundToInt(100f * fill) + "%" : "";
+                    if (slot.raised) text = UITheme.Warning;
+                }
                 else if (slot.casting) { status = "CAST"; fill = 1f; edge = hero; }
                 else if (slot.charges > 0)
                 {
@@ -560,6 +569,13 @@ namespace DuckAndCover.UI
                 s.name.color = UITheme.Text;
                 DrawSlot(s, fill, ready, pips, edge, def.ultimate ? UITheme.Warning : hero);
             }
+        }
+
+        /// <summary>A raised held ability's object health as a share of full.</summary>
+        static float ShieldShare(MatchSnapshot snapshot, AbilitySlotState slot)
+        {
+            var obj = snapshot.abilities == null ? null : snapshot.abilities.Object(slot.heldObjectId);
+            return obj == null || obj.def == null || obj.def.health <= 0f ? slot.reserve : obj.health / obj.def.health;
         }
 
         void DrawSlot(AbilitySlot s, float fill, bool ready, int pips, Color edge, Color tone)
