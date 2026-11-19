@@ -223,7 +223,7 @@ namespace DuckAndCover.Core
             if (len < 1e-4f) return true;
             Func<ObjectState, bool> skip = null;
             if (PassesObject != null && viewerId >= 0) skip = o => PassesObject(viewerId, o);
-            if (SolidObjects.Raycast(Objects, from, d / len, len - 1e-3f, skip, out _)) return false;
+            if (SolidObjects.Raycast(Objects, from, d / len, len - 1e-3f, skip, out _, true)) return false;
             return !(geometry.Raycast(from, d / len, len, tick, out var hit) && hit.kind != HitKind.Player && hit.distance < len - 1e-3f);
         }
     }

@@ -11,8 +11,12 @@ namespace DuckAndCover.Core
     /// </summary>
     public static class SolidObjects
     {
-        /// <summary>The nearest solid object along the ray within <paramref name="max"/>, skipping those <paramref name="skip"/> names.</summary>
-        public static bool Raycast(IReadOnlyList<ObjectState> objects, Vec3 origin, Vec3 dir, float max, Func<ObjectState, bool> skip, out HitInfo hit)
+        /// <summary>
+        /// The nearest solid object along the ray within <paramref name="max"/>, skipping those
+        /// <paramref name="skip"/> names. Balls that shots can hit (drones) count unless
+        /// <paramref name="wallsOnly"/>, which line of sight uses.
+        /// </summary>
+        public static bool Raycast(IReadOnlyList<ObjectState> objects, Vec3 origin, Vec3 dir, float max, Func<ObjectState, bool> skip, out HitInfo hit, bool wallsOnly = false)
         {
             hit = HitInfo.Miss;
             if (objects == null) return false;
@@ -20,9 +24,13 @@ namespace DuckAndCover.Core
             bool found = false;
             foreach (var o in objects)
             {
-                if (o == null || o.def == null || !o.def.IsSolid) continue;
+                if (o == null || o.def == null) continue;
+                bool ball = !wallsOnly && o.def.IsBall;
+                if (!o.def.IsSolid && !ball) continue;
                 if (skip != null && skip(o)) continue;
-                if (!Intersect(o, origin, dir, best, out float t, out Vec3 normal)) continue;
+                float t;
+                Vec3 normal;
+                if (o.def.IsSolid ? !Intersect(o, origin, dir, best, out t, out normal) : !IntersectBall(o, origin, dir, best, out t, out normal)) continue;
                 best = t;
                 found = true;
                 hit = new HitInfo
@@ -34,6 +42,25 @@ namespace DuckAndCover.Core
             return found;
         }
 
+        /// <summary>Where the ray enters the object's ball (<see cref="ObjectDef.hitRadius"/> around its spot). A ray starting inside doesn't count.</summary>
+        public static bool IntersectBall(ObjectState o, Vec3 origin, Vec3 dir, float max, out float distance, out Vec3 normal)
+        {
+            distance = 0f;
+            normal = Vec3.Zero;
+            float r = o.def.hitRadius;
+            Vec3 rel = origin - o.position;
+            float b = Vec3.Dot(rel, dir);
+            float c = Vec3.Dot(rel, rel) - r * r;
+            if (c <= 0f) return false;
+            float disc = b * b - c;
+            if (disc < 0f) return false;
+            float t = -b - (float)Math.Sqrt(disc);
+            if (t < 0f || t > max) return false;
+            distance = t;
+            normal = (origin + dir * t - o.position).Normalized;
+            return true;
+        }
+
         /// <summary>Where the ray enters the object's box, if it does within <paramref name="max"/>. A ray starting inside doesn't count.</summary>
         public static bool Intersect(ObjectState o, Vec3 origin, Vec3 dir, float max, out float distance, out Vec3 normal)
         {
@@ -43,7 +70,7 @@ namespace DuckAndCover.Core
             Vec3 up = Vec3.Up;
             Vec3 right = Vec3.Cross(up, forward).Normalized;
             Vec3 center = o.position + up * (o.def.height * 0.5f);
-            Vec3 half = new Vec3(o.def.width * 0.5f, o.def.height * 0.5f, ObjectDef.SolidDepth * 0.5f);
+            Vec3 half = new Vec3(o.Width * 0.5f, o.def.height * 0.5f, ObjectDef.SolidDepth * 0.5f);
 
             // Into the box's own axes: x across, y up, z through.
             Vec3 rel = origin - center;
