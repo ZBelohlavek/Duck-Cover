@@ -1,0 +1,26 @@
+{
+    "heroId": "lancer",
+    "model": "Lancer",
+    "firstPerson": "Lancer_FirstPerson",
+    "texture": "Lancer_Paint",
+    "firstPersonTexture": "Lancer_FirstPerson_Paint",
+    "scale": 0.853,
+    "clipPrefix": "Lancer_",
+    "loops": ["idle", "run", "strafe_left", "strafe_right", "backpedal", "sprint", "crouch_idle", "crouch_walk", "aim"],
+    "speeds": [
+        { "clip": "run", "speed": 5.0 },
+        { "clip": "strafe_left", "speed": 4.88 },
+        { "clip": "strafe_right", "speed": 4.88 },
+        { "clip": "backpedal", "speed": 3.15 },
+        { "clip": "sprint", "speed": 7.19 },
+        { "clip": "crouch_walk", "speed": 2.41 }
+    ],
+    "jumpTakeoff": 0.4,
+    "jumpAir": 0.7,
+    "jumpLand": 1.02,
+    "abilities": [
+        { "ability": "lancer_slip", "clip": "slip" },
+        { "ability": "lancer_mark", "clip": "tracer_mark" },
+        { "ability": "lancer_firebomb", "clip": "grenade" }
+    ]
+}

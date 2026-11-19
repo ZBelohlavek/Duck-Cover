@@ -415,6 +415,8 @@ namespace DuckAndCover.UI
             var unit = snapshot.abilities == null ? null : snapshot.abilities.Unit(me.id);
             ShowVitals(snapshot, me, unit, local, runner);
             ShowWeapon(local);
+            bool cross = !local.LookingThroughSight;   // the sight's own dot takes over
+            if (crosshair.gameObject.activeSelf != cross) crosshair.gameObject.SetActive(cross);
             ShowAbilities(snapshot, me, unit);
             ShowChoice(snapshot, me, local);
 

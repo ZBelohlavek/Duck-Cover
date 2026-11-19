@@ -57,6 +57,15 @@ namespace DuckAndCover.Game
             new Shot("11d-vampire", DummyVampireGrabs, 1.0f),
             new Shot("12-hero-hud", LevelUpAndLook, 1.2f),
             new Shot("12b-bars", AllyAndEnemyBars, 0.8f),
+            // The soldier (Lancer) model: his rifle in first person, then firing, then a dummy shown as a Lancer
+            // from the player's eyes, then every clip on a lineup away from the map (studio floor).
+            new Shot("12b-fp-rifle", () => { HideHud = true; }, 0.5f),
+            new Shot("12c-fp-fire", FirstPersonBurst, 0.12f),
+            new Shot("12c2-fp-sight", FirstPersonSight, 0.6f),
+            new Shot("12d-lancer-enemy", DummyBecomesLancer, 1.2f),
+            new Shot("12e-lancer-moves", () => LancerLineup(0), 0.6f),
+            new Shot("12f-lancer-actions", () => LancerLineup(1), 0.6f),
+            new Shot("12g-lancer-close", () => LancerLineup(2), 0.6f),
             // Environment kit: the lane mock-up, built far off to one side of the real map.
             new Shot("13-lane", () => LaneShot(new Vector3(0f, 1.8f, -50f), new Vector3(0f, 1.2f, -38f)), 1.0f),
             new Shot("14-lane-gap", () => LaneShot(new Vector3(1.5f, 1.8f, -41f), new Vector3(-16f, 1.2f, -50f)), 0.6f),
@@ -585,6 +594,104 @@ namespace DuckAndCover.Game
             if (runner == null || runner.Heroes == null || local == null) return;
             runner.Heroes.Progression.Grant(runner.Client.PlayerId, 1000f, ExperienceSource.Match);
             local.freeCamera = false;
+        }
+
+        /// <summary>
+        /// The first practice dummy becomes a Lancer (on the server, for looks only: its kit stays), so the player
+        /// sees the soldier model as an enemy, firing toward them, with their own rifle in view.
+        /// </summary>
+        static void DummyBecomesLancer()
+        {
+            HideHud = true;
+            var runner = SessionRunner.Instance;
+            var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
+            var dummy = runner == null || runner.Match == null ? null : runner.Match.State.Player(CombatServer.FirstDummyId);
+            if (dummy == null || local == null) { Debug.LogError("Duck and Cover: the capture found no practice dummy to show as a Lancer."); return; }
+            dummy.heroId = "lancer";
+            local.freeCamera = false;
+            CombatView.Instance.StartCoroutine(DummyFires(CombatServer.FirstDummyId));
+        }
+
+        /// <summary>Once the dummy's model is up, show it firing (looks only; dummies don't shoot).</summary>
+        static IEnumerator DummyFires(int dummyId)
+        {
+            yield return new WaitForSecondsRealtime(0.5f);
+            var body = CombatView.Instance == null ? null : CombatView.Instance.BodyOf(dummyId);
+            if (body == null || body.Model == null) { Debug.LogError("Duck and Cover: the Lancer dummy has no model (is Resources/HeroArt/lancer imported?)."); yield break; }
+            float until = Time.realtimeSinceStartup + 1f;
+            while (Time.realtimeSinceStartup < until)
+            {
+                body.Model.Fired();
+                yield return new WaitForSecondsRealtime(0.1f);
+            }
+        }
+
+        /// <summary>A few shots from the player's rifle, captured mid-burst (no hit check: shot 08 already counts hits).</summary>
+        static void FirstPersonBurst()
+        {
+            HideHud = true;
+            var view = CombatView.Instance;
+            if (view == null || view.Local == null) return;
+            view.StartCoroutine(Burst(view.Local, 6, () => { }));
+            // The flash lasts a few hundredths of a second in play; hold it for the picture.
+            view.StartCoroutine(HoldFlash(view.Local));
+        }
+
+        /// <summary>Right mouse held: the sight up at the eye, zoomed, the dot bright; let go again after the picture.</summary>
+        static void FirstPersonSight()
+        {
+            HideHud = true;
+            var view = CombatView.Instance;
+            if (view == null || view.Local == null) return;
+            view.Local.ForceAim = true;
+            view.StartCoroutine(LowerSight(view.Local));
+        }
+
+        static IEnumerator LowerSight(LocalPlayer local)
+        {
+            yield return new WaitForSecondsRealtime(0.9f);
+            local.ForceAim = false;
+        }
+
+        static IEnumerator HoldFlash(LocalPlayer local)
+        {
+            yield return new WaitForSecondsRealtime(0.06f);
+            if (local.ViewModel != null) local.ViewModel.Fired(0.5f);
+        }
+
+        static Transform lineup;
+
+        /// <summary>
+        /// Lancer in every clip, held at a telling moment, on a floor far from the map. Page 0: moving; page 1:
+        /// shooting, reloading, jumping, vaulting and his abilities; page 2: three of them close up.
+        /// </summary>
+        static void LancerLineup(int page)
+        {
+            HideHud = true;
+            var runner = SessionRunner.Instance;
+            var art = HeroArt.For("lancer");
+            if (runner == null || runner.ClientRules == null || art == null) { Debug.LogError("Duck and Cover: the capture has no Lancer model to line up."); return; }
+            if (lineup != null) Destroy(lineup.gameObject);
+            lineup = new GameObject("Lineup").transform;
+            var origin = new Vector3(0f, 0f, 400f);
+            Paint.Block(lineup, "Floor", origin + new Vector3(0f, -0.05f, 0f), new Vector3(40f, 0.1f, 20f), new Color(0.30f, 0.33f, 0.38f), false);
+            var moving = new[] { ("idle", 1f), ("run", 0.3f), ("strafe_left", 0.3f), ("strafe_right", 0.3f), ("backpedal", 0.3f), ("sprint", 0.25f), ("crouch_walk", 0.4f) };
+            var acting = new[] { ("aim", 0f), ("reload", 0.8f), ("jump", art.def.jumpAir), ("vault", 0.37f), ("slip", 0.27f), ("tracer_mark", 0.37f), ("grenade", 0.8f) };
+            var close = new[] { ("aim", 0f), ("run", 0.3f), ("tracer_mark", 0.37f) };
+            var set = page == 0 ? moving : page == 1 ? acting : close;
+            float spacing = page == 2 ? 1.3f : 1.55f;
+            for (int i = 0; i < set.Length; i++)
+            {
+                var (clip, at) = set[i];
+                var body = PlaceholderBody.Create("Lancer " + clip, TeamId.A, runner.ClientRules, false, "lancer");
+                body.transform.SetParent(lineup, false);
+                body.Pose(origin + new Vector3((i - (set.Length - 1) * 0.5f) * spacing, 0f, 0f), page == 2 ? 200f : 165f, clip == "crouch_walk");
+                if (body.Model == null) { Debug.LogError("Duck and Cover: the Lancer lineup body has no model."); return; }
+                body.Model.Freeze(clip, at);
+                if (clip == "aim") body.Model.Fired(10f);
+            }
+            if (page == 2) WatchFrom(origin + new Vector3(-0.6f, 1.55f, -3.3f), origin + new Vector3(0f, 1.05f, 0f));
+            else WatchFrom(origin + new Vector3(0f, 1.6f, -6.2f), origin + new Vector3(0f, 0.95f, 0f));
         }
 
         /// <summary>A dummy uses an ability (server side, as a client's command would), aimed at a player's chest, dipped by <paramref name="dip"/>.</summary>

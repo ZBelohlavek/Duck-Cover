@@ -35,6 +35,13 @@ namespace DuckAndCover.Game
         public bool CarryingFlag => client != null && client.Snapshot != null && client.Snapshot.flag != null && client.Snapshot.flag.IsCarrier(client.PlayerId);
         public bool Crouched { get; private set; }
         public bool Sprinting { get; private set; }
+        /// <summary>Right mouse held: looking through the weapon's sight, for heroes whose model has one (a zoom; it stops sprinting).</summary>
+        public bool AimHeld { get; private set; }
+        /// <summary>Captures set this to hold the sight up without a mouse.</summary>
+        public bool ForceAim;
+        /// <summary>The sight is up in front of the eye (the HUD drops its crosshair for the sight's dot).</summary>
+        public bool LookingThroughSight => viewModel != null && viewModel.HasSight && viewModel.AimBlend > 0.6f;
+        float baseFov;
         public bool Vaulting => vaultTime >= 0f;
         public int Ammo { get; private set; }
         public int Magazine { get; private set; }
@@ -60,7 +67,10 @@ namespace DuckAndCover.Game
         public const float ChoiceHoldSeconds = 0.35f;
 
         CharacterController controller;
-        Transform viewModel;
+        FirstPersonRig viewModel;
+        /// <summary>The arms and weapon in front of the camera (null until the player is in the world).</summary>
+        public FirstPersonRig ViewModel => viewModel;
+        string heroId = "";
         CombatView view;
         SessionClient client;
         Ruleset rules;
@@ -222,6 +232,7 @@ namespace DuckAndCover.Game
             bool alive = me != null && me.alive && placed && rules != null && snapshot != null;
             SetActive(alive);
             if (!alive) return;
+            heroId = me.heroId ?? "";
 
             var keyboard = Keyboard.current;
             var mouse = Mouse.current;
@@ -231,6 +242,7 @@ namespace DuckAndCover.Game
             bool held = unit != null && (unit.HasStatus(AbilityLibrary.StunStatus) || unit.HasStatus(AbilityLibrary.RootStatus));
             float speedScale = held ? 0f : unit == null ? 1f : Mathf.Max(rules.minMoveSpeed, unit.stats.Get(StatIds.MoveSpeed));
 
+            AimHeld = ForceAim || (focused && !scripted && mouse != null && mouse.rightButton.isPressed);
             Look(mouse, focused);
             Move(keyboard, focused, speedScale);
             PlaceCamera();
@@ -240,6 +252,21 @@ namespace DuckAndCover.Game
             Weapons(keyboard, mouse, focused, snapshot.Weapons(me.id), stunned || WeaponHeldBack(unit));
             Abilities(keyboard, focused, unit);
             Choices(keyboard, focused, snapshot, me);
+            DriveViewModel();
+        }
+
+        /// <summary>Tell the arms in front of the camera how the body is moving.</summary>
+        void DriveViewModel()
+        {
+            if (viewModel == null) return;
+            viewModel.speed = new Vector3(velocity.x, 0f, velocity.z).magnitude;
+            viewModel.grounded = controller.isGrounded || Vaulting;
+            viewModel.sprinting = Sprinting;
+            viewModel.crouched = Crouched;
+            viewModel.reloading = Reloading;
+            viewModel.aiming = AimHeld;
+            viewModel.yaw = yaw;
+            viewModel.pitch = pitch;
         }
 
         float fireRate = 1f;
@@ -373,8 +400,10 @@ namespace DuckAndCover.Game
         {
             if (!focused || mouse == null || scripted) return;
             Vector2 delta = mouse.delta.ReadValue();
-            yaw = Mathf.Repeat(yaw + delta.x * mouseSensitivity, 360f);
-            pitch = Mathf.Clamp(pitch - delta.y * mouseSensitivity, -89f, 89f);
+            // Slower look while zoomed, in step with the narrower view.
+            float sensitivity = mouseSensitivity * (viewModel == null ? 1f : Mathf.Lerp(1f, FirstPersonRig.AimZoom, viewModel.AimBlend));
+            yaw = Mathf.Repeat(yaw + delta.x * sensitivity, 360f);
+            pitch = Mathf.Clamp(pitch - delta.y * sensitivity, -89f, 89f);
         }
 
         void Move(Keyboard keyboard, bool focused, float speedScale)
@@ -385,7 +414,7 @@ namespace DuckAndCover.Game
             {
                 input.forward = (keyboard.wKey.isPressed ? 1f : 0f) - (keyboard.sKey.isPressed ? 1f : 0f);
                 input.right = (keyboard.dKey.isPressed ? 1f : 0f) - (keyboard.aKey.isPressed ? 1f : 0f);
-                input.sprint = keyboard.leftShiftKey.isPressed && !CarryingFlag;
+                input.sprint = keyboard.leftShiftKey.isPressed && !CarryingFlag && !(AimHeld && viewModel != null && viewModel.HasSight);
                 input.crouch = keyboard.leftCtrlKey.isPressed || keyboard.cKey.isPressed;
                 input.jump = keyboard.spaceKey.wasPressedThisFrame;
             }
@@ -518,22 +547,18 @@ namespace DuckAndCover.Game
         {
             var cam = Camera.main;
             if (cam == null) return;
-            if (viewModel == null) viewModel = BuildViewModel(cam.transform);
+            // The hero's arms and weapon, built again when the hero changes.
+            if (viewModel != null && (viewModel.HeroId != heroId || viewModel.transform.parent != cam.transform))
+            {
+                Destroy(viewModel.gameObject);
+                viewModel = null;
+            }
+            if (viewModel == null) viewModel = FirstPersonRig.Create(cam.transform, heroId);
             if (viewModel.gameObject.activeSelf == freeCamera) viewModel.gameObject.SetActive(!freeCamera);
             if (freeCamera) return;
+            if (baseFov <= 0f) baseFov = cam.fieldOfView;
+            cam.fieldOfView = Mathf.Lerp(baseFov, baseFov * FirstPersonRig.AimZoom, viewModel.AimBlend);
             cam.transform.SetPositionAndRotation(transform.position + Vector3.up * eyeHeight, Quaternion.Euler(pitch, yaw, 0f));
-        }
-
-        static Transform BuildViewModel(Transform camera)
-        {
-            var root = new GameObject("ViewModel").transform;
-            root.SetParent(camera, false);
-            root.localPosition = new Vector3(0.22f, -0.2f, 0.45f);
-            var dark = new Color(0.10f, 0.11f, 0.13f);
-            Paint.Block(root, "Barrel", new Vector3(0f, 0.03f, 0.18f), new Vector3(0.05f, 0.05f, 0.5f), dark, false);
-            Paint.Block(root, "Body", new Vector3(0f, 0f, -0.05f), new Vector3(0.07f, 0.11f, 0.32f), new Color(0.93f, 0.78f, 0.25f), false);
-            Paint.Block(root, "Grip", new Vector3(0f, -0.1f, -0.12f), new Vector3(0.05f, 0.14f, 0.07f), dark, false);
-            return root;
         }
 
         /// <summary>Where shots leave from on screen: the end of the gun in the player's hands.</summary>
@@ -542,7 +567,7 @@ namespace DuckAndCover.Game
             get
             {
                 var cam = Camera.main;
-                if (viewModel != null) return viewModel.TransformPoint(new Vector3(0f, 0.03f, 0.45f));
+                if (viewModel != null && viewModel.Muzzle != null) return viewModel.Muzzle.position;
                 return cam != null ? cam.transform.position : transform.position;
             }
         }
@@ -635,6 +660,7 @@ namespace DuckAndCover.Game
             Vec3 direction = MoveMath.AimDirection(yaw, pitch);
             // The tick this player is looking at: other players are drawn a little in the past.
             client.Send(new FireCommand { weaponId = def.id, origin = origin, direction = direction, tick = view != null ? view.RenderTick : 0 });
+            if (viewModel != null) viewModel.Fired();
             if (view != null && def.kind == WeaponKind.Hitscan) view.DrawOwnShot(def, origin, direction, Muzzle);
             if (view != null && def.kind == WeaponKind.Melee) view.DrawSwing(client.PlayerId, def.range, def.arcDegrees, origin, direction);
             return true;
