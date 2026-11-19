@@ -137,6 +137,7 @@ namespace DuckAndCover.Core
                 if (o.lifetime < 0f || o.health < 0f || o.radius < 0f || o.armTime < 0f) errors.Add(w + "lifetime, health, radius and armTime can't be negative");
                 if (!Triggers.IsKnown(o.trigger)) errors.Add(w + "unknown trigger '" + o.trigger + "'");
                 if (!Affects.IsKnown(o.affects)) errors.Add(w + "unknown affects '" + o.affects + "'");
+                if (o.followAlly && o.radius <= 0f) errors.Add(w + "following an ally needs a radius to find one in");
                 if (o.trigger == Triggers.Pulse && o.interval <= 0f) errors.Add(w + "a pulse needs an interval");
                 if (o.trigger != Triggers.None && o.radius <= 0f) errors.Add(w + "a pulse or trigger needs a radius");
                 if (o.trigger != Triggers.None && (o.effects == null || o.effects.Length == 0)) errors.Add(w + "a pulse or trigger needs effects");
@@ -158,13 +159,14 @@ namespace DuckAndCover.Core
                 if (e == null || string.IsNullOrEmpty(e.kind)) { errors.Add(w + "an effect has no kind"); continue; }
                 string x = w + e.kind + ": ";
                 if (!EffectKinds.IsKnown(e.kind)) { errors.Add(w + "unknown effect kind '" + e.kind + "'"); continue; }
-                if (e.amount < 0f || e.duration < 0f || e.delay < 0f || e.interval < 0f) errors.Add(x + "amount, duration, delay and interval can't be negative");
+                if (e.amount < 0f || e.duration < 0f || e.delay < 0f || e.interval < 0f || e.radius < 0f) errors.Add(x + "amount, duration, delay, interval and radius can't be negative");
                 if (!string.IsNullOrEmpty(e.affects) && !Affects.IsKnown(e.affects)) errors.Add(x + "unknown affects '" + e.affects + "'");
                 switch (e.kind)
                 {
                     case EffectKinds.Damage:
                     case EffectKinds.Heal:
                     case EffectKinds.Shield:
+                    case EffectKinds.HealRounds:
                         if (e.amount <= 0f) errors.Add(x + "needs an amount");
                         break;
                     case EffectKinds.Slow:

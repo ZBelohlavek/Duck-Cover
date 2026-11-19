@@ -204,6 +204,17 @@ namespace DuckAndCover.Game
                     Destroy(glow, Mathf.Max(0.1f, cast.castTime));
                     break;
                 }
+                case HealRoundBouncedEvent bounce:
+                {
+                    // A healing round jumping between teammates: a short green streak.
+                    Vector3 from = bounce.from.ToVector3(), to = bounce.to.ToVector3();
+                    Vector3 along = to - from;
+                    if (along.magnitude < 0.05f) break;
+                    var streak = Paint.Block(flashes, "Ricochet", (from + to) * 0.5f, new Vector3(0.05f, 0.05f, along.magnitude), new Color(0.40f, 0.95f, 0.55f), false);
+                    streak.transform.rotation = Quaternion.LookRotation(along);
+                    Destroy(streak, FlashSeconds * 0.6f);
+                    break;
+                }
                 case ObjectTriggeredEvent triggered:
                 {
                     var blast = Paint.Shape(PrimitiveType.Sphere, flashes, "Triggered", triggered.position.ToVector3(), Vector3.one * 1.2f, Color.white, false);

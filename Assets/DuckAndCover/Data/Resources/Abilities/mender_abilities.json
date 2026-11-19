@@ -1,9 +1,9 @@
 {
   "abilities": [
     {
-      "id": "mender_field",
-      "displayName": "Mending Field",
-      "description": "Throw down a field where you aim. For 6 seconds it heals you and teammates within 4 m by 20 every second.",
+      "id": "mender_canister",
+      "displayName": "Mending Canister",
+      "description": "Throw a canister where you aim. For 6 seconds, you and teammates within 3.5 m of it regenerate 16 health a second, and keep regenerating for a second after stepping out.",
       "cooldown": 12,
       "targeting": {
         "shape": "sphere",
@@ -15,15 +15,15 @@
       "effects": [
         {
           "kind": "spawn",
-          "objectId": "mender_field"
+          "objectId": "mender_canister"
         }
       ]
     },
     {
       "id": "mender_purge",
       "displayName": "Purge",
-      "description": "Clear slows, stuns and marks from you and teammates within 6 m, and heal them 30.",
-      "cooldown": 10,
+      "description": "Clear every harmful effect (slows, stuns, silences, marks, damage and healing cuts) from you and teammates within 6 m.",
+      "cooldown": 12,
       "targeting": {
         "shape": "sphere",
         "origin": "caster",
@@ -35,74 +35,70 @@
           "kind": "cleanse"
         },
         {
-          "kind": "heal",
-          "amount": 30
-        },
-        {
           "kind": "status",
-          "status": "mender_quicken",
-          "duration": 3,
-          "tag": "purgeHaste"
+          "status": "mender_ward",
+          "duration": 8,
+          "tag": "ward"
         }
       ]
     },
     {
-      "id": "mender_aegis",
-      "displayName": "Aegis Pulse",
-      "description": "Ultimate. Shield yourself and every teammate within 12 m for 100 for 5 seconds.",
-      "ultimate": true,
-      "ultimateCost": 100,
+      "id": "mender_rounds",
+      "displayName": "Mending Rounds",
+      "description": "Reload at once with a magazine of healing rounds: each one that hits a teammate heals them 16. Enemies still take normal damage. A normal reload swaps back.",
+      "cooldown": 6,
       "targeting": {
-        "shape": "sphere",
-        "origin": "caster",
-        "radius": 12,
-        "affects": "alliesAndSelf"
+        "shape": "self",
+        "affects": "self"
       },
       "effects": [
         {
-          "kind": "shield",
-          "amount": 100,
-          "duration": 5
+          "kind": "healRounds",
+          "amount": 16
         }
       ]
     }
   ],
   "statuses": [
     {
-      "id": "mender_quicken",
-      "displayName": "Quickened",
+      "id": "mender_regen",
+      "displayName": "Regenerating",
       "negative": false,
-      "duration": 3,
+      "duration": 1,
       "stacking": "refresh",
-      "stats": [
+      "interval": 0.5,
+      "scaleWithStrength": true,
+      "tickEffects": [
         {
-          "stat": "moveSpeed",
-          "op": "percent",
-          "value": 0.25,
-          "when": ""
+          "kind": "heal",
+          "amount": 8
         }
       ]
+    },
+    {
+      "id": "mender_ward",
+      "displayName": "Warded",
+      "negative": false,
+      "duration": 8,
+      "stacking": "refresh",
+      "ward": true
     }
   ],
   "objects": [
     {
-      "id": "mender_field",
-      "displayName": "Mending Field",
+      "id": "mender_canister",
+      "displayName": "Mending Canister",
       "lifetime": 6,
-      "radius": 4,
+      "radius": 3.5,
       "trigger": "pulse",
-      "interval": 1,
+      "interval": 0.5,
       "affects": "alliesAndSelf",
       "effects": [
         {
-          "kind": "heal",
-          "amount": 20
-        },
-        {
-          "kind": "shield",
-          "amount": 15,
-          "duration": 2,
-          "tag": "sanctuary"
+          "kind": "status",
+          "status": "mender_regen",
+          "amount": 1,
+          "duration": 1
         }
       ]
     }

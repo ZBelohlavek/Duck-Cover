@@ -54,6 +54,14 @@ namespace DuckAndCover.Core
         /// <summary>Shots the fire-rate check will still allow right now (refills at the weapon's rate).</summary>
         public float fireCredit;
         public int shotsFired;
+        /// <summary>
+        /// Healing rounds left in the magazine in hand (an ability's healRounds effect loads them): each
+        /// one that hits a teammate heals <see cref="healPerRound"/>. A reload or a weapon switch empties them.
+        /// </summary>
+        public int healRounds;
+        public float healPerRound;
+        /// <summary>Metres around the teammate hit that a healing round also heals (Ruleset.healSplashShare). 0 = none.</summary>
+        public float healSplash;
 
         public string CurrentId => current >= 0 && current < weapons.Length ? weapons[current] : "";
         public int CurrentAmmo => current >= 0 && current < ammo.Length ? ammo[current] : 0;
