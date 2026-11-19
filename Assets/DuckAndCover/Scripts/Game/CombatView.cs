@@ -21,6 +21,7 @@ namespace DuckAndCover.Game
             public float yawFrom, yawTo;
             public bool crouched;
             public bool hasPose;
+            public PlayerMotion motion;
         }
 
         sealed class Flying
@@ -66,6 +67,9 @@ namespace DuckAndCover.Game
             feet = Vector3.Lerp(b.from, b.to, Blend);
             return true;
         }
+
+        /// <summary>The body drawn for another player, or null.</summary>
+        public PlaceholderBody BodyOf(int playerId) => bodies.TryGetValue(playerId, out var b) ? b.view : null;
 
         void Awake()
         {
@@ -131,6 +135,11 @@ namespace DuckAndCover.Game
                 if (b.view.gameObject.activeSelf != show) b.view.gameObject.SetActive(show);
                 if (!show) continue;
                 b.view.Pose(Vector3.Lerp(b.from, b.to, k), Mathf.LerpAngle(b.yawFrom, b.yawTo, k), b.crouched);
+                if (b.motion != null)
+                {
+                    var weapons = snapshot.Weapons(pair.Key);
+                    b.view.Drive(b.motion.velocity.ToVector3(), b.motion.pitch, b.motion.grounded, b.motion.sprinting, b.motion.vaulting, weapons != null && weapons.Reloading);
+                }
                 var unit = snapshot.abilities == null ? null : snapshot.abilities.Unit(pair.Key);
                 float max = unit == null ? 1f : Mathf.Max(1f, unit.stats.Get(StatIds.MaxHealth));
                 b.view.ShowBars(unit == null ? 1f : unit.health / max, unit == null ? 0f : unit.Shield / Mathf.Max(1f, runner.ClientRules.maxShield), cam);
@@ -169,11 +178,11 @@ namespace DuckAndCover.Game
                 var p = snapshot.match.Player(m.playerId);
                 if (p == null) continue;
                 scratch.Remove(m.playerId);
-                if (!bodies.TryGetValue(m.playerId, out var b) || b.team != p.team)
+                if (!bodies.TryGetValue(m.playerId, out var b) || b.view == null || b.team != p.team || b.view.HeroId != (p.heroId ?? ""))
                 {
                     if (b != null && b.view != null) Destroy(b.view.gameObject);
                     b = new Body { team = p.team };
-                    b.view = PlaceholderBody.Create("Player " + m.playerId, p.team, runner.ClientRules, snapshot.IsDummy(m.playerId));
+                    b.view = PlaceholderBody.Create("Player " + m.playerId, p.team, runner.ClientRules, snapshot.IsDummy(m.playerId), p.heroId);
                     b.view.transform.SetParent(transform, false);
                     bodies[m.playerId] = b;
                 }
@@ -185,6 +194,7 @@ namespace DuckAndCover.Game
                 b.to = at;
                 b.yawTo = m.yaw;
                 b.crouched = m.crouched;
+                b.motion = m;
                 b.hasPose = true;
             }
             foreach (int gone in scratch)
@@ -201,7 +211,15 @@ namespace DuckAndCover.Game
                 case ShotFiredEvent shot:
                     if (shot.playerId == client.PlayerId) break; // drawn already, the moment it was fired
                     Vector3 from = shot.origin.ToVector3() + Vector3.down * 0.15f;
+                    if (bodies.TryGetValue(shot.playerId, out var shooter) && shooter.view != null && shooter.view.gameObject.activeSelf)
+                    {
+                        if (shooter.view.Model != null) shooter.view.Model.Fired();
+                        from = shooter.view.MuzzleOr(from);
+                    }
                     foreach (var end in shot.ends) Tracer(from, end.ToVector3());
+                    break;
+                case AbilityUsedEvent used:
+                    if (bodies.TryGetValue(used.playerId, out var caster) && caster.view != null && caster.view.Model != null) caster.view.Model.UsedAbility(used.abilityId);
                     break;
                 case ProjectileLaunchedEvent launched:
                 {

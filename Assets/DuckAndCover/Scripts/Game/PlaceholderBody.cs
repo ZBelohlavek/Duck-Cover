@@ -4,10 +4,12 @@ using UnityEngine;
 namespace DuckAndCover.Game
 {
     /// <summary>
-    /// The stand-in hero body until real models arrive: legs, torso and head built from the same
-    /// numbers as the hitboxes (so what you see is what you can hit), in the team's colour, with a
-    /// dark visor and a gun to show which way it faces, and a health and shield bar overhead.
-    /// It has no colliders: hits are decided by the rules, not by physics.
+    /// Another player's body. A hero with a model (<see cref="HeroArt"/>) shows it, animated by
+    /// <see cref="HeroModel"/> and scaled to the hitboxes; the rest get the stand-in: legs, torso and head
+    /// built from the same numbers as the hitboxes (so what you see is what you can hit), in the team's
+    /// colour, with a dark visor and a gun to show which way it faces. Both carry a health and shield
+    /// bar overhead with a strip in the team's colour under it (heroes keep their own colours, so the
+    /// strip says whose side they are on). It has no colliders: hits are decided by the rules, not by physics.
     /// </summary>
     public class PlaceholderBody : MonoBehaviour
     {
@@ -20,6 +22,9 @@ namespace DuckAndCover.Game
         const float BarWidth = 0.9f;
 
         Transform figure;
+        Transform heroRoot;
+        public HeroModel Model { get; private set; }
+        public string HeroId { get; private set; } = "";
         Transform bar;
         Transform healthFill;
         Transform shieldFill;
@@ -27,16 +32,17 @@ namespace DuckAndCover.Game
 
         public static Color ColorFor(TeamId team) => team == TeamId.B ? TeamB : TeamA;
 
-        public static PlaceholderBody Create(string name, TeamId team, Ruleset r, bool dummy)
+        public static PlaceholderBody Create(string name, TeamId team, Ruleset r, bool dummy, string heroId = "")
         {
             var go = new GameObject(name);
             var body = go.AddComponent<PlaceholderBody>();
-            body.Build(team, r, dummy);
+            body.Build(team, r, dummy, heroId ?? "");
             return body;
         }
 
-        void Build(TeamId team, Ruleset r, bool dummy)
+        void Build(TeamId team, Ruleset r, bool dummy, string heroId)
         {
+            HeroId = heroId;
             Color main = ColorFor(team);
             Color trim = dummy ? new Color(0.85f, 0.85f, 0.88f) : Color.Lerp(main, Color.white, 0.45f);
             crouchScale = r.crouchHeight / r.standHeight;
@@ -59,6 +65,16 @@ namespace DuckAndCover.Game
             Paint.Block(bar, "Back", new Vector3(0f, 0f, 0.01f), new Vector3(BarWidth + 0.06f, 0.2f, 0.01f), BarBack, false);
             healthFill = Paint.Block(bar, "Health", new Vector3(0f, -0.035f, 0f), new Vector3(BarWidth, 0.09f, 0.012f), HealthColor, false).transform;
             shieldFill = Paint.Block(bar, "Shield", new Vector3(0f, 0.05f, 0f), new Vector3(BarWidth, 0.05f, 0.012f), ShieldColor, false).transform;
+            Paint.Block(bar, "Team", new Vector3(0f, -0.13f, 0.01f), new Vector3(BarWidth + 0.06f, 0.045f, 0.01f), main, false);
+
+            var art = HeroArt.For(heroId);
+            if (art != null)
+            {
+                heroRoot = new GameObject("Hero").transform;
+                heroRoot.SetParent(transform, false);
+                Model = HeroModel.Create(heroRoot, art);
+                if (Model != null) figureObject.SetActive(false);
+            }
 
             SetLayer(transform, PhysicsWorld.PlayerLayer);
         }
@@ -82,7 +98,24 @@ namespace DuckAndCover.Game
             transform.position = feet;
             figure.localRotation = Quaternion.Euler(0f, yaw, 0f);
             figure.localScale = new Vector3(1f, crouched ? crouchScale : 1f, 1f);
+            if (heroRoot != null) heroRoot.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            if (Model != null) Model.crouched = crouched;
         }
+
+        /// <summary>How the body is moving, for the model's clips (the stand-in ignores it).</summary>
+        public void Drive(Vector3 velocity, float pitch, bool grounded, bool sprinting, bool vaulting, bool reloading)
+        {
+            if (Model == null) return;
+            Model.velocity = velocity;
+            Model.pitch = pitch;
+            Model.grounded = grounded;
+            Model.sprinting = sprinting;
+            Model.vaulting = vaulting;
+            Model.reloading = reloading;
+        }
+
+        /// <summary>Where this body's shots leave: the model's muzzle, or <paramref name="fallback"/>.</summary>
+        public Vector3 MuzzleOr(Vector3 fallback) => Model != null && Model.Muzzle != null ? Model.Muzzle.position : fallback;
 
         /// <summary>Health and shield as shares of their maximum (0..1), and turn the bar to face a camera.</summary>
         public void ShowBars(float health, float shield, Camera viewer)

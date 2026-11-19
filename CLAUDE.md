@@ -170,5 +170,12 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
 - Heroes (WP11): Bulwark (vanguard), Lancer (striker), Mender (support), Rigger (controller), as data in
   Data/Resources. `HeroServer` (Core/Heroes) gives a pick its kit, runs leveling beside the match and
   applies upgrades; `HeroKitTests` checks every ability and all 80 upgrades. Levels run 1 to 20 (picks on even levels); each hero has two upgrade paths, left and right (`docs/HEROES.md`).
+- Hero models live in `Assets/DuckAndCover/Art/Resources/HeroArt/<heroId>/`: `art.json` (`Game/Heroes/HeroArt.cs`:
+  scale to the hitboxes, clip loops and speeds, jump timings, which clip each ability plays), the rigged FBX with every
+  clip, a first-person FBX made in camera space, and baked paint PNGs (FBX and PNG through LFS). `Editor/HeroArtImport`
+  sets their import (Generic, no material import). `HeroModel` animates other players' bodies through a PlayableGraph
+  evaluated by hand (no Animator Controller asset); `FirstPersonRig` moves the local arms. A hero without a folder keeps
+  the stand-in body and block gun. Lancer's files come from the Blender rig in the project's `art/lancer-anim-v1`, exported
+  by the scripts in `art/lancer-unity-v1`.
 - F1 in the Boot scene shows a developer panel to host, join, pick a team and hero and start a match.
   Two copies on one PC: host in one, join `127.0.0.1` in the other.

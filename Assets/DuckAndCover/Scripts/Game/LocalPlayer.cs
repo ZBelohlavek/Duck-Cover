@@ -54,7 +54,8 @@ namespace DuckAndCover.Game
         public const float ChoiceHoldSeconds = 0.35f;
 
         CharacterController controller;
-        Transform viewModel;
+        FirstPersonRig viewModel;
+        string heroId = "";
         CombatView view;
         SessionClient client;
         Ruleset rules;
@@ -207,6 +208,7 @@ namespace DuckAndCover.Game
             bool alive = me != null && me.alive && placed && rules != null && snapshot != null;
             SetActive(alive);
             if (!alive) return;
+            heroId = me.heroId ?? "";
 
             var keyboard = Keyboard.current;
             var mouse = Mouse.current;
@@ -225,6 +227,20 @@ namespace DuckAndCover.Game
             Weapons(keyboard, mouse, focused, snapshot.Weapons(me.id), stunned);
             Abilities(keyboard, focused, unit);
             Choices(keyboard, focused, snapshot, me);
+            DriveViewModel();
+        }
+
+        /// <summary>Tell the arms in front of the camera how the body is moving.</summary>
+        void DriveViewModel()
+        {
+            if (viewModel == null) return;
+            viewModel.speed = new Vector3(velocity.x, 0f, velocity.z).magnitude;
+            viewModel.grounded = controller.isGrounded || Vaulting;
+            viewModel.sprinting = Sprinting;
+            viewModel.crouched = Crouched;
+            viewModel.reloading = Reloading;
+            viewModel.yaw = yaw;
+            viewModel.pitch = pitch;
         }
 
         float fireRate = 1f;
@@ -450,22 +466,16 @@ namespace DuckAndCover.Game
         {
             var cam = Camera.main;
             if (cam == null) return;
-            if (viewModel == null) viewModel = BuildViewModel(cam.transform);
+            // The hero's arms and weapon, built again when the hero changes.
+            if (viewModel != null && (viewModel.HeroId != heroId || viewModel.transform.parent != cam.transform))
+            {
+                Destroy(viewModel.gameObject);
+                viewModel = null;
+            }
+            if (viewModel == null) viewModel = FirstPersonRig.Create(cam.transform, heroId);
             if (viewModel.gameObject.activeSelf == freeCamera) viewModel.gameObject.SetActive(!freeCamera);
             if (freeCamera) return;
             cam.transform.SetPositionAndRotation(transform.position + Vector3.up * eyeHeight, Quaternion.Euler(pitch, yaw, 0f));
-        }
-
-        static Transform BuildViewModel(Transform camera)
-        {
-            var root = new GameObject("ViewModel").transform;
-            root.SetParent(camera, false);
-            root.localPosition = new Vector3(0.22f, -0.2f, 0.45f);
-            var dark = new Color(0.10f, 0.11f, 0.13f);
-            Paint.Block(root, "Barrel", new Vector3(0f, 0.03f, 0.18f), new Vector3(0.05f, 0.05f, 0.5f), dark, false);
-            Paint.Block(root, "Body", new Vector3(0f, 0f, -0.05f), new Vector3(0.07f, 0.11f, 0.32f), new Color(0.93f, 0.78f, 0.25f), false);
-            Paint.Block(root, "Grip", new Vector3(0f, -0.1f, -0.12f), new Vector3(0.05f, 0.14f, 0.07f), dark, false);
-            return root;
         }
 
         /// <summary>Where shots leave from on screen: the end of the gun in the player's hands.</summary>
@@ -474,7 +484,7 @@ namespace DuckAndCover.Game
             get
             {
                 var cam = Camera.main;
-                if (viewModel != null) return viewModel.TransformPoint(new Vector3(0f, 0.03f, 0.45f));
+                if (viewModel != null && viewModel.Muzzle != null) return viewModel.Muzzle.position;
                 return cam != null ? cam.transform.position : transform.position;
             }
         }
@@ -563,6 +573,7 @@ namespace DuckAndCover.Game
             Vec3 direction = MoveMath.AimDirection(yaw, pitch);
             // The tick this player is looking at: other players are drawn a little in the past.
             client.Send(new FireCommand { weaponId = def.id, origin = origin, direction = direction, tick = view != null ? view.RenderTick : 0 });
+            if (viewModel != null) viewModel.Fired();
             if (view != null && def.kind == WeaponKind.Hitscan) view.DrawOwnShot(def, origin, direction, Muzzle);
             return true;
         }

@@ -19,6 +19,7 @@ namespace UnityEngine
         public static T FindAnyObjectByType<T>() where T : Object => null;
         public static T[] FindObjectsByType<T>(FindObjectsSortMode sortMode) where T : Object => new T[0];
         public static T Instantiate<T>(T original) where T : Object => original;
+        public static T Instantiate<T>(T original, Transform parent, bool instantiateInWorldSpace) where T : Object => original;
         public static bool operator ==(Object x, Object y) => ReferenceEquals(x, y);
         public static bool operator !=(Object x, Object y) => !ReferenceEquals(x, y);
         public static implicit operator bool(Object exists) => !ReferenceEquals(exists, null);
@@ -102,6 +103,7 @@ namespace UnityEngine
     {
         public static T GetBuiltinResource<T>(string path) where T : Object => null;
         public static T[] LoadAll<T>(string path) where T : Object => null;
+        public static T Load<T>(string path) where T : Object => null;
     }
 
     public class TextAsset : Object
@@ -221,6 +223,7 @@ namespace UnityEngine
         public T AddComponent<T>() where T : Component => null;
         public T GetComponent<T>() => default;
         public T GetComponentInChildren<T>(bool includeInactive) => default;
+        public T[] GetComponentsInChildren<T>(bool includeInactive) => new T[0];
         public static GameObject Find(string name) => null;
         public static GameObject CreatePrimitive(PrimitiveType type) => null;
     }
@@ -233,6 +236,8 @@ namespace UnityEngine
         public Quaternion localRotation { get; set; }
         public Vector3 localScale { get; set; }
         public Vector3 forward { get; set; }
+        public Vector3 right { get; set; }
+        public Vector3 InverseTransformPoint(Vector3 position) => position;
         public Transform parent { get; set; }
         public Vector3 TransformPoint(Vector3 position) => position;
         public void SetParent(Transform parent) { }
@@ -265,6 +270,7 @@ namespace UnityEngine
     {
         public float x, y;
         public Vector2(float x, float y) { this.x = x; this.y = y; }
+        public static Vector2 Lerp(Vector2 a, Vector2 b, float t) => b;
         public static Vector2 zero => default;
         public static Vector2 one => new Vector2(1, 1);
     }
@@ -285,6 +291,9 @@ namespace UnityEngine
         public static Quaternion LookRotation(Vector3 forward) => identity;
         public static Quaternion FromToRotation(Vector3 fromDirection, Vector3 toDirection) => identity;
         public static Vector3 operator *(Quaternion rotation, Vector3 point) => point;
+        public static Quaternion operator *(Quaternion lhs, Quaternion rhs) => lhs;
+        public static Quaternion Inverse(Quaternion rotation) => rotation;
+        public static Quaternion AngleAxis(float angle, Vector3 axis) => identity;
     }
 
     public struct Color
@@ -386,6 +395,23 @@ namespace UnityEngine
     {
         public Material material { get; set; }
         public Material sharedMaterial { get; set; }
+        public Material[] sharedMaterials { get; set; }
+        public UnityEngine.Rendering.ShadowCastingMode shadowCastingMode { get; set; }
+    }
+
+    public class Motion : Object { }
+
+    public sealed class AnimationClip : Motion
+    {
+        public float length => 0f;
+    }
+
+    public enum AnimatorCullingMode { AlwaysAnimate = 0, CullUpdateTransforms = 1, CullCompletely = 2 }
+
+    public class Animator : Behaviour
+    {
+        public bool applyRootMotion { get; set; }
+        public AnimatorCullingMode cullingMode { get; set; }
     }
 
     public enum TextureWrapMode { Repeat = 0, Clamp = 1, Mirror = 2, MirrorOnce = 3 }
@@ -485,6 +511,7 @@ namespace UnityEngine
         public static float Lerp(float a, float b, float t) => a;
         public static float LerpAngle(float a, float b, float t) => a;
         public static float MoveTowards(float current, float target, float maxDelta) => target;
+        public static float DeltaAngle(float current, float target) => target - current;
         public static float Repeat(float t, float length) => t;
         public static float Atan2(float y, float x) => 0f;
         public static float Asin(float f) => 0f;
@@ -599,6 +626,8 @@ namespace UnityEngine.Rendering
 
     public enum AmbientMode { Skybox = 0, Trilight = 1, Flat = 3, Custom = 4 }
 
+    public enum ShadowCastingMode { Off = 0, On = 1, TwoSided = 2, ShadowsOnly = 3 }
+
     public sealed class GraphicsSettings : Object
     {
         public static RenderPipelineAsset currentRenderPipeline => null;
@@ -616,8 +645,89 @@ namespace UnityEngine.SceneManagement
     }
 }
 
+namespace UnityEngine.Playables
+{
+    public enum DirectorUpdateMode { DSPClock = 0, GameTime = 1, UnscaledGameTime = 2, Manual = 3 }
+
+    public struct PlayableHandle { }
+
+    public interface IPlayable { PlayableHandle GetHandle(); }
+
+    public interface IPlayableOutput { }
+
+    public struct PlayableGraph
+    {
+        public static PlayableGraph Create(string name) => default;
+        public bool IsValid() => false;
+        public void Destroy() { }
+        public void SetTimeUpdateMode(DirectorUpdateMode value) { }
+        public void Evaluate(float deltaTime) { }
+        public bool Connect<U, V>(U source, int sourceOutputPort, V destination, int destinationInputPort) where U : struct, IPlayable where V : struct, IPlayable => true;
+    }
+
+    public static class PlayableExtensions
+    {
+        public static void SetInputWeight<U>(this U playable, int inputIndex, float weight) where U : struct, IPlayable { }
+        public static void SetTime<U>(this U playable, double value) where U : struct, IPlayable { }
+    }
+
+    public static class PlayableOutputExtensions
+    {
+        public static void SetSourcePlayable<U, V>(this U output, V value) where U : struct, IPlayableOutput where V : struct, IPlayable { }
+    }
+}
+
+namespace UnityEngine.Animations
+{
+    using UnityEngine.Playables;
+
+    public struct AnimationPlayableOutput : IPlayableOutput
+    {
+        public static AnimationPlayableOutput Create(PlayableGraph graph, string name, Animator target) => default;
+    }
+
+    public struct AnimationMixerPlayable : IPlayable
+    {
+        public PlayableHandle GetHandle() => default;
+        public static AnimationMixerPlayable Create(PlayableGraph graph, int inputCount = 0) => default;
+    }
+
+    public struct AnimationClipPlayable : IPlayable
+    {
+        public PlayableHandle GetHandle() => default;
+        public static AnimationClipPlayable Create(PlayableGraph graph, AnimationClip clip) => default;
+        public void SetApplyFootIK(bool value) { }
+    }
+}
+
 namespace UnityEditor
 {
+    public class AssetImporter : UnityEngine.Object { }
+
+    public enum ModelImporterMaterialImportMode { None = 0, ImportStandard = 1, ImportViaMaterialDescription = 2 }
+    public enum ModelImporterAnimationType { None = 0, Legacy = 1, Generic = 2, Human = 3 }
+    public enum ModelImporterAvatarSetup { NoAvatar = 0, CreateFromThisModel = 1, CopyFromOther = 2 }
+    public enum ModelImporterAnimationCompression { Off = 0, KeyframeReduction = 1, KeyframeReductionAndCompression = 2, Optimal = 3 }
+
+    public class ModelImporter : AssetImporter
+    {
+        public ModelImporterMaterialImportMode materialImportMode { get; set; }
+        public bool importCameras { get; set; }
+        public bool importLights { get; set; }
+        public bool useFileScale { get; set; }
+        public float globalScale { get; set; }
+        public ModelImporterAnimationType animationType { get; set; }
+        public bool importAnimation { get; set; }
+        public ModelImporterAvatarSetup avatarSetup { get; set; }
+        public ModelImporterAnimationCompression animationCompression { get; set; }
+    }
+
+    public class AssetPostprocessor
+    {
+        public string assetPath { get; set; }
+        public AssetImporter assetImporter => null;
+    }
+
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
     public sealed class MenuItem : Attribute
     {
