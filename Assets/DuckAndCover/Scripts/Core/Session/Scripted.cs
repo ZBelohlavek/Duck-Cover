@@ -211,8 +211,11 @@ namespace DuckAndCover.Core
     /// </summary>
     public sealed class ScriptedPlayer
     {
-        /// <summary>The four starter heroes, and an id with no data (it plays the catalog's fallback hero).</summary>
-        static readonly string[] Heroes = { "bulwark", "lancer", "mender", "rigger", "generic" };
+        /// <summary>
+        /// The heroes and an id with no data (it plays the catalog's fallback hero). New heroes go after "generic",
+        /// so the first four players keep the lineup the session tests were tuned on.
+        /// </summary>
+        static readonly string[] Heroes = { "bulwark", "lancer", "mender", "rigger", "generic", "bolete" };
 
         /// <summary>Seconds of match time between changes of plan.</summary>
         const float PlanSeconds = 12f;
@@ -482,12 +485,13 @@ namespace DuckAndCover.Core
             float distance = Vec3.Distance(eye, chest);
 
             var w = weapons.Weapon(arms.CurrentId);
-            if (w == null || w.kind != WeaponKind.Hitscan || w.range < distance + 1f)
+            // Lobbed weapons (Bolete's spore bombs) count when the target is well inside their throw.
+            if (w == null || w.Reach < distance + 1f)
             {
                 for (int i = 0; i < arms.weapons.Length; i++)
                 {
                     var other = weapons.Weapon(arms.weapons[i]);
-                    if (i != arms.current && other != null && other.kind == WeaponKind.Hitscan && other.range >= distance + 1f)
+                    if (i != arms.current && other != null && other.Reach >= distance + 1f)
                     {
                         Send(new SwitchWeaponCommand { slot = i });
                         return;
@@ -497,7 +501,7 @@ namespace DuckAndCover.Core
             }
             if (arms.Reloading || arms.switchLeft > 0f || arms.CurrentAmmo <= 0 || arms.fireCredit < 1f) return;
             firesSent++;
-            Send(new FireCommand { weaponId = w.id, origin = eye, direction = (chest - eye).Normalized });
+            Send(new FireCommand { weaponId = w.id, origin = eye, direction = w.AimAt(eye, chest) });
         }
 
         static ZoneId ChooseZone(MatchState state, PlayerState me, int plan)

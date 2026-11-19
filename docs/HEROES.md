@@ -1,4 +1,4 @@
-# Starter heroes
+# Heroes
 
 Generated from the hero and ability data in `Assets/DuckAndCover/Data/Resources`. The data files are
 the source of truth; numbers here are the ones the tests check. All names and kits are original.
@@ -144,6 +144,82 @@ harmful effect.
 | 18 talent | **Wide Landing**: War Leap's landing reaches 1.5 m further. | **Twin Axes**: Axe Throw holds two charges. |
 | 20 capstone | **Berserker**: Rage gives 20% more damage on top, and you swing 20% faster while it is up. | **Warlord**: Your stuns, knock-ups and Rage last 25% longer, and Rage lasts 2 seconds longer. |
 
+## Skulk (striker)
+
+Health 200. Weapon: Scrap Rifle, his only gun (automatic, 22 damage a round, 20 rounds). A goblin jungler: fast in the
+jungle, fed by camp kills, and finishing enemies up close with a knife that gets sharper with every kill.
+
+- **E: Shrapnel Charge.** Toss a charge up to 8 m ahead. After 0.6 seconds it bursts, dealing 40 damage to each enemy within 3 m. Cooldown 14 s.
+- **Passive (in F's place): Jungle Stalker.** Move 15% faster in the jungle. Finishing off a camp creature (any way) heals you 35 and gives you Spoils: 10% more damage for 15 seconds.
+- **X: Serrated Knife.** Slash the nearest enemy in a 110° arc within 2.5 m in front of you for 45 damage (one target: area damage stays lower per target than single-target damage). Every enemy the knife kills (hero, minion or camp creature, not a Bastion) adds a notch: 3 more knife damage, up to 10 notches, kept for the whole match, through deaths. Cooldown 13 s.
+
+Skulk is the one hero with a passive in his base kit (Zach asked for it), so he has no F ability: E and X are his
+abilities and the HUD shows the passive in F's slot. **In the jungle** (`StatConditions.Jungle`): on a map with one
+(Breakwater), on a jungle trail or within 9 m of a camp pad, and never on the lane (`Core/Maps/JungleArea`,
+`Ruleset.jungleTrailMargin`, `jungleClearingRadius`); on a map without one (Gantry Yard), anywhere off a live point.
+Kill rewards are data (`AbilityDef.onKill`, `KillRewardDef`): who counts (hero, minion, camp), and whether the kill must
+be by that ability, by anything else, or either. No single use of his abilities kills a full-health 200 hero, at any
+level down either path (`SkulkKitTests.NoOneUseKillsAFullHealthHero`).
+
+Left (Z) is the **Jungle** path: faster, tougher and quicker to recover in the jungle, bigger camp rewards, a knife
+that heals him on kills and holds more notches, and two Shrapnel Charges. Right (V) is the **Headhunter** path: more gun
+damage, hero kills by anything notch the knife and pay Jungle Stalker's rewards, a bleeding knife, Shrapnel that makes
+enemies take more damage, and notches worth more.
+
+| Level | Left (hold Z) | Right (hold V) |
+|---|---|---|
+| 2 trait | **Trailwise**: In the jungle you move another 5% faster. | **Sharp Sights**: Your weapons deal 5% more damage. |
+| 4 talent | **Big Game**: Jungle Stalker's kill rewards heal you 25 more. | **Head Count**: A hero you kill with anything else (your rifle, Shrapnel Charge) also adds a notch to Serrated Knife. |
+| 6 trait | **Thick Hide**: Take 8% less damage in the jungle. | **Scrap Mag**: Your magazine holds 25% more rounds. |
+| 8 third ability | **Field Dressing**: Every kill with Serrated Knife heals you 30. | **Bloodletter**: Serrated Knife makes enemies bleed for 6 damage a second for 4 seconds. |
+| 10 passive | **Lurker**: In the jungle, regain 8 health a second when you haven't been hit for a while. | **Restless**: Move 7% faster everywhere. |
+| 12 talent | **Rich Pickings**: Spoils lasts 10 seconds longer and adds another 10% damage. | **Trophy Hunter**: Killing a hero also gives you Jungle Stalker's rewards: the heal and Spoils. |
+| 14 trait | **Undergrowth**: In the jungle your abilities recover 20% faster. | **Long Barrel**: Your weapons deal 8% more damage and keep full damage 30% further out. |
+| 16 talent | **Trophy Rack**: Serrated Knife holds 5 more notches. | **Shredder**: Enemies Shrapnel Charge hits take 15% more damage for 4 seconds. |
+| 18 talent | **Satchel**: Shrapnel Charge holds two charges. | **Keen Edge**: Each Serrated Knife notch adds 2 more damage. |
+| 20 capstone | **Jungle King**: In the jungle you deal 15% more damage and move another 10% faster. | **Headhunter**: Hero kills give Serrated Knife two notches instead of one. |
+
+## Bolete (support)
+
+Health 200. Weapon: Spore bombs. A fungal healer: he lobs spore bombs, grows mushrooms that heal his team, rots the
+enemy and grows a frenzy mushroom out of a teammate.
+
+- **Primary: Spore bombs.** Lob a spotted spore bomb in an arc (it falls, so aim above far targets). It bursts where it
+  lands: 10 damage on a direct hit plus a 25 damage burst that reaches 2.5 m (down to 40% at the edge). Six bombs a
+  load, one every 0.7 s, 2 s to reload. Bombs never hurt or heal teammates. Because a burst can catch several enemies,
+  one bomb does less damage a second than Mender's sidearm does to one target: at most 50 a second on direct hits
+  (34 counting reloads) against the sidearm's 94 (63).
+- **E: Bloom Cap.** Plant a healing mushroom where you aim. For 6 seconds, you and teammates within 3.5 m of it heal 18
+  health a second, and keep healing for a second after stepping out. Cooldown 14 s.
+- **F: Rot Spore.** Throw a rotten spore pod where you aim. It bursts a second later: enemies within 3.5 m are poisoned
+  for 10 damage a second and Wilt (deal 20% less damage) for 5 seconds. Both are harmful effects, so a cleanse (Purge)
+  clears them (50 damage in all, so it never kills a healthy hero alone). Cooldown 15 s.
+- **X: Frenzy Cap.** Grow a frenzy mushroom on the teammate you aim at (within 1.5 m of where your aim
+  lands, up to 30 m): for 6 seconds they fire 25% faster and deal 15% more damage. With no teammate there it is
+  refused and spends nothing (`TargetingDef.needsTarget`). Cooldown 20 s (no ultimate charge).
+
+Left (Z) is the **Overgrowth** path: everything grows bigger, lasts longer and spreads. Right (V) is the **Symbiosis**
+path: Bolete gains from his own fungus, healed when he heals, feeding on his poison and sharing his Frenzy.
+
+| Level | Left (hold Z) | Right (hold V) |
+|---|---|---|
+| 2 trait | **Wide Spores**: Bloom Cap, Rot Spore and Frenzy Cap reach 10% further. | **Hardy Stalk**: +25 max health. |
+| 4 talent | **Lasting Bloom**: Bloom Cap lasts 2 seconds longer. | **Quick Spores**: Rot Spore recovers 2 seconds sooner. |
+| 6 trait | **Lingering Rot**: Everything your fungus puts on someone lasts 25% longer: poison, Wilt, Frenzy and Bloom Cap's healing. | **Potent Bombs**: Your spore bombs deal 8% more damage. |
+| 8 ultimate | **Wild Frenzy**: Frenzy Cap also makes its teammate move 20% faster. | **Kindred Frenzy**: Frenzy Cap also grows on you. |
+| 10 passive | **Fertile Ground**: Your healing is 10% stronger. | **Shared Roots**: Whenever your healing heals a teammate, you heal 30% as much. |
+| 12 talent | **Clinging Spores**: Anyone who steps into Bloom Cap carries its healing with them for 4 seconds after they leave. | **Leeching Rot**: Each enemy hero Rot Spore poisons gives you 6% more damage and 5% more speed for 6 seconds (up to 3 at once). |
+| 14 trait | **Big Bombs**: Your spore bombs burst 30% wider. | **Steady Growth**: Abilities recover 10% faster. |
+| 16 talent | **Creeping Rot**: Rot Spore's poison lasts 3 seconds longer and its cloud reaches 1 m further. | **Heart of the Bloom**: Take 15% less damage while you stand in your own Bloom Cap. |
+| 18 talent | **Shared Frenzy**: Frenzy Cap also grows on every teammate within 4 m of the one you aim at. | **Feeding Rot**: Your poison heals you for half the damage it deals. |
+| 20 capstone | **Great Bloom**: Bloom Cap reaches 2 m further and heals 30% more. | **Mycelial Link**: Shared Roots gives 60% instead of 30%, and Frenzy Cap lasts 3 seconds longer. |
+
+The rules behind the Symbiosis path are stats any hero could use: `healShare` (Shared Roots; healing teammate heroes,
+not minions, and never its own echo), `statusLifeSteal` (Feeding Rot; damage over time that heals its source), an
+effect reaching `selfPerHero` (Leeching Rot; once per enemy hero caught, never minions) and a "self" effect on an
+object's pulse, which reaches the owner only while they stand in it (Heart of the Bloom). Big Bombs is the
+`splashRadius` stat. Bots and tests aim lobbed weapons on their arc with `WeaponDef.AimAt`.
+
 ## Against minion waves (WP20)
 
 Every ability and weapon hits minions, Bastions and camp guards as it hits heroes. Each hero's job against a wave,
@@ -153,8 +229,11 @@ as `Tests/CoreSim/Tests/WaveKitTests.cs` checks it:
   and feet (`UnitRules.LineOfFire`, `UnitRules.Walk`) while his team shoots through. His shotgun clears a wave from close up.
 - **Lancer** clears: Incendiary Grenade catches a whole wave; Thermite destroys Scrappers outright.
 - **Mender** protects his own wave: Mending Canister regenerates minions, Purge frees them from slows, and Mending Rounds heal the minion he shoots.
+- **Bolete** clears with his bombs' bursts, which catch a clump of minions, while Rot Spore wilts a wave's fire and
+  Bloom Cap heals his own minions.
 - **Gashrak** cleaves: every swing hits every minion in front of him, so he clears a wave fastest of all from up
   close, but has to walk into it to do so.
+- **Skulk** clears with the Scrap Rifle and Shrapnel Charge, and every minion his knife finishes notches it for the match.
 - **Rigger** slips past a lane: minions and Bastions don't shoot him while he is cloaked, so he can get behind a wave
   or reach the enemy's heroes. Against the wave itself he is the SMG, sped up by Combat Stim.
 

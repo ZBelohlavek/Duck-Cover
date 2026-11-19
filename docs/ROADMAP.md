@@ -9,7 +9,7 @@ https://claude.ai/artifact/7qbJG2ukrZDQ6ZTfX3nXGs
 ## Teams
 
 Four a side (Nov 18; it was 5v5). The recommended lineup is one tank, one healer, one DPS and one utility or flex
-pick: Bulwark, Mender, Lancer and Rigger. It is a recommendation, not a lock: teams may pick any mix and the same
+pick: Bulwark, Mender, Lancer and Rigger (Bolete is a second healer). It is a recommendation, not a lock: teams may pick any mix and the same
 hero twice. The pick panel labels each hero's role and names the lineup roles a team hasn't covered yet
 (`Core/Heroes/Roles.cs`). `report teamsize`, `report flagrush` and `report overrun [matches] [seed] [players per team]`
 compare 4v4 with 5v5 bot matches.

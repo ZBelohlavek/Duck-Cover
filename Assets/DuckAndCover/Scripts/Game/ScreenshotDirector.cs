@@ -51,6 +51,7 @@ namespace DuckAndCover.Game
             new Shot("10-abilities", DummiesUseAbilities, 1.6f),
             new Shot("11-hush", DummyThrowsHush, 1.0f),
             new Shot("11b-war-leap", DummyWarLeaps, 1.4f),
+            new Shot("11c-bolete", DummyPlaysBolete, 1.4f),
             new Shot("12-hero-hud", LevelUpAndLook, 1.2f),
             // Environment kit: the lane mock-up, built far off to one side of the real map.
             new Shot("13-lane", () => LaneShot(new Vector3(0f, 1.8f, -50f), new Vector3(0f, 1.2f, -38f)), 1.0f),
@@ -470,6 +471,30 @@ namespace DuckAndCover.Game
             });
             if (!result.IsAccepted) Debug.LogWarning("Duck and Cover: the capture's war chief could not swing: " + result.reason);
             else Debug.Log("Duck and Cover: the capture's war chief swung from " + Vec3.Distance(from.position, to.position).ToString("0.0") + " m; the player has " + runner.Combat.Damage.Unit(targetId).health.ToString("0") + " health.");
+        }
+
+        /// <summary>
+        /// The Mender dummy turns into Bolete, 8 m ahead and off to the side: it plants Bloom Cap at its
+        /// feet and throws Rot Spore at the player, which bursts a second later and poisons them.
+        /// </summary>
+        static void DummyPlaysBolete()
+        {
+            var runner = SessionRunner.Instance;
+            if (runner == null || runner.Heroes == null || runner.Client == null) return;
+            int bolete = CombatServer.FirstDummyId + 2;
+            int me = runner.Client.PlayerId;
+            var mine = runner.Combat.Movement.Motion(me);
+            if (mine == null) return;
+            if (!runner.Heroes.GiveKit(bolete, "bolete").IsAccepted) { Debug.LogError("Duck and Cover: the capture could not give a dummy Bolete's kit."); return; }
+            Vec3 ahead = MoveMath.Forward(mine.yaw), side = MoveMath.Right(mine.yaw);
+            runner.Combat.Movement.Teleport(bolete, mine.position + ahead * 8f - side * 3f, mine.yaw + 160f);
+            WatchFrom((mine.position + ahead * 4f + side * 8f).ToVector3() + Vector3.up * 3.5f, (mine.position + ahead * 4.5f - side * 1f).ToVector3() + Vector3.up * 0.8f);
+            int used = 0;
+            if (DummyCast(runner, bolete, 0, me, -0.9f)) used++;
+            if (DummyCast(runner, bolete, 1, me, 0f)) used++;
+            if (used < 2) Debug.LogError("Duck and Cover: the capture's Bolete used " + used + " abilities, expected 2.");
+            CombatView.Instance.StartCoroutine(Expect(() => runner.Combat.Abilities.Unit(me) != null && runner.Combat.Abilities.Unit(me).Status("bolete_poison") != null,
+                1.3f, "the player poisoned by Rot Spore"));
         }
 
         /// <summary>Back to the player's eyes, a few levels up, so the ability bar and the upgrade on offer show.</summary>

@@ -526,11 +526,24 @@ namespace DuckAndCover.UI
             var rules = SessionRunner.Instance.ClientRules;
             Color hero = UITheme.ForHero(me.heroId);
             ShowSelfState(unit);
+            bool basePassive = unit != null && !string.IsNullOrEmpty(unit.passiveId);
             for (int i = 0; i < slots.Count; i++)
             {
                 var s = slots[i];
-                var slot = unit != null && i < unit.slots.Count ? unit.slots[i] : null;
+                // The HUD's E, F and X slots; a hero with a base passive shows it in F's place.
+                int at = unit == null ? -1 : Core.AbilityKeys.SlotFor(AbilityKeys[i], unit.slots.Count, basePassive);
+                var slot = at >= 0 ? unit.slots[at] : null;
                 var baseDef = slot == null ? null : lib.Ability(slot.abilityId);
+                if (baseDef == null && basePassive && AbilityKeys[i] == Core.AbilityKeys.F && lib.Ability(unit.passiveId) != null)
+                {
+                    s.key.text = "";
+                    s.name.text = lib.Ability(unit.passiveId).displayName.ToUpperInvariant();
+                    s.name.color = UITheme.Text;
+                    s.status.text = "PASSIVE";
+                    s.status.color = UITheme.TextDim;
+                    DrawSlot(s, 1f, false, 0, hero, hero);
+                    continue;
+                }
                 if (baseDef == null)
                 {
                     s.lines.Clear();
@@ -539,7 +552,7 @@ namespace DuckAndCover.UI
                     continue;
                 }
                 var def = AbilityParams.Resolve(baseDef, unit.changes, lib, rules.minCooldownSeconds).def;
-                s.key.text = i < AbilityKeys.Length ? AbilityKeys[i] : "";
+                s.key.text = AbilityKeys[i];
                 s.name.text = def.displayName.ToUpperInvariant();
 
                 // How full the slot is (recharge or ultimate charge), whether it is ready, and what it says.
@@ -578,6 +591,8 @@ namespace DuckAndCover.UI
                     status = (slot.rechargeLeft / rate).ToString("0.0");
                     text = UITheme.TextDim;
                 }
+                // Notches earned by kills (the goblin's knife) show beside the slot's state.
+                if (slot.notches > 0 && def.maxNotches > 0) status = (status.Length > 0 ? status + "  " : "") + "+" + Mathf.RoundToInt(Mathf.Min(slot.notches, def.maxNotches) * def.notchDamage);
                 s.status.text = status;
                 s.status.color = text;
                 s.name.color = UITheme.Text;

@@ -1,0 +1,453 @@
+{
+    "id": "bolete",
+    "displayName": "Bolete",
+    "role": "support",
+    "weaponId": "spore_bombs",
+    "maxHealth": 200,
+    "abilities": [
+        "bolete_bloom",
+        "bolete_rot"
+    ],
+    "ultimateId": "bolete_frenzy",
+    "passiveId": "",
+    "levels": [
+        {
+            "level": 2,
+            "options": [
+                "bolete_wide_spores",
+                "bolete_hardy_stalk"
+            ]
+        },
+        {
+            "level": 4,
+            "options": [
+                "bolete_lasting_bloom",
+                "bolete_quick_spores"
+            ]
+        },
+        {
+            "level": 6,
+            "options": [
+                "bolete_lingering_rot",
+                "bolete_potent_bombs"
+            ]
+        },
+        {
+            "level": 8,
+            "options": [
+                "bolete_wild_frenzy",
+                "bolete_kindred_frenzy"
+            ]
+        },
+        {
+            "level": 10,
+            "options": [
+                "bolete_fertile_ground",
+                "bolete_shared_roots"
+            ]
+        },
+        {
+            "level": 12,
+            "options": [
+                "bolete_clinging_spores",
+                "bolete_leeching_rot"
+            ]
+        },
+        {
+            "level": 14,
+            "options": [
+                "bolete_big_bombs",
+                "bolete_steady_growth"
+            ]
+        },
+        {
+            "level": 16,
+            "options": [
+                "bolete_creeping_rot",
+                "bolete_heart_of_bloom"
+            ]
+        },
+        {
+            "level": 18,
+            "options": [
+                "bolete_shared_frenzy",
+                "bolete_feeding_rot"
+            ]
+        },
+        {
+            "level": 20,
+            "options": [
+                "bolete_great_bloom",
+                "bolete_mycelial_link"
+            ]
+        }
+    ],
+    "upgrades": [
+        {
+            "id": "bolete_wide_spores",
+            "displayName": "Wide Spores",
+            "description": "Bloom Cap, Rot Spore and Frenzy Cap reach 10% further.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "abilityRadius",
+                    "op": "percent",
+                    "value": 0.1,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_hardy_stalk",
+            "displayName": "Hardy Stalk",
+            "description": "+25 max health.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "maxHealth",
+                    "op": "add",
+                    "value": 25,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_lasting_bloom",
+            "displayName": "Lasting Bloom",
+            "description": "Bloom Cap lasts 2 seconds longer.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bolete_bloom",
+                    "param": "object.lifetime",
+                    "op": "add",
+                    "value": 2,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_quick_spores",
+            "displayName": "Quick Spores",
+            "description": "Rot Spore recovers 2 seconds sooner.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bolete_rot",
+                    "param": "cooldown",
+                    "op": "add",
+                    "value": -2,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_lingering_rot",
+            "displayName": "Lingering Rot",
+            "description": "Everything your fungus puts on someone lasts 25% longer: poison, Wilt, Frenzy and Bloom Cap's healing.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "statusDuration",
+                    "op": "percent",
+                    "value": 0.25,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_potent_bombs",
+            "displayName": "Potent Bombs",
+            "description": "Your spore bombs deal 8% more damage.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "weaponDamage",
+                    "op": "percent",
+                    "value": 0.08,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_wild_frenzy",
+            "displayName": "Wild Frenzy",
+            "description": "Frenzy Cap also makes its teammate move 20% faster.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bolete_frenzy",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "stride"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_kindred_frenzy",
+            "displayName": "Kindred Frenzy",
+            "description": "Frenzy Cap also grows on you.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bolete_frenzy",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "kindred"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_fertile_ground",
+            "displayName": "Fertile Ground",
+            "description": "Passive. Your healing is 10% stronger.",
+            "kind": "passive",
+            "stats": [
+                {
+                    "stat": "healingDone",
+                    "op": "percent",
+                    "value": 0.1,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_shared_roots",
+            "displayName": "Shared Roots",
+            "description": "Passive. Whenever your healing heals a teammate, you heal 30% as much.",
+            "kind": "passive",
+            "stats": [
+                {
+                    "stat": "healShare",
+                    "op": "add",
+                    "value": 0.3,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_clinging_spores",
+            "displayName": "Clinging Spores",
+            "description": "Anyone who steps into Bloom Cap carries its healing with them for 4 seconds after they leave.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bolete_bloom",
+                    "param": "object.effect.bolete_bloom_heal.duration",
+                    "op": "add",
+                    "value": 4,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_leeching_rot",
+            "displayName": "Leeching Rot",
+            "description": "Each enemy hero Rot Spore poisons gives you 6% more damage and 5% more speed for 6 seconds (up to 3 at once).",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bolete_rot",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "leech"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_big_bombs",
+            "displayName": "Big Bombs",
+            "description": "Your spore bombs burst 30% wider.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "splashRadius",
+                    "op": "percent",
+                    "value": 0.3,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_steady_growth",
+            "displayName": "Steady Growth",
+            "description": "Abilities recover 10% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "cooldownRate",
+                    "op": "percent",
+                    "value": 0.1,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_creeping_rot",
+            "displayName": "Creeping Rot",
+            "description": "Rot Spore's poison lasts 3 seconds longer and its cloud reaches 1 m further.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bolete_rot",
+                    "param": "effect.bolete_poison.duration",
+                    "op": "add",
+                    "value": 3,
+                    "text": ""
+                },
+                {
+                    "ability": "bolete_rot",
+                    "param": "radius",
+                    "op": "add",
+                    "value": 1,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_heart_of_bloom",
+            "displayName": "Heart of the Bloom",
+            "description": "Take 15% less damage while you stand in your own Bloom Cap.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bolete_bloom",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "heartwood"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_shared_frenzy",
+            "displayName": "Shared Frenzy",
+            "description": "Frenzy Cap also grows on every teammate within 4 m of the one you aim at.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bolete_frenzy",
+                    "param": "radius",
+                    "op": "add",
+                    "value": 2.5,
+                    "text": ""
+                },
+                {
+                    "ability": "bolete_frenzy",
+                    "param": "maxTargets",
+                    "op": "set",
+                    "value": 0,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_feeding_rot",
+            "displayName": "Feeding Rot",
+            "description": "Your poison heals you for half the damage it deals.",
+            "kind": "talent",
+            "stats": [
+                {
+                    "stat": "statusLifeSteal",
+                    "op": "add",
+                    "value": 0.5,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_great_bloom",
+            "displayName": "Great Bloom",
+            "description": "Bloom Cap reaches 2 m further and heals 30% more.",
+            "kind": "capstone",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bolete_bloom",
+                    "param": "object.radius",
+                    "op": "add",
+                    "value": 2,
+                    "text": ""
+                },
+                {
+                    "ability": "bolete_bloom",
+                    "param": "object.effect.bolete_bloom_heal.amount",
+                    "op": "percent",
+                    "value": 0.3,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bolete_mycelial_link",
+            "displayName": "Mycelial Link",
+            "description": "Shared Roots gives 60% instead of 30%, and Frenzy Cap lasts 3 seconds longer.",
+            "kind": "capstone",
+            "stats": [
+                {
+                    "stat": "healShare",
+                    "op": "add",
+                    "value": 0.3,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [
+                {
+                    "ability": "bolete_frenzy",
+                    "param": "effect.bolete_frenzy.duration",
+                    "op": "add",
+                    "value": 3,
+                    "text": ""
+                },
+                {
+                    "ability": "bolete_frenzy",
+                    "param": "effect.bolete_stride.duration",
+                    "op": "add",
+                    "value": 3,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        }
+    ]
+}
