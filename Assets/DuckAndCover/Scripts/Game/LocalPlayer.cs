@@ -38,6 +38,8 @@ namespace DuckAndCover.Game
         public bool Vaulting => vaultTime >= 0f;
         public int Ammo { get; private set; }
         public int Magazine { get; private set; }
+        /// <summary>The weapon in hand is a melee weapon: no ammo to show, nothing to reload.</summary>
+        public bool Melee { get; private set; }
         public string WeaponName { get; private set; } = "";
         public bool Reloading { get; private set; }
         /// <summary>The magazine in hand holds healing rounds (Mender's Mending Rounds).</summary>
@@ -165,18 +167,27 @@ namespace DuckAndCover.Game
             if (!correction) { yaw = newYaw; pitch = 0f; }
         }
 
-        /// <summary>A dash (along the aim) or a knockback: moved over its seconds, level with the ground.</summary>
+        /// <summary>
+        /// A dash (along the aim), a knockback or a leap: moved over its seconds along the ground. A push with
+        /// a lift also throws the body up that many metres (a leap's arc, or a knock-up with no distance),
+        /// and gravity brings it down.
+        /// </summary>
         void StartPush(PushedEvent pushed)
         {
             Vector3 dir = pushed.direction.ToVector3();
-            if (pushed.mode != PushDirections.Aim && dir.sqrMagnitude < 1e-6f) dir = transform.position - pushed.origin.ToVector3();
+            if (pushed.mode != PushDirections.Aim && pushed.mode != PushDirections.Leap && dir.sqrMagnitude < 1e-6f) dir = transform.position - pushed.origin.ToVector3();
             dir.y = 0f;
-            if (dir.sqrMagnitude < 1e-6f || pushed.distance <= 0f) return;
+            bool moves = dir.sqrMagnitude >= 1e-6f && pushed.distance > 0f;
+            if (!moves && pushed.lift <= 0f) return;
             float seconds = Mathf.Max(0.05f, pushed.seconds);
-            pushVelocity = dir.normalized * (pushed.distance / seconds);
+            pushVelocity = moves ? dir.normalized * (pushed.distance / seconds) : Vector3.zero;
             pushLeft = seconds;
+            pushLifting = pushed.lift > 0f;
+            if (pushLifting) velocity.y = Mathf.Sqrt(2f * rules.gravity * pushed.lift);
             vaultTime = -1f;
         }
+
+        bool pushLifting;
 
         void SetActive(bool on)
         {
@@ -397,8 +408,9 @@ namespace DuckAndCover.Game
             {
                 float step = Mathf.Min(dt, pushLeft);
                 pushLeft -= step;
-                velocity.y = Mathf.Min(velocity.y, 0f) - rules.gravity * step;
-                controller.Move(pushVelocity * step + Vector3.up * (velocity.y * step));
+                velocity.y = (pushLifting ? velocity.y : Mathf.Min(velocity.y, 0f)) - rules.gravity * step;
+                var pushFlags = controller.Move(pushVelocity * step + Vector3.up * (velocity.y * step));
+                if ((pushFlags & CollisionFlags.Above) != 0 && velocity.y > 0f) velocity.y = 0f;
                 Sprinting = false;
                 return;
             }
@@ -565,6 +577,8 @@ namespace DuckAndCover.Game
             Reloading = state.Reloading;
             Ammo = Reloading ? 0 : Mathf.Max(0, state.CurrentAmmo - unacknowledged);
             HealRounds = !Reloading && state.healRounds > 0;
+            Melee = def.kind == WeaponKind.Melee;
+            if (Melee) { Ammo = Magazine; shotsSent = 0; } // a swing spends nothing
             if (!focused || scripted || stunned) return;
 
             int slot = SlotAsked(keyboard, mouse, state);
@@ -575,7 +589,7 @@ namespace DuckAndCover.Game
                 client.Send(new SwitchWeaponCommand { slot = slot });
                 return;
             }
-            if (keyboard != null && keyboard.rKey.wasPressedThisFrame && !Reloading && Ammo < Magazine)
+            if (keyboard != null && keyboard.rKey.wasPressedThisFrame && !Reloading && Ammo < Magazine && !Melee)
             {
                 client.Send(new ReloadCommand());
                 return;
@@ -612,13 +626,14 @@ namespace DuckAndCover.Game
             var cam = Camera.main;
             if (cam == null) return false;
             nextFireAt = Time.time + def.fireInterval / fireRate;
-            shotsSent++;
+            if (def.kind != WeaponKind.Melee) shotsSent++;
 
             Vec3 origin = (transform.position + Vector3.up * eyeHeight).ToVec3();
             Vec3 direction = MoveMath.AimDirection(yaw, pitch);
             // The tick this player is looking at: other players are drawn a little in the past.
             client.Send(new FireCommand { weaponId = def.id, origin = origin, direction = direction, tick = view != null ? view.RenderTick : 0 });
             if (view != null && def.kind == WeaponKind.Hitscan) view.DrawOwnShot(def, origin, direction, Muzzle);
+            if (view != null && def.kind == WeaponKind.Melee) view.DrawSwing(client.PlayerId, def.range, def.arcDegrees, origin, direction);
             return true;
         }
 

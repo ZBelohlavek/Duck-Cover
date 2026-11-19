@@ -52,6 +52,10 @@ namespace DuckAndCover.Core
         // ---- Status effects ----
         /// <summary>Slows can't take a hero below this share of their move speed.</summary>
         public float minMoveSpeed = 0.3f;
+        /// <summary>An aimed sphere that lands on the ground (TargetingDef.ground) looks this far down for the floor.</summary>
+        public float groundProbeMetres = 30f;
+        /// <summary>...after stepping this far back toward the caster, so a wall the aim hit doesn't stand in the way.</summary>
+        public float groundProbeBack = 0.5f;
         /// <summary>Stuns longer than this are cut short.</summary>
         public float maxStunSeconds = 2f;
         /// <summary>Seconds of the ambush window that attacking out of stealth opens (StatConditions.Ambush), before the ambushSeconds stat.</summary>

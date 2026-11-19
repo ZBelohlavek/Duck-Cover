@@ -95,7 +95,7 @@ static class SkulkKitTests
         h.Run(0.4f);
         Check.Near(near, h.Health(B1), "nothing before the fuse");
         h.Run(0.4f);
-        Check.Near(near - 60f, h.Health(B1), "60 damage within 3 m of where it lands (8 m ahead)", 0.01f);
+        Check.Near(near - 40f, h.Health(B1), "40 damage within 3 m of where it lands (8 m ahead)", 0.01f);
         Check.Near(far, h.Health(B2), "nothing 3 m past the edge");
         Check.Equal("on cooldown", h.Use(A1, Shrapnel, Ahead).reason, "one charge");
     }
@@ -113,6 +113,14 @@ static class SkulkKitTests
         Check.Near(back, h.Health(B2), "nobody behind him is cut");
         var used = h.Last<AbilityUsedEvent>();
         Check.Equal(1, used.targets.Length, "one target");
+
+        var two = Duel();
+        two.Place(B2, 0.5f, 1.2f);
+        two.NoShield(B2);
+        float b1 = two.Health(B1), b2 = two.Health(B2);
+        Check.True(two.Use(A1, Knife, Ahead).IsAccepted, "slash at two enemies");
+        Check.Near(b1 + b2 - 45f, two.Health(B1) + two.Health(B2), "only the nearest is cut: the knife is single-target", 0.01f);
+        Check.Near(b2 - 45f, two.Health(B2), "and it is the nearer one", 0.01f);
 
         var far = Duel();
         far.Place(B1, 0f, 4f);

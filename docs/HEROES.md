@@ -108,14 +108,50 @@ the **Shutdown** path: longer silences on one enemy at a time that weaken, expos
 | 18 talent | **Smoke Stim**: Combat Stim also cloaks you for 2 seconds. | **Double Hush**: Hush Grenade holds two charges. |
 | 20 capstone | **Phantom**: During Ambush your weapons deal 25% more damage and heal you for 15% of the damage they deal. | **Blackout**: The enemy Hush Grenade hits takes 15% more damage while silenced, and the silence lasts 1 second longer. |
 
+## Gashrak, the war chief (striker)
+
+Health 275. Weapon: Greataxe, melee only (no gun). A bruiser who closes the gap with War Leap and holds enemies in place
+while his axe works. Gashrak is a working name.
+
+- **Left mouse: Greataxe.** A swing hits every enemy (heroes and minions) within 3.2 m in a 100 degree arc in front of
+  him for 60, once every 0.75 s. No ammo and no reload. Walls and enemy shields stop it; a shield or drone straight ahead
+  takes the hit instead.
+- **E: War Leap.** Leap up to 12 m to where you aim (onto the floor below it, so aiming at a wall or the sky still lands).
+  Where he lands, 0.8 s later, enemies within 3.5 m take 30 damage and are knocked up: thrown into the air and stunned for
+  0.75 seconds. Cooldown 10 s.
+- **F: Axe Throw.** Throw a hand axe up to 25 m: the first enemy hit takes 40 damage and is stunned for 1.25 seconds.
+  Cooldown 12 s.
+- **X: Rage.** For 6 seconds, regenerate 15 health a second and deal 20% more damage. Cooldown 20 s (not ultimate charge).
+
+Stuns and knock-ups use the built-in stun: Purge clears them, a ward blocks them, and `Ruleset.maxStunSeconds` caps them.
+A silence (Hush Grenade) stops his abilities but not the axe, unless he has Unbroken.
+
+Left (Z) is the **Bruiser** path: in and hitting, with a harder, longer Rage that heals him through the axe and a War
+Leap that lands harder and wider. Right (V) is the **Warlord** path: longer stuns from Axe Throw and War Leap, two axes,
+a sturdier body and Rage regeneration, and Unbroken, which lets Rage shake off a stun or silence and clears every
+harmful effect.
+
+| Level | Left (hold Z) | Right (hold V) |
+|---|---|---|
+| 2 trait | **Heavy Hands**: Your axe deals 6% more damage. | **Thick Hide**: +25 max health. |
+| 4 talent | **Blood Up**: Rage gives 30% more damage instead of 20%. | **Heavy Haft**: Axe Throw stuns for 0.4 seconds longer. |
+| 6 trait | **Long Reach**: Your swings reach 15% further (about half a metre). | **Warlord's Pace**: Abilities recover 10% faster. |
+| 8 third ability | **Long Rage**: Rage lasts 2 seconds longer. | **Second Skin**: Rage regenerates 50% more health. |
+| 10 passive | **Battle Hunger**: Heal for 8% of the damage your axe deals. | **Hard to Kill**: Take 10% less damage while at half health or less. |
+| 12 talent | **Crushing Landing**: War Leap's landing deals 40 more damage. | **Ground Shaker**: War Leap's knock-up stuns for 0.4 seconds longer. |
+| 14 trait | **Quick Swings**: You swing 10% faster. | **Iron Grip**: Your stuns, knock-ups and Rage last 15% longer. |
+| 16 talent | **Blood Rage**: While Rage is up, your axe also heals you for 15% of the damage it deals. | **Unbroken**: Rage can be used while stunned or silenced, and clears every harmful effect on you when it starts. |
+| 18 talent | **Wide Landing**: War Leap's landing reaches 1.5 m further. | **Twin Axes**: Axe Throw holds two charges. |
+| 20 capstone | **Berserker**: Rage gives 20% more damage on top, and you swing 20% faster while it is up. | **Warlord**: Your stuns, knock-ups and Rage last 25% longer, and Rage lasts 2 seconds longer. |
+
 ## Skulk (striker)
 
 Health 200. Weapon: Scrap Rifle, his only gun (automatic, 22 damage a round, 20 rounds). A goblin jungler: fast in the
 jungle, fed by camp kills, and finishing enemies up close with a knife that gets sharper with every kill.
 
-- **E: Shrapnel Charge.** Toss a charge up to 8 m ahead. After 0.6 seconds it bursts, dealing 60 damage to enemies within 3 m. Cooldown 14 s.
+- **E: Shrapnel Charge.** Toss a charge up to 8 m ahead. After 0.6 seconds it bursts, dealing 40 damage to each enemy within 3 m. Cooldown 14 s.
 - **Passive (in F's place): Jungle Stalker.** Move 15% faster in the jungle. Finishing off a camp creature (any way) heals you 35 and gives you Spoils: 10% more damage for 15 seconds.
-- **X: Serrated Knife.** Slash everything in a 110° arc within 2.5 m in front of you for 45 damage. Every enemy the knife kills (hero, minion or camp creature, not a Bastion) adds a notch: 3 more knife damage, up to 10 notches, kept for the whole match, through deaths. Cooldown 13 s.
+- **X: Serrated Knife.** Slash the nearest enemy in a 110° arc within 2.5 m in front of you for 45 damage (one target: area damage stays lower per target than single-target damage). Every enemy the knife kills (hero, minion or camp creature, not a Bastion) adds a notch: 3 more knife damage, up to 10 notches, kept for the whole match, through deaths. Cooldown 13 s.
 
 Skulk is the one hero with a passive in his base kit (Zach asked for it), so he has no F ability: E and X are his
 abilities and the HUD shows the passive in F's slot. **In the jungle** (`StatConditions.Jungle`): on a map with one
@@ -152,6 +188,8 @@ as `Tests/CoreSim/Tests/WaveKitTests.cs` checks it:
   and feet (`UnitRules.LineOfFire`, `UnitRules.Walk`) while his team shoots through. His shotgun clears a wave from close up.
 - **Lancer** clears: Incendiary Grenade catches a whole wave; Thermite destroys Scrappers outright.
 - **Mender** protects his own wave: Mending Canister regenerates minions, Purge frees them from slows, and Mending Rounds heal the minion he shoots.
+- **Gashrak** cleaves: every swing hits every minion in front of him, so he clears a wave fastest of all from up
+  close, but has to walk into it to do so.
 - **Skulk** clears with the Scrap Rifle and Shrapnel Charge, and every minion his knife finishes notches it for the match.
 - **Rigger** slips past a lane: minions and Bastions don't shoot him while he is cloaked, so he can get behind a wave
   or reach the enemy's heroes. Against the wave itself he is the SMG, sped up by Combat Stim.

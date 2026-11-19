@@ -61,7 +61,10 @@ namespace DuckAndCover.Core
                     float radius = t.radius * Math.Max(0f, Combat.Stat(casterId, StatIds.AbilityRadius));
                     Vec3 center = origin;
                     if (t.origin == Origins.AimPoint)
+                    {
                         center = CastRay(casterId, origin, dir, t.range, tick, out var land) && land.kind != HitKind.Nothing ? land.point : origin + dir * t.range;
+                        if (t.ground) center = Ground(casterId, origin, center, tick);
+                    }
                     areas.Add(Query(center, radius, t.affects, casterId, team, t.maxTargets, tick));
                     for (int i = 1; i < count; i++)
                     {
@@ -81,6 +84,21 @@ namespace DuckAndCover.Core
                     break;
             }
             return areas;
+        }
+
+        /// <summary>
+        /// The floor below an aimed point: a little back toward the caster (off a wall it hit), then straight
+        /// down, up to <see cref="Ruleset.groundProbeMetres"/>. Nothing below: the point as it is.
+        /// </summary>
+        Vec3 Ground(int casterId, Vec3 origin, Vec3 point, int tick)
+        {
+            Vec3 back = new Vec3(origin.x - point.x, 0f, origin.z - point.z);
+            float len = back.Magnitude;
+            if (len > 1e-4f) point += back / len * Math.Min(len, Rules.groundProbeBack);
+            Vec3 start = point + Vec3.Up * 0.05f;
+            if (CastRay(casterId, start, -Vec3.Up, Rules.groundProbeMetres, tick, out var floor) && floor.kind != HitKind.Nothing && floor.kind != HitKind.Player)
+                return floor.point;
+            return point;
         }
 
         /// <summary>

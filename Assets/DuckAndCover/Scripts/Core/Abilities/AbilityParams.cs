@@ -22,8 +22,9 @@ namespace DuckAndCover.Core
     /// one taken). The rules never special-case a named talent; they only read the result.
     ///
     /// Numeric params:
-    ///   cooldown, charges, castTime, duration, ultimateCost, range, radius, count, spreadDegrees, maxTargets
-    ///   effect.KEY.amount | duration | delay | interval | radius
+    ///   cooldown, charges, castTime, duration, ultimateCost, range, radius, count, spreadDegrees, maxTargets,
+    ///   breaksControl (0 or 1)
+    ///   effect.KEY.amount | duration | delay | interval | radius | lift
     ///   object.lifetime | health | radius | interval | armTime | maxPerOwner | maxTargets | width | height
     ///          | reflect | regen | regenDelay | hitRadius | followAlly (0 or 1)
     ///   object.effect.KEY.amount | duration | delay | interval | radius
@@ -184,6 +185,7 @@ namespace DuckAndCover.Core
                 case "maxTargets": found.Add(new Slot { get = () => t.maxTargets, set = v => t.maxTargets = (int)v, whole = true }); return found;
                 case "notchDamage": if (d.maxNotches > 0) found.Add(new Slot { get = () => d.notchDamage, set = v => d.notchDamage = v }); return found;
                 case "maxNotches": if (d.maxNotches > 0) found.Add(new Slot { get = () => d.maxNotches, set = v => d.maxNotches = (int)v, whole = true }); return found;
+                case "breaksControl": found.Add(new Slot { get = () => d.breaksControl ? 1f : 0f, set = v => d.breaksControl = v >= 0.5f }); return found;
             }
 
             var parts = param.Split('.');
@@ -257,6 +259,7 @@ namespace DuckAndCover.Core
                     case "delay": found.Add(new Slot { get = () => e.delay, set = v => e.delay = v }); break;
                     case "interval": found.Add(new Slot { get = () => e.interval, set = v => e.interval = v }); break;
                     case "radius": found.Add(new Slot { get = () => e.radius, set = v => e.radius = v }); break;
+                    case "lift": found.Add(new Slot { get = () => e.lift, set = v => e.lift = v }); break;
                 }
             }
         }

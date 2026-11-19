@@ -107,6 +107,7 @@ namespace DuckAndCover.Core
                 if (t.shape == Shapes.Sphere && t.radius <= 0f) errors.Add(w + "a sphere needs a radius");
                 if (t.shape == Shapes.Arc && (t.range <= 0f || t.spreadDegrees <= 0f)) errors.Add(w + "an arc needs a range and a spreadDegrees");
                 if (t.shape == Shapes.Sphere && t.origin == Origins.AimPoint && t.range <= 0f) errors.Add(w + "an aimed sphere needs a range");
+                if (t.ground && (t.shape != Shapes.Sphere || t.origin != Origins.AimPoint)) errors.Add(w + "ground only works on an aimed sphere");
                 if (t.count < 1) errors.Add(w + "count must be at least 1");
                 if (t.maxTargets < 0 || t.spreadDegrees < 0f) errors.Add(w + "maxTargets and spreadDegrees can't be negative");
                 bool hasScript = !string.IsNullOrEmpty(a.scriptId);
@@ -201,7 +202,8 @@ namespace DuckAndCover.Core
                         if (Status(e.status) == null) errors.Add(x + "unknown status '" + e.status + "'");
                         break;
                     case EffectKinds.Push:
-                        if (e.amount <= 0f) errors.Add(x + "needs a distance (amount)");
+                        if (e.amount <= 0f && e.lift <= 0f) errors.Add(x + "needs a distance (amount) or a lift");
+                        if (e.lift < 0f) errors.Add(x + "lift can't be negative");
                         if (!PushDirections.IsKnown(e.direction)) errors.Add(x + "unknown direction '" + e.direction + "'");
                         break;
                     case EffectKinds.Spawn:

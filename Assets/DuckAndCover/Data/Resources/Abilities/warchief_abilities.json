@@ -1,0 +1,176 @@
+{
+  "abilities": [
+    {
+      "id": "warchief_leap",
+      "displayName": "War Leap",
+      "description": "Leap up to 12 m to where you aim. Where you land, enemies within 3.5 m take 30 damage and are knocked up: thrown into the air and stunned for 0.75 seconds. Cooldown 10 s.",
+      "cooldown": 10,
+      "targeting": {
+        "shape": "sphere",
+        "origin": "aimPoint",
+        "range": 12,
+        "radius": 3.5,
+        "affects": "enemies",
+        "ground": true
+      },
+      "effects": [
+        {
+          "kind": "push",
+          "amount": 12,
+          "duration": 0.8,
+          "direction": "leap",
+          "lift": 1.8,
+          "affects": "self"
+        },
+        {
+          "kind": "damage",
+          "amount": 30,
+          "delay": 0.8
+        },
+        {
+          "kind": "stun",
+          "duration": 0.75,
+          "delay": 0.8
+        },
+        {
+          "kind": "push",
+          "duration": 0.6,
+          "direction": "away",
+          "lift": 1.2,
+          "delay": 0.8
+        }
+      ]
+    },
+    {
+      "id": "warchief_axe_throw",
+      "displayName": "Axe Throw",
+      "description": "Throw a hand axe up to 25 m along your aim. The first enemy it hits takes 40 damage and is stunned for 1.25 seconds. Cooldown 12 s.",
+      "cooldown": 12,
+      "targeting": {
+        "shape": "ray",
+        "range": 25,
+        "affects": "enemies"
+      },
+      "effects": [
+        {
+          "kind": "damage",
+          "amount": 40
+        },
+        {
+          "kind": "stun",
+          "duration": 1.25
+        }
+      ]
+    },
+    {
+      "id": "warchief_rage",
+      "displayName": "Rage",
+      "description": "For 6 seconds, regenerate 15 health a second and deal 20% more damage. Cooldown 20 s.",
+      "cooldown": 20,
+      "duration": 6,
+      "targeting": {
+        "shape": "self",
+        "origin": "caster",
+        "affects": "self"
+      },
+      "effects": [
+        {
+          "kind": "cleanse",
+          "affects": "self",
+          "tag": "unbroken"
+        },
+        {
+          "kind": "status",
+          "status": "warchief_rage",
+          "amount": 0.2,
+          "affects": "self"
+        },
+        {
+          "kind": "status",
+          "status": "warchief_rage_regen",
+          "amount": 15,
+          "affects": "self"
+        },
+        {
+          "kind": "status",
+          "status": "warchief_blood_rage",
+          "amount": 0.15,
+          "affects": "self",
+          "tag": "bloodRage"
+        },
+        {
+          "kind": "status",
+          "status": "warchief_frenzy",
+          "amount": 0.2,
+          "affects": "self",
+          "tag": "frenzy"
+        }
+      ]
+    }
+  ],
+  "statuses": [
+    {
+      "id": "warchief_rage",
+      "displayName": "Rage",
+      "negative": false,
+      "duration": 6,
+      "stacking": "refresh",
+      "scaleWithStrength": true,
+      "stats": [
+        {
+          "stat": "damageDealt",
+          "op": "percent",
+          "value": 1,
+          "when": ""
+        }
+      ]
+    },
+    {
+      "id": "warchief_rage_regen",
+      "displayName": "Rage regeneration",
+      "negative": false,
+      "duration": 6,
+      "stacking": "refresh",
+      "scaleWithStrength": true,
+      "interval": 0.5,
+      "tickEffects": [
+        {
+          "kind": "heal",
+          "amount": 0.5
+        }
+      ]
+    },
+    {
+      "id": "warchief_blood_rage",
+      "displayName": "Blood Rage",
+      "negative": false,
+      "duration": 6,
+      "stacking": "refresh",
+      "scaleWithStrength": true,
+      "stats": [
+        {
+          "stat": "lifeSteal",
+          "op": "add",
+          "value": 1,
+          "when": ""
+        }
+      ]
+    },
+    {
+      "id": "warchief_frenzy",
+      "displayName": "Frenzy",
+      "negative": false,
+      "duration": 6,
+      "stacking": "refresh",
+      "scaleWithStrength": true,
+      "stats": [
+        {
+          "stat": "fireRate",
+          "op": "percent",
+          "value": 1,
+          "when": ""
+        }
+      ]
+    }
+  ]
+}

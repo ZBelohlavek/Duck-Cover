@@ -115,10 +115,17 @@ static class WaveHarness
         h.Forget();
         float t = 0f, wardenIn = 0f;
         var waveIds = new HashSet<int>(wave);
+        bool melee = h.Combat.Weapons.Library.Weapon(h.Combat.Weapons.Weapons(A1).CurrentId).kind == WeaponKind.Melee;
         while (t < cap && Alive(h.Combat.Units, wave) > 0)
         {
             if (wardenIn <= 0f) { WardenPulse(h.Combat, wave[3]); wardenIn += WardenEvery; }
             int target = wave.First(h.Combat.Units.IsAlive);
+            if (melee)
+            {
+                // A melee hero walks up to the unit he is hitting, `distance` metres short of it.
+                var at = h.Combat.Units.Unit(target).position;
+                h.Place(A1, at.x, at.z - distance);
+            }
             var chest = Hitboxes.Chest(h.R, h.Combat.Units.Unit(target).Pose());
             var center = Center(h.Combat.Units, wave) + Vec3.Up * 0.6f;
             for (int slot = 0; slot < h.Unit(A1).slots.Count; slot++)

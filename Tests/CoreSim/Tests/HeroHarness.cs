@@ -26,7 +26,7 @@ sealed class HeroHarness
     public Ruleset R => Match.Rules;
     public AbilityRunner Abilities => Combat.Abilities;
 
-    public static string[] StarterIds = { "bulwark", "lancer", "mender", "rigger", "skulk" };
+    public static string[] StarterIds = { "bulwark", "lancer", "mender", "rigger", "warchief", "skulk" };
 
     /// <summary>Every ability file, loaded the strict way (an unknown key fails).</summary>
     public static AbilityLibrary DataLibrary() =>

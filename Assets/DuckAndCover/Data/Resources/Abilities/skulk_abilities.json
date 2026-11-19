@@ -3,7 +3,7 @@
         {
             "id": "skulk_shrapnel",
             "displayName": "Shrapnel Charge",
-            "description": "Toss a charge up to 8 m ahead. After 0.6 seconds it bursts, dealing 60 damage to enemies within 3 m. Cooldown 14 s.",
+            "description": "Toss a charge up to 8 m ahead. After 0.6 seconds it bursts, dealing 40 damage to each enemy within 3 m. Cooldown 14 s.",
             "cooldown": 14,
             "targeting": {
                 "shape": "sphere",
@@ -15,7 +15,7 @@
             "effects": [
                 {
                     "kind": "damage",
-                    "amount": 60,
+                    "amount": 40,
                     "delay": 0.6
                 },
                 {
@@ -84,14 +84,15 @@
         {
             "id": "skulk_knife",
             "displayName": "Serrated Knife",
-            "description": "Slash everything in a wide arc right in front of you for 45 damage. Every enemy the knife kills (hero, minion or camp creature) adds a notch: 3 more knife damage, up to 10 notches, kept for the whole match. Cooldown 13 s.",
+            "description": "Slash the nearest enemy in a wide arc right in front of you for 45 damage. Every enemy the knife kills (hero, minion or camp creature) adds a notch: 3 more knife damage, up to 10 notches, kept for the whole match. Cooldown 13 s.",
             "cooldown": 13,
             "targeting": {
                 "shape": "arc",
                 "origin": "caster",
                 "range": 2.5,
                 "spreadDegrees": 110,
-                "affects": "enemies"
+                "affects": "enemies",
+                "maxTargets": 1
             },
             "effects": [
                 {
