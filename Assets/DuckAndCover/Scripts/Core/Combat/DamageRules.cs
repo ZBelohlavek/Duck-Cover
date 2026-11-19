@@ -222,6 +222,8 @@ namespace DuckAndCover.Core
             bool attacker = IsKnown(attackerId);
             if (attacker && attackerId != targetId && SameTeam(attackerId, targetId) && !Rules.friendlyFire) return 0f;
 
+            if (target.invulnerable && !(attacker && attackerId != targetId && SameTeam(attackerId, targetId))) return 0f;
+
             float scaled = amount * Math.Max(0f, Stat(targetId, StatIds.DamageTaken));
             if (attacker) scaled *= Math.Max(0f, Stat(attackerId, StatIds.DamageDealt));
             if (scaled <= 0f) return 0f;
@@ -259,6 +261,32 @@ namespace DuckAndCover.Core
                 if (UnitIds.IsUnit(targetId)) DestroyUnit(targetId, killer, "killed");
                 else match.EliminatePlayer(targetId, killer);
             }
+            return lost + absorbed;
+        }
+
+        /// <summary>
+        /// Finish off an enemy hero whose health is at or below <paramref name="share"/> of their max health: they
+        /// lose all their health and shields at once (a DamagedEvent and the elimination, credited to the
+        /// attacker). Units are never executed, and an untouchable hero isn't. Returns what was taken, 0 when
+        /// the target was too healthy or out of reach.
+        /// </summary>
+        public float Execute(int attackerId, int targetId, float share, string abilityId = "")
+        {
+            if (share <= 0f || UnitIds.IsUnit(targetId) || !match.State.IsPlaying || !IsAlive(targetId)) return 0f;
+            if (attackerId == targetId || !IsKnown(attackerId) || SameTeam(attackerId, targetId)) return 0f;
+            if (DamageGate != null && !DamageGate(attackerId, targetId)) return 0f;
+            var target = Unit(targetId);
+            if (target.invulnerable || target.health > share * MaxHealth(targetId) + 1e-3f) return 0f;
+            float absorbed = target.Shield, lost = target.health;
+            target.shields.Clear();
+            target.health = 0f;
+            target.sinceDamaged = 0f;
+            Publish(new DamagedEvent
+            {
+                attackerId = attackerId, targetId = targetId, amount = lost + absorbed, absorbed = absorbed,
+                healthLeft = 0f, abilityId = abilityId ?? "", objectId = 0, eliminated = true,
+            });
+            match.EliminatePlayer(targetId, attackerId);
             return lost + absorbed;
         }
 

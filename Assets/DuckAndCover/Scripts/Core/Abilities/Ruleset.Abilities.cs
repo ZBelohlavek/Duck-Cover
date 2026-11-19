@@ -56,6 +56,8 @@ namespace DuckAndCover.Core
         public float groundProbeMetres = 30f;
         /// <summary>...after stepping this far back toward the caster, so a wall the aim hit doesn't stand in the way.</summary>
         public float groundProbeBack = 0.5f;
+        /// <summary>A pull toward the caster (PushDirections.Caster) stops this far short of them (metres).</summary>
+        public float pullStopMetres = 1.2f;
         /// <summary>Stuns longer than this are cut short.</summary>
         public float maxStunSeconds = 2f;
         /// <summary>Seconds of the ambush window that attacking out of stealth opens (StatConditions.Ambush), before the ambushSeconds stat.</summary>
@@ -86,6 +88,7 @@ namespace DuckAndCover.Core
             if (escortRadius < 0f) e.Add("escortRadius can't be negative");
             if (ultimateChargeMax <= 0f) e.Add("ultimateChargeMax must be positive");
             if (minMoveSpeed < 0f || minMoveSpeed > 1f) e.Add("minMoveSpeed must be between 0 and 1");
+            if (pullStopMetres < 0f) e.Add("pullStopMetres can't be negative");
             if (maxStunSeconds <= 0f) e.Add("maxStunSeconds must be positive");
             if (ambushSeconds < 0f) e.Add("ambushSeconds can't be negative");
             if (stealthShimmerRange < 0f) e.Add("stealthShimmerRange can't be negative");

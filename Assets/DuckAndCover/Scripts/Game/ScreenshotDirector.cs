@@ -51,6 +51,7 @@ namespace DuckAndCover.Game
             new Shot("10-abilities", DummiesUseAbilities, 1.6f),
             new Shot("11-hush", DummyThrowsHush, 1.0f),
             new Shot("11b-war-leap", DummyWarLeaps, 1.0f),
+            new Shot("11c-vampire", DummyVampireGrabs, 0.9f),
             new Shot("12-hero-hud", LevelUpAndLook, 1.2f),
             // Environment kit: the lane mock-up, built far off to one side of the real map.
             new Shot("13-lane", () => LaneShot(new Vector3(0f, 1.8f, -50f), new Vector3(0f, 1.2f, -38f)), 1.0f),
@@ -459,6 +460,52 @@ namespace DuckAndCover.Game
                 direction = (Hitboxes.Chest(rules, to.Pose(true)) - eye).Normalized,
             });
             if (!result.IsAccepted) Debug.LogWarning("Duck and Cover: the capture's war chief could not swing: " + result.reason);
+        }
+
+        /// <summary>
+        /// The Mender dummy becomes the vampire 5 m in front of the player: Grasping Claw seizes them (stealing max
+        /// health, so the health bar shortens) and he keeps throwing red Blood Darts until the shot is taken.
+        /// </summary>
+        static void DummyVampireGrabs()
+        {
+            var runner = SessionRunner.Instance;
+            if (runner == null || runner.Heroes == null || runner.Client == null) return;
+            int vampire = CombatServer.FirstDummyId + 2;
+            int me = runner.Client.PlayerId;
+            var mine = runner.Combat.Movement.Motion(me);
+            if (mine == null) return;
+            if (!runner.Heroes.GiveKit(vampire, "vampire").IsAccepted) { Debug.LogError("Duck and Cover: the capture could not give a dummy the vampire's kit."); return; }
+            runner.Combat.Weapons.SetLoadout(vampire, runner.Combat.Weapons.Library.LoadoutFor("vampire"));
+            // Full health first, so the earlier shots' damage plus the grab can't take the player down.
+            var unit = runner.Combat.Damage.Unit(me);
+            if (unit != null) unit.health = runner.Combat.Damage.MaxHealth(me);
+            Vec3 ahead = MoveMath.Forward(mine.yaw);
+            runner.Combat.Movement.Teleport(vampire, mine.position + ahead * 5f, mine.yaw + 180f);
+            Vec3 side = MoveMath.Right(mine.yaw);
+            WatchFrom((mine.position + ahead * 2.5f + side * 7f).ToVector3() + Vector3.up * 2.5f, (mine.position + ahead * 2.5f).ToVector3() + Vector3.up * 1f);
+            if (!DummyCast(runner, vampire, 0, me, 0f)) Debug.LogError("Duck and Cover: the capture's vampire could not use Grasping Claw.");
+            CombatView.Instance.StartCoroutine(ThrowDarts(runner, vampire, me, 1.2f));
+            CombatView.Instance.StartCoroutine(Expect(() => runner.Combat.Damage.Unit(me) != null && runner.Combat.Damage.Unit(me).HasStatus("vampire_drained"), 0.5f,
+                "the player drained by Grasping Claw"));
+        }
+
+        /// <summary>The vampire dummy (server side) throws a dart at the player every quarter second for a while.</summary>
+        static IEnumerator ThrowDarts(SessionRunner runner, int dummy, int targetId, float seconds)
+        {
+            var rules = runner.Match.Rules;
+            for (float t = 0f; t < seconds; t += 0.26f)
+            {
+                var from = runner.Combat.Movement.Motion(dummy);
+                var to = runner.Combat.Movement.Motion(targetId);
+                if (from == null || to == null) yield break;
+                Vec3 eye = from.position + Vec3.Up * rules.eyeHeight;
+                runner.Combat.Apply(new FireCommand
+                {
+                    playerId = dummy, weaponId = "blood_darts", origin = eye, tick = runner.Match.State.tick,
+                    direction = (Hitboxes.Chest(rules, to.Pose(true)) - eye).Normalized,
+                });
+                yield return new WaitForSecondsRealtime(0.26f);
+            }
         }
 
         /// <summary>Back to the player's eyes, a few levels up, so the ability bar and the upgrade on offer show.</summary>

@@ -22,8 +22,8 @@ namespace DuckAndCover.Core
     ///
     /// Numeric params:
     ///   cooldown, charges, castTime, duration, ultimateCost, range, radius, count, spreadDegrees, maxTargets,
-    ///   breaksControl (0 or 1)
-    ///   effect.KEY.amount | duration | delay | interval | radius | lift
+    ///   arcDegrees, breaksControl (0 or 1)
+    ///   effect.KEY.amount | duration | delay | interval | radius | lift | lifeSteal | minTargets
     ///   object.lifetime | health | radius | interval | armTime | maxPerOwner | maxTargets | width | height
     ///          | reflect | regen | regenDelay | hitRadius | followAlly (0 or 1)
     ///   object.effect.KEY.amount | duration | delay | interval | radius
@@ -178,6 +178,7 @@ namespace DuckAndCover.Core
                 case "count": found.Add(new Slot { get = () => t.count, set = v => t.count = (int)v, whole = true, min = 1f }); return found;
                 case "spreadDegrees": found.Add(new Slot { get = () => t.spreadDegrees, set = v => t.spreadDegrees = v }); return found;
                 case "maxTargets": found.Add(new Slot { get = () => t.maxTargets, set = v => t.maxTargets = (int)v, whole = true }); return found;
+                case "arcDegrees": found.Add(new Slot { get = () => t.arcDegrees, set = v => t.arcDegrees = v }); return found;
                 case "breaksControl": found.Add(new Slot { get = () => d.breaksControl ? 1f : 0f, set = v => d.breaksControl = v >= 0.5f }); return found;
             }
 
@@ -241,6 +242,8 @@ namespace DuckAndCover.Core
                     case "interval": found.Add(new Slot { get = () => e.interval, set = v => e.interval = v }); break;
                     case "radius": found.Add(new Slot { get = () => e.radius, set = v => e.radius = v }); break;
                     case "lift": found.Add(new Slot { get = () => e.lift, set = v => e.lift = v }); break;
+                    case "lifeSteal": found.Add(new Slot { get = () => e.lifeSteal, set = v => e.lifeSteal = v }); break;
+                    case "minTargets": found.Add(new Slot { get = () => e.minTargets, set = v => e.minTargets = (int)v, whole = true }); break;
                 }
             }
         }

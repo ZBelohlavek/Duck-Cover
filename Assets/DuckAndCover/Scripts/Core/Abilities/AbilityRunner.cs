@@ -30,7 +30,7 @@ namespace DuckAndCover.Core
         readonly Dictionary<string, IEffect> effects = new Dictionary<string, IEffect>();
         readonly Dictionary<string, ResolvedAbility> resolved = new Dictionary<string, ResolvedAbility>();
 
-        Ruleset Rules => match.Rules;
+        internal Ruleset Rules => match.Rules;
         MatchState Match => match.State;
 
         /// <summary>
@@ -64,6 +64,7 @@ namespace DuckAndCover.Core
             effects[EffectKinds.Cleanse] = new CleanseEffect();
             effects[EffectKinds.Push] = new PushEffect();
             effects[EffectKinds.Spawn] = new SpawnEffect();
+            effects[EffectKinds.Execute] = new ExecuteEffect();
 
             events.Subscribe(OnEvent);
         }
@@ -346,6 +347,7 @@ namespace DuckAndCover.Core
             foreach (var effect in def.effects)
             {
                 if (!ability.IsOn(effect)) continue;
+                if (effect.minTargets > 0 && all.Count < effect.minTargets) continue; // didn't catch enough
                 var e = effect;
                 if (e.duration <= 0f && def.duration > 0f && LastsForAbility(e.kind))
                 {

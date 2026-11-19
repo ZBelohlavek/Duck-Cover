@@ -144,6 +144,45 @@ harmful effect.
 | 18 talent | **Wide Landing**: War Leap's landing reaches 1.5 m further. | **Twin Axes**: Axe Throw holds two charges. |
 | 20 capstone | **Berserker**: Rage gives 20% more damage on top, and you swing 20% faster while it is up. | **Warlord**: Your stuns, knock-ups and Rage last 25% longer, and Rage lasts 2 seconds longer. |
 
+## Nocturne, the vampire lord (striker)
+
+Health 250. Weapon: Blood Darts, thrown from his hands (no gun). A brawler who drains what he hits: he grabs a foe,
+steals their health and sweeps through a crowd to heal. Nocturne is a working name.
+
+- **Left mouse: Blood Darts.** Each chop of a hand throws one red dart: 28 damage, four throws a second. Darts fly fast
+  (75 m/s) and straight, so they can be seen and dodged, and a dart counts where it strikes: 1.75x to the head. No ammo
+  and no reload: the throwing rhythm is the only limit.
+- **E: Grasping Claw.** A huge claw lunges up to 6 m where you aim and seizes the enemy nearest that spot (within 1.5 m):
+  45 damage, a 2 m pull toward him, and he steals 30 of their max health for 30 seconds (they lose it; he gains it, and
+  the health with it). Each grab refreshes the steal and adds to it, up to 3 times (90). A miss steals nothing. The
+  drain is a harmful effect, so a cleanse (Mender's Purge) gives it back. Cooldown 14 s.
+- **F: Bat Swarm.** Burst into a cloud of bats and fly 7 m along your aim. For half a second he takes no damage and
+  enemies can't put harmful effects on him. Cooldown 13 s.
+- **X: Crimson Sweep.** Rake the claws through everyone within 5 m in a 120 degree arc in front of him: 55 damage each,
+  and he heals for 40% of the damage dealt. Cooldown 16 s.
+
+No ability kills a full-health hero on its own. The only kill is Executioner (right path), which finishes off
+enemies already at 20% health or less (30% with Deathmark). Units (minions, Bastions, camp guards) are never executed.
+"Crits" are head hits: the game has no random crits, and the right path makes head hits much stronger (the
+`headDamage` stat).
+
+Left (Z) is the **Blood Tyrant** path: a life-stealing tank who gets in and siphons health to keep going, ending in a
+draining aura when the sweep hits a crowd. Right (V) is the **Nightstalker** path: elusive with Bat Swarm, big head hits
+with the darts, and an execute on the grab.
+
+| Level | Left (hold Z) | Right (hold V) |
+|---|---|---|
+| 2 trait | **Thick Blood**: +25 max health. | **Keen Eye**: Your head hits deal 10% more damage. |
+| 4 talent | **Deep Siphon**: Crimson Sweep heals you for 60% of its damage instead of 40%. | **Long Flight**: Bat Swarm flies 3 m further. |
+| 6 trait | **Thirst**: Heal for 8% of the damage your darts deal. | **Quick Hands**: You throw darts 8% faster. |
+| 8 ultimate | **Wide Sweep**: Crimson Sweep reaches 1.5 m further and sweeps 180 degrees instead of 120. | **Quick Sweep**: Crimson Sweep recovers 3 seconds sooner. |
+| 10 passive | **Blood Bank**: Healing you receive is 10% stronger. | **Night Runner**: Move 8% faster. |
+| 12 talent | **Greedy Grasp**: Grasping Claw steals 45 max health a grab instead of 30. | **Twin Flight**: Bat Swarm holds two charges. |
+| 14 trait | **Iron Veins**: +8% max health. | **Killing Eye**: Your head hits deal 25% more damage. |
+| 16 talent | **Blood Aura**: When Crimson Sweep hits 3 or more enemies, you wear a draining aura for 5 seconds: enemies within 4 m lose 15 health a second, and you gain what they lose. | **Executioner**: Grasping Claw finishes off an enemy hero left at 20% health or less. |
+| 18 talent | **Hungry Aura**: Blood Aura needs only 2 enemies hit and lasts 2 seconds longer. | **Out of the Dark**: For 3 seconds after Bat Swarm, your darts deal 30% more damage. |
+| 20 capstone | **Blood Tyrant**: Heal for 10% more of the damage your darts deal, and Blood Aura reaches 1.5 m further. | **Deathmark**: Your head hits deal 20% more damage, and Executioner finishes off enemies at 30% health instead of 20%. |
+
 ## Against minion waves (WP20)
 
 Every ability and weapon hits minions, Bastions and camp guards as it hits heroes. Each hero's job against a wave,

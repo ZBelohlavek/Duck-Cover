@@ -106,6 +106,8 @@ namespace DuckAndCover.Core
         public const string MagazineSize = "magazineSize";
         /// <summary>Share of weapon damage dealt to enemies that heals the shooter (0.1 = 10%).</summary>
         public const string LifeSteal = "lifeSteal";
+        /// <summary>Extra damage on weapon head hits, as a share on top of the weapon's head multiplier (0.25 = head hits deal 25% more).</summary>
+        public const string HeadDamage = "headDamage";
         /// <summary>Metres each weapon hit pushes an enemy along the shot (0 = none).</summary>
         public const string WeaponPush = "weaponPush";
         /// <summary>Above 0: weaponPush only shoves enemies this many metres away or closer (a point-blank knockback). 0 = any distance.</summary>

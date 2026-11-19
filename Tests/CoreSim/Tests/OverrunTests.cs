@@ -319,8 +319,10 @@ static class OverrunBotTests
     {
         // A sample, not a guarantee: about a quarter of the report's seeds run past 15 minutes (see
         // "report overrun 12"). Seed 10 did until the Mender rework moved it to the 2-minute tie-break, with
-        // the report's spread unchanged (9 of 12 inside the cap before and after), so this plays seed 11.
-        var r = OverrunSim.Play(11);
+        // the report's spread unchanged (9 of 12 inside the cap before and after), so it played seed 11. Adding the
+        // vampire to the random picks moved seed 11 past the cap while the report went from 8 to 11 of 12 inside
+        // it, so this plays seed 5 (won on score at 13:59).
+        var r = OverrunSim.Play(5);
         Check.True(r.seconds <= ModeDef.Overrun().timeCapSeconds + 1f, "ended by the cap (" + r.seconds.ToString("0") + " s)");
         Check.True(r.winner != TeamId.None, "with a winner");
         Check.True(r.minionsKilled > 0 && r.heroDeaths > 0, "waves and heroes fought");

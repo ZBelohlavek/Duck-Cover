@@ -1,0 +1,454 @@
+{
+    "id": "vampire",
+    "displayName": "Nocturne",
+    "role": "striker",
+    "weaponId": "blood_darts",
+    "maxHealth": 250,
+    "abilities": [
+        "vampire_grasp",
+        "vampire_bats"
+    ],
+    "ultimateId": "vampire_sweep",
+    "passiveId": "",
+    "levels": [
+        {
+            "level": 2,
+            "options": [
+                "vampire_thick_blood",
+                "vampire_keen_eye"
+            ]
+        },
+        {
+            "level": 4,
+            "options": [
+                "vampire_deep_siphon",
+                "vampire_long_flight"
+            ]
+        },
+        {
+            "level": 6,
+            "options": [
+                "vampire_thirst",
+                "vampire_quick_hands"
+            ]
+        },
+        {
+            "level": 8,
+            "options": [
+                "vampire_wide_sweep",
+                "vampire_quick_sweep"
+            ]
+        },
+        {
+            "level": 10,
+            "options": [
+                "vampire_blood_bank",
+                "vampire_night_runner"
+            ]
+        },
+        {
+            "level": 12,
+            "options": [
+                "vampire_greedy_grasp",
+                "vampire_twin_flight"
+            ]
+        },
+        {
+            "level": 14,
+            "options": [
+                "vampire_iron_veins",
+                "vampire_killing_eye"
+            ]
+        },
+        {
+            "level": 16,
+            "options": [
+                "vampire_blood_aura",
+                "vampire_executioner"
+            ]
+        },
+        {
+            "level": 18,
+            "options": [
+                "vampire_hungry_aura",
+                "vampire_out_of_the_dark"
+            ]
+        },
+        {
+            "level": 20,
+            "options": [
+                "vampire_blood_tyrant",
+                "vampire_deathmark"
+            ]
+        }
+    ],
+    "upgrades": [
+        {
+            "id": "vampire_thick_blood",
+            "displayName": "Thick Blood",
+            "description": "+25 max health.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "maxHealth",
+                    "op": "add",
+                    "value": 25,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_keen_eye",
+            "displayName": "Keen Eye",
+            "description": "Your head hits deal 10% more damage.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "headDamage",
+                    "op": "add",
+                    "value": 0.1,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_deep_siphon",
+            "displayName": "Deep Siphon",
+            "description": "Crimson Sweep heals you for 60% of its damage instead of 40%.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "vampire_sweep",
+                    "param": "effect.damage.lifeSteal",
+                    "op": "add",
+                    "value": 0.2,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_long_flight",
+            "displayName": "Long Flight",
+            "description": "Bat Swarm flies 3 m further.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "vampire_bats",
+                    "param": "effect.push.amount",
+                    "op": "add",
+                    "value": 3,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_thirst",
+            "displayName": "Thirst",
+            "description": "Heal for 8% of the damage your darts deal.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "lifeSteal",
+                    "op": "add",
+                    "value": 0.08,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_quick_hands",
+            "displayName": "Quick Hands",
+            "description": "You throw darts 8% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "fireRate",
+                    "op": "percent",
+                    "value": 0.08,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_wide_sweep",
+            "displayName": "Wide Sweep",
+            "description": "Crimson Sweep reaches 1.5 m further and sweeps 180 degrees instead of 120.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "vampire_sweep",
+                    "param": "radius",
+                    "op": "add",
+                    "value": 1.5,
+                    "text": ""
+                },
+                {
+                    "ability": "vampire_sweep",
+                    "param": "arcDegrees",
+                    "op": "add",
+                    "value": 60,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_quick_sweep",
+            "displayName": "Quick Sweep",
+            "description": "Crimson Sweep recovers 3 seconds sooner.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "vampire_sweep",
+                    "param": "cooldown",
+                    "op": "add",
+                    "value": -3,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_blood_bank",
+            "displayName": "Blood Bank",
+            "description": "Passive. Healing you receive is 10% stronger.",
+            "kind": "passive",
+            "stats": [
+                {
+                    "stat": "healingTaken",
+                    "op": "percent",
+                    "value": 0.1,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_night_runner",
+            "displayName": "Night Runner",
+            "description": "Passive. Move 8% faster.",
+            "kind": "passive",
+            "stats": [
+                {
+                    "stat": "moveSpeed",
+                    "op": "percent",
+                    "value": 0.08,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_greedy_grasp",
+            "displayName": "Greedy Grasp",
+            "description": "Grasping Claw steals 45 max health a grab instead of 30.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "vampire_grasp",
+                    "param": "effect.vampire_drained.amount",
+                    "op": "add",
+                    "value": 15,
+                    "text": ""
+                },
+                {
+                    "ability": "vampire_grasp",
+                    "param": "effect.vampire_gorged.amount",
+                    "op": "add",
+                    "value": 15,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_twin_flight",
+            "displayName": "Twin Flight",
+            "description": "Bat Swarm holds two charges.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "vampire_bats",
+                    "param": "charges",
+                    "op": "add",
+                    "value": 1,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_iron_veins",
+            "displayName": "Iron Veins",
+            "description": "+8% max health.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "maxHealth",
+                    "op": "percent",
+                    "value": 0.08,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_killing_eye",
+            "displayName": "Killing Eye",
+            "description": "Your head hits deal 25% more damage.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "headDamage",
+                    "op": "add",
+                    "value": 0.25,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_blood_aura",
+            "displayName": "Blood Aura",
+            "description": "When Crimson Sweep hits 3 or more enemies, you wear a draining aura for 5 seconds: enemies within 4 m lose 15 health a second, and you gain what they lose.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "vampire_sweep",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "bloodAura"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_executioner",
+            "displayName": "Executioner",
+            "description": "Grasping Claw finishes off an enemy hero left at 20% health or less.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "vampire_grasp",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "execute"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_hungry_aura",
+            "displayName": "Hungry Aura",
+            "description": "Blood Aura needs only 2 enemies hit and lasts 2 seconds longer.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "vampire_sweep",
+                    "param": "effect.bloodAura.minTargets",
+                    "op": "add",
+                    "value": -1,
+                    "text": ""
+                },
+                {
+                    "ability": "vampire_sweep",
+                    "param": "object.lifetime",
+                    "op": "add",
+                    "value": 2,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_out_of_the_dark",
+            "displayName": "Out of the Dark",
+            "description": "For 3 seconds after Bat Swarm, your darts deal 30% more damage.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "vampire_bats",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "outOfTheDark"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_blood_tyrant",
+            "displayName": "Blood Tyrant",
+            "description": "Heal for 10% more of the damage your darts deal, and Blood Aura reaches 1.5 m further.",
+            "kind": "capstone",
+            "stats": [
+                {
+                    "stat": "lifeSteal",
+                    "op": "add",
+                    "value": 0.1,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [
+                {
+                    "ability": "vampire_sweep",
+                    "param": "object.radius",
+                    "op": "add",
+                    "value": 1.5,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "vampire_deathmark",
+            "displayName": "Deathmark",
+            "description": "Your head hits deal 20% more damage, and Executioner finishes off enemies at 30% health instead of 20%.",
+            "kind": "capstone",
+            "stats": [
+                {
+                    "stat": "headDamage",
+                    "op": "add",
+                    "value": 0.2,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [
+                {
+                    "ability": "vampire_grasp",
+                    "param": "effect.execute.amount",
+                    "op": "add",
+                    "value": 0.1,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        }
+    ]
+}

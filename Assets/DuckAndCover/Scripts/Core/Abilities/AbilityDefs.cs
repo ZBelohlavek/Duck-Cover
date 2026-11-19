@@ -103,6 +103,11 @@ namespace DuckAndCover.Core
         /// so aiming at a wall or into the air still lands on the ground.
         /// </summary>
         public bool ground;
+        /// <summary>
+        /// Spheres around the caster: only targets (and objects) within this many degrees, left to right,
+        /// of the caster's level aim count (a sweep in front). 0 = all the way round.
+        /// </summary>
+        public float arcDegrees;
 
         public TargetingDef Clone() => (TargetingDef)MemberwiseClone();
     }
@@ -113,7 +118,8 @@ namespace DuckAndCover.Core
     /// duration), slow (amount = share of speed taken, duration), stun (duration), cleanse,
     /// push (amount = metres, or the most metres for a leap; duration = seconds; direction; lift = metres
     /// up at the top of the arc, so a push with only a lift is a knock-up), spawn (objectId), reload,
-    /// healRounds (amount = health each round gives, radius = splash around the teammate hit).
+    /// healRounds (amount = health each round gives, radius = splash around the teammate hit),
+    /// execute (amount = share of max health at or below which an enemy hero is finished off).
     /// </summary>
     [Serializable]
     public class EffectDef
@@ -136,6 +142,13 @@ namespace DuckAndCover.Core
         public float radius;
         /// <summary>Push: metres the target rises at the top of the arc (a leap, a knock-up). 0 = level with the ground.</summary>
         public float lift;
+        /// <summary>Damage: share of the damage dealt that heals whoever is credited (the caster or the object's owner). 0 = none.</summary>
+        public float lifeSteal;
+        /// <summary>
+        /// Above 0: the effect only happens when the ability caught at least this many targets (a sweep that
+        /// pays off when it hits a crowd). Abilities only; objects and statuses ignore it.
+        /// </summary>
+        public int minTargets;
         /// <summary>
         /// Overrides who this effect reaches: empty = the ability's targets; "self" = the caster once,
         /// whatever was hit; otherwise filters the ability's targets (<see cref="Affects"/>).
@@ -189,6 +202,11 @@ namespace DuckAndCover.Core
         /// (StatConditions.Ambush). A reveal status on the bearer wins over it.
         /// </summary>
         public bool stealth;
+        /// <summary>
+        /// Untouchable: the bearer takes no damage and enemies can't put harmful statuses on them (a dash
+        /// as a cloud of bats). Pushes still move them.
+        /// </summary>
+        public bool invulnerable;
         /// <summary>What a second application does, one of <see cref="Stacking"/>.</summary>
         public string stacking = Stacking.Refresh;
         public int maxStacks = 1;
@@ -321,8 +339,13 @@ namespace DuckAndCover.Core
         /// magazine is spent or reloaded, a round that hits a teammate heals them by the amount.
         /// </summary>
         public const string HealRounds = "healRounds";
+        /// <summary>
+        /// Finishes off an enemy hero whose health is at or below the amount (a share of their max health, 0.2 =
+        /// 20%), shields and all. Units (minions, Bastions, camp guards) are never executed.
+        /// </summary>
+        public const string Execute = "execute";
 
-        public static readonly string[] All = { Damage, Heal, Shield, Status, Slow, Stun, Cleanse, Push, Spawn, Reload, HealRounds };
+        public static readonly string[] All = { Damage, Heal, Shield, Status, Slow, Stun, Cleanse, Push, Spawn, Reload, HealRounds, Execute };
         public static bool IsKnown(string kind) => Array.IndexOf(All, kind) >= 0;
     }
 
@@ -388,7 +411,12 @@ namespace DuckAndCover.Core
         /// effect's amount. Give it a lift so it arcs.
         /// </summary>
         public const string Leap = "leap";
-        public static bool IsKnown(string s) => s == Aim || s == Away || s == Toward || s == Leap;
+        /// <summary>
+        /// Toward the caster (a grab that pulls): up to the amount, stopping <see cref="Ruleset.pullStopMetres"/>
+        /// short of them.
+        /// </summary>
+        public const string Caster = "caster";
+        public static bool IsKnown(string s) => s == Aim || s == Away || s == Toward || s == Leap || s == Caster;
     }
 
     /// <summary>

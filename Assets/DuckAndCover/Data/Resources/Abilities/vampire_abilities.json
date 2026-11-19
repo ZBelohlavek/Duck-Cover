@@ -1,0 +1,187 @@
+{
+  "abilities": [
+    {
+      "id": "vampire_grasp",
+      "displayName": "Grasping Claw",
+      "description": "Lunge a huge claw up to 6 m where you aim and seize the enemy nearest that spot (within 1.5 m): 45 damage, a 2 m pull toward you, and you steal 30 of their max health for 30 seconds (they lose it, you gain it). Each grab refreshes the steal and adds to it, up to 3 times. Cooldown 14 s.",
+      "cooldown": 14,
+      "targeting": {
+        "shape": "sphere",
+        "origin": "aimPoint",
+        "range": 6,
+        "radius": 1.5,
+        "affects": "enemies",
+        "maxTargets": 1
+      },
+      "effects": [
+        {
+          "kind": "damage",
+          "amount": 45
+        },
+        {
+          "kind": "status",
+          "status": "vampire_drained",
+          "amount": 30
+        },
+        {
+          "kind": "status",
+          "status": "vampire_gorged",
+          "amount": 30,
+          "affects": "self",
+          "minTargets": 1
+        },
+        {
+          "kind": "execute",
+          "amount": 0.2,
+          "tag": "execute"
+        },
+        {
+          "kind": "push",
+          "amount": 2,
+          "duration": 0.2,
+          "direction": "caster"
+        }
+      ]
+    },
+    {
+      "id": "vampire_bats",
+      "displayName": "Bat Swarm",
+      "description": "Burst into a cloud of bats and fly 7 m along your aim. For half a second you can't be hurt and enemies can't put harmful effects on you. Cooldown 13 s.",
+      "cooldown": 13,
+      "targeting": {
+        "shape": "self",
+        "origin": "caster",
+        "affects": "self"
+      },
+      "effects": [
+        {
+          "kind": "push",
+          "amount": 7,
+          "duration": 0.3,
+          "direction": "aim",
+          "affects": "self"
+        },
+        {
+          "kind": "status",
+          "status": "vampire_bat_form",
+          "duration": 0.5,
+          "affects": "self"
+        },
+        {
+          "kind": "status",
+          "status": "vampire_night_hunger",
+          "amount": 0.3,
+          "duration": 3,
+          "affects": "self",
+          "tag": "outOfTheDark"
+        }
+      ]
+    },
+    {
+      "id": "vampire_sweep",
+      "displayName": "Crimson Sweep",
+      "description": "Rake your claws through everyone in a 120 degree arc up to 5 m in front of you: 55 damage each, and you heal for 40% of the damage dealt. Cooldown 16 s.",
+      "cooldown": 16,
+      "targeting": {
+        "shape": "sphere",
+        "origin": "caster",
+        "radius": 5,
+        "arcDegrees": 120,
+        "affects": "enemies"
+      },
+      "effects": [
+        {
+          "kind": "damage",
+          "amount": 55,
+          "lifeSteal": 0.4
+        },
+        {
+          "kind": "spawn",
+          "objectId": "vampire_blood_aura",
+          "minTargets": 3,
+          "tag": "bloodAura"
+        }
+      ]
+    }
+  ],
+  "statuses": [
+    {
+      "id": "vampire_drained",
+      "displayName": "Drained",
+      "negative": true,
+      "duration": 30,
+      "stacking": "stack",
+      "maxStacks": 3,
+      "scaleWithStrength": true,
+      "stats": [
+        {
+          "stat": "maxHealth",
+          "op": "add",
+          "value": -1,
+          "when": ""
+        }
+      ]
+    },
+    {
+      "id": "vampire_gorged",
+      "displayName": "Gorged",
+      "negative": false,
+      "duration": 30,
+      "stacking": "stack",
+      "maxStacks": 3,
+      "scaleWithStrength": true,
+      "stats": [
+        {
+          "stat": "maxHealth",
+          "op": "add",
+          "value": 1,
+          "when": ""
+        }
+      ]
+    },
+    {
+      "id": "vampire_bat_form",
+      "displayName": "Bat Swarm",
+      "negative": false,
+      "duration": 0.5,
+      "invulnerable": true,
+      "stacking": "refresh"
+    },
+    {
+      "id": "vampire_night_hunger",
+      "displayName": "Out of the Dark",
+      "negative": false,
+      "duration": 3,
+      "stacking": "refresh",
+      "scaleWithStrength": true,
+      "stats": [
+        {
+          "stat": "weaponDamage",
+          "op": "percent",
+          "value": 1,
+          "when": ""
+        }
+      ]
+    }
+  ],
+  "objects": [
+    {
+      "id": "vampire_blood_aura",
+      "displayName": "Blood Aura",
+      "lifetime": 5,
+      "radius": 4,
+      "trigger": "pulse",
+      "interval": 0.5,
+      "affects": "enemies",
+      "followOwner": true,
+      "maxPerOwner": 1,
+      "effects": [
+        {
+          "kind": "damage",
+          "amount": 7.5,
+          "lifeSteal": 1
+        }
+      ]
+    }
+  ]
+}

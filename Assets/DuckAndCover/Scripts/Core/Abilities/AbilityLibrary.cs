@@ -105,6 +105,8 @@ namespace DuckAndCover.Core
                 if (t.shape == Shapes.Sphere && t.radius <= 0f) errors.Add(w + "a sphere needs a radius");
                 if (t.shape == Shapes.Sphere && t.origin == Origins.AimPoint && t.range <= 0f) errors.Add(w + "an aimed sphere needs a range");
                 if (t.ground && (t.shape != Shapes.Sphere || t.origin != Origins.AimPoint)) errors.Add(w + "ground only works on an aimed sphere");
+                if (t.arcDegrees < 0f || t.arcDegrees > 360f) errors.Add(w + "arcDegrees must be 0..360");
+                if (t.arcDegrees > 0f && (t.shape != Shapes.Sphere || t.origin != Origins.Caster)) errors.Add(w + "arcDegrees only works on a sphere around the caster");
                 if (t.count < 1) errors.Add(w + "count must be at least 1");
                 if (t.maxTargets < 0 || t.spreadDegrees < 0f) errors.Add(w + "maxTargets and spreadDegrees can't be negative");
                 bool hasScript = !string.IsNullOrEmpty(a.scriptId);
@@ -162,6 +164,9 @@ namespace DuckAndCover.Core
                 if (!EffectKinds.IsKnown(e.kind)) { errors.Add(w + "unknown effect kind '" + e.kind + "'"); continue; }
                 if (e.amount < 0f || e.duration < 0f || e.delay < 0f || e.interval < 0f || e.radius < 0f) errors.Add(x + "amount, duration, delay, interval and radius can't be negative");
                 if (!string.IsNullOrEmpty(e.affects) && !Affects.IsKnown(e.affects)) errors.Add(x + "unknown affects '" + e.affects + "'");
+                if (e.lifeSteal < 0f || e.minTargets < 0) errors.Add(x + "lifeSteal and minTargets can't be negative");
+                if (e.lifeSteal > 0f && e.kind != EffectKinds.Damage) errors.Add(x + "only damage can steal life");
+                if (e.minTargets > 0 && depth > 0) errors.Add(x + "minTargets works on abilities only");
                 switch (e.kind)
                 {
                     case EffectKinds.Damage:
@@ -183,6 +188,9 @@ namespace DuckAndCover.Core
                         if (e.amount <= 0f && e.lift <= 0f) errors.Add(x + "needs a distance (amount) or a lift");
                         if (e.lift < 0f) errors.Add(x + "lift can't be negative");
                         if (!PushDirections.IsKnown(e.direction)) errors.Add(x + "unknown direction '" + e.direction + "'");
+                        break;
+                    case EffectKinds.Execute:
+                        if (e.amount <= 0f || e.amount > 1f) errors.Add(x + "amount is the share of max health, between 0 and 1");
                         break;
                     case EffectKinds.Spawn:
                         if (depth > 0) errors.Add(x + "objects and statuses can't spawn objects");
