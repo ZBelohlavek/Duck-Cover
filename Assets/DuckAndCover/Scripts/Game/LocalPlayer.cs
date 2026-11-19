@@ -13,7 +13,7 @@ namespace DuckAndCover.Game
     ///
     /// Keys: WASD move, mouse look, Shift sprint, Ctrl or C crouch, Space jump (vaults a low wall
     /// when facing one), left mouse fire, R reload, 1/2 or the wheel or Q switch weapon,
-    /// E and F the hero's abilities, X the ultimate, hold Z or V to take the left or right upgrade
+    /// E, F and X the hero's three abilities, hold Z or V to take the left or right upgrade
     /// on offer (a stand-in until the level-up prompt, WP12), Esc frees the mouse.
     ///
     /// Abilities are requests too: the server decides, and a dash or knockback comes back as a

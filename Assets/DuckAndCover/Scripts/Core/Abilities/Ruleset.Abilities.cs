@@ -34,9 +34,7 @@ namespace DuckAndCover.Core
         public float minCooldownSeconds = 0.5f;
         /// <summary>Share of an ultimate's cost given back when a stun or death interrupts its wind-up.</summary>
         public float ultimateInterruptRefund = 0.5f;
-        /// <summary>Player level at which ultimates unlock (8, with the ultimate's form in ProgressionRuleset).</summary>
-        public int ultimateUnlockLevel = 8;
-        /// <summary>Ultimate charge gained per second while alive, once unlocked (100 = full for a cost-100 ultimate).</summary>
+        /// <summary>Ultimate charge gained per second while alive, from level 1 (100 = full for a cost-100 ultimate).</summary>
         public float ultimateChargePerSecond = 0.8f;
         /// <summary>Ultimate charge per point of damage dealt to enemies.</summary>
         public float ultimateChargePerDamage = 0.05f;
@@ -79,7 +77,6 @@ namespace DuckAndCover.Core
             if (lowHealthShare < 0f || lowHealthShare > 1f) e.Add("lowHealthShare must be between 0 and 1");
             if (minCooldownSeconds < 0f) e.Add("minCooldownSeconds can't be negative");
             if (ultimateInterruptRefund < 0f || ultimateInterruptRefund > 1f) e.Add("ultimateInterruptRefund must be between 0 and 1");
-            if (ultimateUnlockLevel < 1) e.Add("ultimateUnlockLevel must be at least 1");
             if (ultimateChargePerSecond < 0f || ultimateChargePerDamage < 0f || ultimateChargePerHealing < 0f) e.Add("ultimate charge rates can't be negative");
             if (ultimateChargeUnitShare < 0f) e.Add("ultimateChargeUnitShare can't be negative");
             if (escortRadius < 0f) e.Add("escortRadius can't be negative");

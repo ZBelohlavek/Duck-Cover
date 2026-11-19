@@ -19,7 +19,7 @@ namespace DuckAndCover.Core
         public string displayName = "";
         public string description = "";
 
-        /// <summary>Uses ultimate charge instead of a cooldown, and unlocks at Ruleset.ultimateUnlockLevel.</summary>
+        /// <summary>Uses ultimate charge instead of a cooldown. Like every ability, usable from level 1.</summary>
         public bool ultimate;
         /// <summary>Charge an ultimate costs.</summary>
         public float ultimateCost = 100f;
@@ -34,8 +34,6 @@ namespace DuckAndCover.Core
         /// own use it, and a scripted ability stays active (its Tick runs) this long after landing.
         /// </summary>
         public float duration;
-        /// <summary>Lowest player level that can use it.</summary>
-        public int unlockLevel = 1;
 
         public TargetingDef targeting = new TargetingDef();
         public EffectDef[] effects = new EffectDef[0];

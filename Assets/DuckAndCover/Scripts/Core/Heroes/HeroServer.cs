@@ -36,14 +36,12 @@ namespace DuckAndCover.Core
             var problems = Validate(heroes ?? throw new ArgumentNullException(nameof(heroes)), combat.Abilities.Library, combat.Weapons.Library);
             if (problems.Count > 0) throw new ArgumentException("Can't run heroes: " + string.Join("; ", problems));
             Progression = new ProgressionRules(combat.Match, heroes, world ?? throw new ArgumentNullException(nameof(world)), events);
-            combat.Abilities.UseCheck = UltimateHeld;
             events.Subscribe(OnEvent);
         }
 
         public void Dispose()
         {
             events.Unsubscribe(OnEvent);
-            if (Combat.Abilities.UseCheck == (Func<int, string, string>)UltimateHeld) Combat.Abilities.UseCheck = null;
             Progression.Dispose();
         }
 
@@ -81,27 +79,6 @@ namespace DuckAndCover.Core
                     Progression.RecordSupport(shield.sourceId, shield.targetId, shield.amount);
                     break;
             }
-        }
-
-        /// <summary>
-        /// Why the ultimate can't be used yet: the hero offers two forms of it and the player hasn't
-        /// picked one. Null for everything else (and for heroes with no forms on offer).
-        /// </summary>
-        public string UltimateHeld(int playerId, string abilityId)
-        {
-            var p = Combat.Match.State.Player(playerId);
-            var hero = p == null ? null : Heroes.Resolve(p.heroId);
-            if (hero == null || abilityId != hero.ultimateId) return null;
-            if (!OffersUltimateForm(hero, Progression.Rules)) return null;
-            return Progression.UltimateForm(playerId) == null ? "pick the ultimate's form first" : null;
-        }
-
-        /// <summary>Whether leveling offers this hero a choice of ultimate form (so the ultimate waits for it).</summary>
-        public static bool OffersUltimateForm(HeroDef hero, ProgressionRuleset rules)
-        {
-            int level = rules == null ? 0 : rules.UltimateFormLevel();
-            var offer = level > 0 && hero != null ? hero.Level(level) : null;
-            return offer != null && offer.options != null && offer.options.Length > 0;
         }
 
         /// <summary>The hero's abilities (ultimate last), passive and max health. Unknown heroes get the catalog's fallback.</summary>
@@ -151,7 +128,7 @@ namespace DuckAndCover.Core
 
         /// <summary>
         /// Everything about the heroes that the leveling check alone can't see: their abilities,
-        /// ultimate and passive exist and are the right kind, each talent's parameter change fits its
+        /// third ability and passive exist and are the right kind, each talent's parameter change fits its
         /// ability, and each hero's weapon is the first in its loadout. Empty when the heroes can run.
         /// </summary>
         public static List<string> Validate(HeroCatalog heroes, AbilityLibrary abilities, WeaponLibrary weapons)
@@ -184,12 +161,13 @@ namespace DuckAndCover.Core
             return errors;
         }
 
-        static void CheckAbility(AbilityLibrary lib, string id, string who, bool ultimate, bool passive, List<string> errors)
+        static void CheckAbility(AbilityLibrary lib, string id, string who, bool thirdSlot, bool passive, List<string> errors)
         {
             var a = lib.Ability(id);
             if (a == null) { errors.Add(who + " uses unknown ability '" + id + "'"); return; }
             if (a.passive != passive) errors.Add(who + ": '" + id + "' " + (passive ? "is its passive but isn't marked passive" : "is a passive, not something to cast"));
-            if (!passive && a.ultimate != ultimate) errors.Add(who + ": '" + id + "' " + (ultimate ? "is its ultimate but isn't marked ultimate" : "is marked ultimate but sits in an ability slot"));
+            // The third slot (X) may run on ultimate charge or on a cooldown; the first two always use cooldowns.
+            if (!passive && !thirdSlot && a.ultimate) errors.Add(who + ": '" + id + "' is marked ultimate but sits in an E or F slot (only the third ability may use ultimate charge)");
         }
     }
 }

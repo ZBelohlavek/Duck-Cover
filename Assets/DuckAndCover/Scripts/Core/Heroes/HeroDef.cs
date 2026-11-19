@@ -19,7 +19,7 @@ namespace DuckAndCover.Core
         public float maxHealth;
         /// <summary>The two ability ids (AbilityDef ids from the Abilities module).</summary>
         public string[] abilities = new string[0];
-        /// <summary>Unlocks at the ultimate level; its form is chosen there.</summary>
+        /// <summary>The third ability (key X), usable from level 1 like the other two. It may run on ultimate charge or on a cooldown. The level-8 "ultimate" pick upgrades it.</summary>
         public string ultimateId = "";
         /// <summary>
         /// An always-on passive ability in the base kit, or empty. The starter heroes have none: their

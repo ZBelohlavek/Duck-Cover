@@ -3,10 +3,12 @@
 Generated from the hero and ability data in `Assets/DuckAndCover/Data/Resources`. The data files are
 the source of truth; numbers here are the ones the tests check. All names and kits are original.
 
-Levels run 1 to 20 with a pick every other level: traits at 2, 6 and 14, talents at 4, 12, 16 and 18, the ultimate
-unlocks at 8 once you pick one of its two forms, the passive at 10 (heroes start without one) and a capstone at 20.
-Each odd level gives a small automatic boost instead: +2% max health and +2% damage. Keys: E and F abilities,
-X ultimate, hold Z or V for the left or right upgrade.
+Every hero has three abilities, all usable from level 1: nothing is locked behind a level. The third (X) may run on
+ultimate charge, which builds from the start of the match, or on a plain cooldown.
+Levels run 1 to 20 with a pick every other level: traits at 2, 6 and 14, talents at 4, 12, 16 and 18, an upgrade to
+the third ability at 8 (one of two; it is usable before and without it), the passive at 10 (heroes start without one)
+and a capstone at 20. Each odd level gives a small automatic boost instead: +2% max health and +2% damage.
+Keys: E, F and X abilities, hold Z or V for the left or right upgrade.
 
 ## Bulwark (vanguard)
 

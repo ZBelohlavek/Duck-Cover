@@ -57,8 +57,19 @@ static class HeroKitTests
         lancer.Upgrade("lancer_twin_marks").abilityChanges[0].param = "effect.push.amount";
         var problems = HeroServer.Validate(catalog, lib, StarterWeapons.Library());
         Check.True(problems.Any(p => p.Contains("loadout should start with shotgun")), "a weapon that isn't the loadout's first");
-        Check.True(problems.Any(p => p.Contains("marked ultimate but sits in an ability slot")), "an ultimate in an ability slot");
+        Check.True(problems.Any(p => p.Contains("marked ultimate but sits in an E or F slot")), "an ultimate-charge ability in the E or F slot");
         Check.True(problems.Any(p => p.Contains("lancer_twin_marks") && p.Contains("no such parameter")), "a talent changing something the ability lacks");
+    }
+
+    [Test]
+    static void TheThirdAbilityMayUseACooldown()
+    {
+        var catalog = ProgressionHarness.DataCatalog();
+        var lancer = catalog.Get("lancer");
+        lancer.abilities = new[] { "lancer_slip" };
+        lancer.ultimateId = "lancer_mark";
+        var problems = HeroServer.Validate(catalog, DataLibrary(), StarterWeapons.Library());
+        Check.False(problems.Any(p => p.Contains("lancer_mark")), "a cooldown ability is fine as the third: " + string.Join("; ", problems));
     }
 
     [Test]
@@ -97,17 +108,37 @@ static class HeroKitTests
     }
 
     [Test]
-    static void UltimatesWaitForLevelFive()
+    static void EveryHeroHasThreeAbilitiesFromLevelOne()
+    {
+        foreach (var heroId in StarterIds)
+        {
+            var h = With(A1, heroId, B1, "bulwark");
+            Check.Equal(1, h.S.Player(A1).level, heroId + " starts at level 1");
+            Check.Equal(3, h.Unit(A1).slots.Count, heroId + " has three abilities");
+            Check.True(h.Use(A1, 0, Ahead).IsAccepted, heroId + ": E works at level 1");
+            h.Run(2f);
+            Check.True(h.Use(A1, 1, Ahead).IsAccepted, heroId + ": F works at level 1");
+            h.Run(2f);
+            var empty = h.Use(A1, 2, Ahead);
+            Check.Equal("ultimate not charged", empty.reason, heroId + ": X is only waiting for charge");
+            h.Run(5f);
+            Check.True(h.Unit(A1).ultimateCharge > 0f, heroId + ": charge builds at level 1");
+            h.Unit(A1).ultimateCharge = 100f;
+            Check.True(h.Use(A1, 2, Ahead).IsAccepted, heroId + ": X works at level 1 once charged");
+        }
+    }
+
+    [Test]
+    static void UltimateUpgradeAtLevelEightIsOptional()
     {
         var h = With(A1, "lancer", B1, "bulwark");
-        h.Unit(A1).ultimateCharge = 100f;
-        Check.False(h.Use(A1, 2, Ahead).IsAccepted, "locked at level 1");
         h.LevelTo(A1, h.Heroes.Progression.Rules.UltimateFormLevel());
-        var held = h.Use(A1, 2, Ahead);
-        Check.False(held.IsAccepted, "held at level 5 until a form is picked");
-        Check.True(held.reason.Contains("form"), "and says why: " + held.reason);
+        h.Unit(A1).ultimateCharge = 100f;
+        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "usable at level 8 before its upgrade is picked");
+        h.Run(10f);
         Check.True(h.PickForm(A1, "lancer_thermite").IsAccepted, "pick Thermite");
-        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "open once the form is picked");
+        h.Unit(A1).ultimateCharge = 100f;
+        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "and after");
     }
 
     // ---- Every upgrade ----
