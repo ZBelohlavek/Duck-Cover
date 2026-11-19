@@ -57,7 +57,7 @@
             "level": 14,
             "options": [
                 "bulwark_steady_guard",
-                "bulwark_rattling_spread"
+                "bulwark_pump_action"
             ]
         },
         {
@@ -326,15 +326,15 @@
             "scriptId": ""
         },
         {
-            "id": "bulwark_rattling_spread",
-            "displayName": "Rattling Spread",
-            "description": "Your shotgun slows the enemies it hits by 15% for a second.",
+            "id": "bulwark_pump_action",
+            "displayName": "Pump Action",
+            "description": "Your shotgun fires 10% faster.",
             "kind": "trait",
             "stats": [
                 {
-                    "stat": "weaponSlow",
-                    "op": "add",
-                    "value": 0.15,
+                    "stat": "fireRate",
+                    "op": "percent",
+                    "value": 0.1,
                     "when": ""
                 }
             ],
@@ -443,7 +443,7 @@
         {
             "id": "bulwark_point_blank",
             "displayName": "Point Blank",
-            "description": "Your shotgun deals 15% more damage and knocks enemies back.",
+            "description": "Your shotgun deals 15% more damage, and knocks back enemies within 4 m.",
             "kind": "capstone",
             "stats": [
                 {
@@ -455,7 +455,13 @@
                 {
                     "stat": "weaponPush",
                     "op": "add",
-                    "value": 0.5,
+                    "value": 0.75,
+                    "when": ""
+                },
+                {
+                    "stat": "weaponPushRange",
+                    "op": "add",
+                    "value": 4,
                     "when": ""
                 }
             ],

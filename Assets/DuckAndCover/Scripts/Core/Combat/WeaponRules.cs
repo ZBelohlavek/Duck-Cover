@@ -313,6 +313,7 @@ namespace DuckAndCover.Core
         /// <summary>
         /// What a weapon hit does beyond its damage, from the shooter's stats: life steal heals them by a
         /// share of what the target lost, weaponPush shoves the target along <paramref name="direction"/>
+        /// (only within weaponPushRange metres, when that is set)
         /// and weaponSlow slows them. Only hits on someone else that did damage count.
         /// </summary>
         void AfterHit(int shooterId, int targetId, float dealt, Vec3 direction)
@@ -322,6 +323,8 @@ namespace DuckAndCover.Core
             if (steal > 0f) combat.Heal(shooterId, shooterId, dealt * steal, StatIds.LifeSteal);
             if (!combat.IsAlive(targetId)) return;
             float push = combat.Stat(shooterId, StatIds.WeaponPush);
+            float pushRange = combat.Stat(shooterId, StatIds.WeaponPushRange);
+            if (push > 0f && pushRange > 0f && !Within(shooterId, targetId, pushRange)) push = 0f; // a point-blank push only
             if (push > 0f && direction.Magnitude > 1e-4f)
             {
                 Vec3 flat = new Vec3(direction.x, 0f, direction.z);
@@ -335,6 +338,11 @@ namespace DuckAndCover.Core
             float slow = combat.Stat(shooterId, StatIds.WeaponSlow);
             if (slow > 0f && Slow != null) Slow(targetId, shooterId, Math.Min(1f, slow), Rules.weaponSlowSeconds);
         }
+
+        /// <summary>Whether the target stands within <paramref name="metres"/> of the shooter right now (unknown positions: no).</summary>
+        bool Within(int shooterId, int targetId, float metres) =>
+            world.TryGetPosition(shooterId, State.tick, out var from) && world.TryGetPosition(targetId, State.tick, out var to)
+            && Vec3.Distance(from, to) <= metres;
 
         /// <summary>The player's weaponDamage stat (1 = the weapon's own numbers).</summary>
         float WeaponDamage(int playerId) => Math.Max(0f, combat.Stat(playerId, StatIds.WeaponDamage));
