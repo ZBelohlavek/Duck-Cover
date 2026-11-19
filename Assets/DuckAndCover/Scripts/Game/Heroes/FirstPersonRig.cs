@@ -46,6 +46,9 @@ namespace DuckAndCover.Game
                 var arms = Instantiate(art.firstPerson, root.transform, false);
                 arms.name = art.def.firstPerson;
                 HeroArt.ApplyPaint(arms, art.firstPersonPaint, false);
+                // Made around the model's own eye, so the hero's scale (which puts that eye at the rules' eye height)
+                // shrinks it about the camera: the view looks the same and the arms sit the same size as the body.
+                arms.transform.localScale = Vector3.one * art.def.scale;
                 rig.model = arms.transform;
                 rig.Muzzle = HeroArt.Find(arms.transform, "Muzzle");
                 // Checked in the camera's space: the file's own nodes may carry Blender's axis turn.

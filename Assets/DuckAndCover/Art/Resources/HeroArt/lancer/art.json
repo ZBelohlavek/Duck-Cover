@@ -4,7 +4,7 @@
     "firstPerson": "Lancer_FirstPerson",
     "texture": "Lancer_Paint",
     "firstPersonTexture": "Lancer_FirstPerson_Paint",
-    "scale": 0.86,
+    "scale": 0.853,
     "clipPrefix": "Lancer_",
     "loops": ["idle", "run", "strafe_left", "strafe_right", "backpedal", "sprint", "crouch_idle", "crouch_walk", "aim"],
     "speeds": [
