@@ -87,8 +87,11 @@ namespace DuckAndCover.Core
         public float healRicochetShare = 0.6f;
 
         // ---- Personal shield (regenerates; ability shields stack on top, up to maxShield) ----
-        /// <summary>Every hero's own shield. 0 turns personal shields off.</summary>
-        public float personalShield = 50f;
+        /// <summary>
+        /// Every hero's own shield. 0 turns personal shields off. Off since Nov 19, 2026: the owner took hero
+        /// shields out of the game "for right now"; set it back to 50 to return them (the rules still work).
+        /// </summary>
+        public float personalShield = 0f;
         /// <summary>The shield starts coming back this long after the last damage.</summary>
         public float personalShieldDelaySeconds = 3f;
         public float personalShieldRegenPerSecond = 25f;

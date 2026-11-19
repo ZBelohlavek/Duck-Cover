@@ -123,6 +123,9 @@ namespace DuckAndCover.Game
             var snapshot = client.Snapshot;
             var cam = Camera.main;
             float k = Blend;
+            // Bars are green for this player's team and red for the other; with no team yet, team A's view.
+            var meNow = snapshot.match.Player(client.PlayerId);
+            TeamId myTeam = meNow == null || meNow.team == TeamId.None ? TeamId.A : meNow.team;
             foreach (var pair in bodies)
             {
                 var b = pair.Value;
@@ -135,7 +138,8 @@ namespace DuckAndCover.Game
                 if (!show) continue;
                 b.view.Pose(feet, Mathf.LerpAngle(b.yawFrom, b.yawTo, k), b.crouched);
                 float max = unit == null ? 1f : Mathf.Max(1f, unit.stats.Get(StatIds.MaxHealth));
-                b.view.ShowBars(unit == null ? 1f : unit.health / max, unit == null ? 0f : unit.Shield / Mathf.Max(1f, runner.ClientRules.maxShield), cam);
+                var progress = snapshot.progression == null ? null : snapshot.progression.Player(pair.Key);
+                b.view.ShowBar(unit == null ? 1f : unit.health / max, myTeam == p.team, progress == null ? 1 : progress.level, cam);
             }
 
             float dt = Time.deltaTime;

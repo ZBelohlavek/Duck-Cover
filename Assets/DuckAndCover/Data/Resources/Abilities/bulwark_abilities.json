@@ -100,12 +100,6 @@
         {
           "kind": "heal",
           "amount": 10
-        },
-        {
-          "kind": "shield",
-          "amount": 6,
-          "duration": 2,
-          "tag": "droneShield"
         }
       ]
     },

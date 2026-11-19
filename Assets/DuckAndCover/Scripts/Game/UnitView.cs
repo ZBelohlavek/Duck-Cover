@@ -19,14 +19,13 @@ namespace DuckAndCover.Game
         static readonly Color Dark = new Color(0.08f, 0.09f, 0.11f);
         static readonly Color Glow = new Color(0.55f, 0.95f, 1.00f);
         static readonly Color BarBack = new Color(0.05f, 0.05f, 0.06f);
-        static readonly Color HealthColor = new Color(0.35f, 0.90f, 0.40f);
         static readonly Color ShieldColor = new Color(0.45f, 0.85f, 1.00f);
         static readonly Color PuffColor = new Color(0.30f, 0.30f, 0.32f);
 
         sealed class Body
         {
             public GameObject root;
-            public Transform figure, bar, healthFill, shieldFill;
+            public Transform figure, bar, allyFill, enemyFill, shieldFill;
             public float barWidth;
             public TeamId team;
             public string typeId;
@@ -117,8 +116,12 @@ namespace DuckAndCover.Game
                     b.to = at;
                     b.yawTo = u.yaw;
                     float max = Mathf.Max(1f, u.maxHealth);
-                    Fill(b.healthFill, b.barWidth, u.health / max);
-                    // A Bastion's shield is out of its own maximum; a minion's out of a hero's personal shield.
+                    // Health is green for this player's side and red for the other side and for neutral camp creatures.
+                    bool friendly = u.team != TeamId.None && u.team == MyTeam(snapshot);
+                    if (b.allyFill.gameObject.activeSelf != friendly) b.allyFill.gameObject.SetActive(friendly);
+                    if (b.enemyFill.gameObject.activeSelf == friendly) b.enemyFill.gameObject.SetActive(!friendly);
+                    Fill(friendly ? b.allyFill : b.enemyFill, b.barWidth, u.health / max);
+                    // A Bastion's shield is out of its own maximum; a minion's (from a Warden) out of the shield cap.
                     var bs = snapshot.overrun == null ? null : snapshot.overrun.ByUnit(u.id);
                     float shieldMax = bs != null ? Mathf.Max(1f, bs.maxShield) : Mathf.Max(1f, rules.maxShield);
                     Fill(b.shieldFill, b.barWidth, u.shield / shieldMax);
@@ -196,7 +199,10 @@ namespace DuckAndCover.Game
             bar.localPosition = new Vector3(0f, b.height + 0.35f, 0f);
             float thick = bastion ? 2.4f : 1f;
             Paint.Block(bar, "Back", new Vector3(0f, 0f, 0.01f), new Vector3(b.barWidth + 0.06f, 0.2f * thick, 0.01f), BarBack, false);
-            b.healthFill = Paint.Block(bar, "Health", new Vector3(0f, -0.035f * thick, 0f), new Vector3(b.barWidth, 0.09f * thick, 0.012f), HealthColor, false).transform;
+            // One fill per side, switched on and off: Paint colours are set once, never changed.
+            b.allyFill = Paint.Block(bar, "HealthAlly", new Vector3(0f, -0.035f * thick, 0f), new Vector3(b.barWidth, 0.09f * thick, 0.012f), OverheadBar.Ally, false).transform;
+            b.enemyFill = Paint.Block(bar, "HealthEnemy", new Vector3(0f, -0.035f * thick, 0f), new Vector3(b.barWidth, 0.09f * thick, 0.012f), OverheadBar.Enemy, false).transform;
+            b.enemyFill.gameObject.SetActive(false);
             b.shieldFill = Paint.Block(bar, "Shield", new Vector3(0f, 0.05f * thick, 0f), new Vector3(b.barWidth, 0.05f * thick, 0.012f), ShieldColor, false).transform;
             b.bar = bar;
             SetLayer(root.transform, PhysicsWorld.PlayerLayer);
@@ -248,6 +254,13 @@ namespace DuckAndCover.Game
                     Paint.Block(f, "Antenna", new Vector3(h * 0.12f, h * 0.88f, -h * 0.05f), new Vector3(h * 0.03f, h * 0.16f, h * 0.03f), trim, false);
                     break;
             }
+        }
+
+        /// <summary>This player's team; with no team yet, team A's view.</summary>
+        TeamId MyTeam(MatchSnapshot snapshot)
+        {
+            var me = snapshot.match == null ? null : snapshot.match.Player(client.PlayerId);
+            return me == null || me.team == TeamId.None ? TeamId.A : me.team;
         }
 
         static void Fill(Transform fill, float width, float share)
