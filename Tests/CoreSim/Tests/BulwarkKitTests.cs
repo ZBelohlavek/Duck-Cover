@@ -261,6 +261,17 @@ static class BulwarkKitTests
     }
 
     [Test]
+    static void BulkheadIsThereFromLevelOne()
+    {
+        var h = Lineup();
+        Check.Equal(1, h.Heroes.Progression.Level(A1), "level 1, no upgrade picked");
+        h.Unit(A1).ultimateCharge = h.R.ultimateChargeMax;
+        Check.True(h.Use(A1, Bulkhead, new Vec3(0f, 0f, 10f) - h.Eye(A1)).IsAccepted, "Bulkhead goes up once charged");
+        Check.True(Held(h, "bulwark_bulkhead") != null, "the wall is out");
+        Check.False(h.Use(A1, Bulkhead, Ahead).IsAccepted, "and needs charging again");
+    }
+
+    [Test]
     static void BulkheadDropsAWallWhereYouAim()
     {
         var h = WithBulkhead("bulwark_reinforced_bulkhead");
