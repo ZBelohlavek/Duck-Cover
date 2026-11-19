@@ -90,15 +90,17 @@ static class RiggerKitTests
     }
 
     [Test]
-    static void HushGrenadeSilencesButLetsThemShoot()
+    static void HushGrenadeSilencesOneEnemyButLetsThemShoot()
     {
         var h = Duel();
-        h.Place(B2, 1.5f, 12f); // a second enemy beside the first
+        h.Place(B2, 1.5f, 12f); // a second enemy beside the first, further from where the grenade lands
         Check.True(h.Use(A1, Cloak, Ahead).IsAccepted, "cloak");
         Check.True(h.UseAt(A1, Hush, B1).IsAccepted, "throw");
         Check.False(h.Abilities.IsStealthed(A1), "throwing gives him away");
         Check.Near(300f - 15f, h.Health(B1), "15 damage");
-        Check.True(h.Abilities.IsSilenced(B1) && h.Abilities.IsSilenced(B2), "both enemies within 3 m are silenced");
+        Check.True(h.Abilities.IsSilenced(B1), "the enemy nearest the impact is silenced");
+        Check.False(h.Abilities.IsSilenced(B2), "only one: the enemy beside them is not");
+        Check.Near(h.Unit(B2).stats.Get(StatIds.MaxHealth), h.Health(B2), "and takes no damage");
         var refused = h.Use(B1, 0, Ahead);
         Check.False(refused.IsAccepted, "a silenced hero can't use abilities");
         Check.Equal("silenced", refused.reason, "and is told why");
@@ -107,6 +109,16 @@ static class RiggerKitTests
         Check.False(h.Abilities.IsSilenced(B1), "for 2.5 seconds");
         Check.True(h.Use(B1, 0, Ahead).IsAccepted, "then abilities work again");
         Check.False(h.Use(A1, Hush, Ahead).IsAccepted, "Hush Grenade is on its cooldown");
+    }
+
+    [Test]
+    static void HushGrenadeTakesWhoeverIsNearestWhereItLands()
+    {
+        var h = Duel("rigger_wide_reach");
+        h.Place(B2, 1.5f, 12f);
+        Check.True(h.UseAt(A1, Hush, B2).IsAccepted, "thrown at the second enemy, B1 1.5 m away and the lower id");
+        Check.True(h.Abilities.IsSilenced(B2), "the one it lands on");
+        Check.False(h.Abilities.IsSilenced(B1), "not the other, even with Wide Reach");
     }
 
     // ---- Stealth against everyone else ----

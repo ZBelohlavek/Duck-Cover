@@ -86,27 +86,27 @@ player down.
 
 - **E: Cloak.** Turn invisible to enemies for 5 seconds. Enemy turrets, minions and Bastions ignore you, and enemies within 5 m see only a shimmer. Firing or using an aimed ability ends it. Cooldown 14 s.
 - **F: Combat Stim.** Fire 25% faster and move 25% faster for 5 seconds. It doesn't end Cloak. Cooldown 14 s.
-- **X: Hush Grenade.** Throw a grenade where you aim: 15 damage to enemies within 3 m, and they are silenced (can't use abilities, can still shoot) for 2.5 seconds. Cooldown 16 s.
+- **X: Hush Grenade.** Throw a grenade where you aim. The one enemy nearest where it lands, within 3 m, takes 15 damage and is silenced (can't use abilities, can still shoot) for 2.5 seconds. It never hits more than one. Cooldown 16 s.
 
 Attacking out of Cloak opens an **ambush** window of 2.5 seconds (`Ruleset.ambushSeconds`), and the shot or grenade
 that breaks the cloak already counts. On its own it does nothing: the Assassin path's upgrades hit harder in it.
 A reveal (Tracer Mark, Tracking Hush) beats a cloak while it lasts.
 
 Left (Z) is the **Assassin** path: a stronger cloak, and a burst on one target when he comes out of it. Right (V) is
-the **Shutdown** path: longer, wider silences that weaken, expose and track the enemy carry.
+the **Shutdown** path: longer silences on one enemy at a time that weaken, expose and track the enemy carry.
 
 | Level | Left (hold Z) | Right (hold V) |
 |---|---|---|
 | 2 trait | **Hollow Points**: Your weapons deal 5% more damage. | **Long Hush**: Everything you put on a target lasts 15% longer: silences, Hamper, and your own Cloak and Stim. |
-| 4 talent | **Ambush**: For 2.5 seconds after you fire or throw out of Cloak, your weapons deal 20% more damage. | **Wide Hush**: Hush Grenade reaches 1 m further. |
+| 4 talent | **Ambush**: For 2.5 seconds after you fire or throw out of Cloak, your weapons deal 20% more damage. | **Quick Hush**: Hush Grenade recovers 3 seconds sooner. |
 | 6 trait | **Drum Mag**: Your magazines hold 25% more rounds. | **Handy**: Abilities recover 10% faster. |
 | 8 third ability | **Sharp Hush**: Hush Grenade deals 25 more damage and recovers 4 seconds sooner, to open an ambush. | **Deep Hush**: Hush Grenade silences for 1 second longer. |
 | 10 passive | **Light Feet**: Move 6% faster, and another 10% faster while cloaked. | **Padded Vest**: +25 max health. |
-| 12 talent | **Killing Window**: Ambush lasts 1.5 seconds longer, and your weapons deal 15% more damage during it. | **Hamper**: Enemies Hush Grenade hits deal 20% less damage and heal 25% less for 5 seconds. |
-| 14 trait | **Close Work**: Your weapons deal 8% more damage. | **Wide Reach**: Your abilities reach 15% further. |
-| 16 talent | **Twin Fades**: Cloak lasts 2 seconds longer and holds two charges. | **Tracking Hush**: Enemies Hush Grenade hits show through walls to your team for 4 seconds, cloaked ones too. |
+| 12 talent | **Killing Window**: Ambush lasts 1.5 seconds longer, and your weapons deal 15% more damage during it. | **Hamper**: The enemy Hush Grenade hits deals 20% less damage and heals 25% less for 5 seconds. |
+| 14 trait | **Close Work**: Your weapons deal 8% more damage. | **Wide Reach**: Your abilities reach 15% further (Hush Grenade still hits one enemy). |
+| 16 talent | **Twin Fades**: Cloak lasts 2 seconds longer and holds two charges. | **Tracking Hush**: The enemy Hush Grenade hits shows through walls to your team for 4 seconds, even if cloaked. |
 | 18 talent | **Smoke Stim**: Combat Stim also cloaks you for 2 seconds. | **Double Hush**: Hush Grenade holds two charges. |
-| 20 capstone | **Phantom**: During Ambush your weapons deal 25% more damage and heal you for 15% of the damage they deal. | **Blackout**: Enemies Hush Grenade hits take 15% more damage while they are silenced, and the silence lasts 1 second longer. |
+| 20 capstone | **Phantom**: During Ambush your weapons deal 25% more damage and heal you for 15% of the damage they deal. | **Blackout**: The enemy Hush Grenade hits takes 15% more damage while silenced, and the silence lasts 1 second longer. |
 
 ## Against minion waves (WP20)
 
@@ -118,8 +118,7 @@ as `Tests/CoreSim/Tests/WaveKitTests.cs` checks it:
 - **Lancer** clears: Incendiary Grenade catches a whole wave; Thermite destroys Scrappers outright.
 - **Mender** protects her own wave: Mending Field heals minions, Purge frees them from slows, Aegis Pulse shields them.
 - **Rigger** slips past a lane: minions and Bastions don't shoot him while he is cloaked, so he can get behind a wave
-  or reach the enemy's heroes. Against the wave itself he is the SMG, sped up by Combat Stim, with Hush Grenade for the
-  bunched front.
+  or reach the enemy's heroes. Against the wave itself he is the SMG, sped up by Combat Stim.
 
 Turrets shoot the nearest enemy they can see, so a minion in front of one comes before a hero at the edge of its reach.
 Upgrades that work "on a point" (Anchor, Braced) also work within 8 m of your own minions or Bastion

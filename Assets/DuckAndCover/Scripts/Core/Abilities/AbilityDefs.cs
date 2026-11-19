@@ -91,7 +91,7 @@ namespace DuckAndCover.Core
         public float spreadDegrees;
         /// <summary>Who counts as a target, one of <see cref="Affects"/>.</summary>
         public string affects = Affects.Enemies;
-        /// <summary>Most targets per ray or area. 0 = no limit. Lowest player ids first, so it is deterministic.</summary>
+        /// <summary>Most targets per ray or area. 0 = no limit. Nearest the area's centre first, ties to the lower id, so it is deterministic.</summary>
         public int maxTargets;
 
         public TargetingDef Clone() => (TargetingDef)MemberwiseClone();
