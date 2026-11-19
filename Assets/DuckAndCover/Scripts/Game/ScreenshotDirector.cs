@@ -419,7 +419,7 @@ namespace DuckAndCover.Game
 
         /// <summary>
         /// The Rigger dummy becomes the war chief and War Leaps at the player from 10 m: he lands in front of
-        /// them and knocks them up (the HUD says STUNNED), then swings his greataxe.
+        /// them and knocks them up (the HUD says STUNNED), then swings his greataxe, seen through the player's eyes.
         /// </summary>
         static void DummyWarLeaps()
         {
@@ -452,6 +452,13 @@ namespace DuckAndCover.Game
             Vec3 back = from.position - to.position;
             back = new Vec3(back.x, 0f, back.z);
             if (back.Magnitude > 1e-3f) runner.Combat.Movement.Teleport(dummy, to.position + back.Normalized * 1.8f, from.yaw);
+            // The player has no body of their own on screen, so look out of their eyes at him instead of from the side.
+            var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
+            if (local != null && back.Magnitude > 1e-3f)
+            {
+                local.freeCamera = false;
+                local.LookAt((float)(Math.Atan2(back.x, back.z) * 180.0 / Math.PI), 8f);
+            }
             // Give the lag-compensation history a few ticks of the dummy in its new spot, and every view time to draw it there.
             yield return new WaitForSecondsRealtime(0.25f);
             if (!runner.Match.State.IsAlive(dummy) || !runner.Match.State.IsAlive(targetId)) yield break;
