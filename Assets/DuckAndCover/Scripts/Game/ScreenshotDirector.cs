@@ -613,16 +613,22 @@ namespace DuckAndCover.Game
             if (dummy == null || local == null) { Debug.LogError("Duck and Cover: the capture found no practice dummy to show as a Lancer."); return; }
             dummy.heroId = "lancer";
             local.freeCamera = false;
-            // Face it, so the soldier model is in the middle of the picture.
+            // Stand 5 m in front of it, facing it, so no other dummy is in between and the soldier fills the middle.
+            var it = runner.Combat.Movement.Motion(id);
+            if (it != null) runner.Combat.Movement.Teleport(runner.Client.PlayerId, it.position - new Vec3(0f, 0f, 5f), 0f);
+            CombatView.Instance.StartCoroutine(FaceWhenPlaced(runner, local, id));
+            CombatView.Instance.StartCoroutine(DummyFires(id));
+        }
+
+        static IEnumerator FaceWhenPlaced(SessionRunner runner, LocalPlayer local, int id)
+        {
+            yield return new WaitForSecondsRealtime(0.4f); // the teleport comes back through the session
             var rules = runner.ClientRules;
             var me = runner.Combat.Movement.Motion(runner.Client.PlayerId);
             var it = runner.Combat.Movement.Motion(id);
-            if (me != null && it != null)
-            {
-                Vec3 d = (Hitboxes.Chest(rules, it.Pose(true)) - (me.position + Vec3.Up * rules.eyeHeight)).Normalized;
-                local.LookAt(Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg, -Mathf.Asin(d.y) * Mathf.Rad2Deg);
-            }
-            CombatView.Instance.StartCoroutine(DummyFires(id));
+            if (me == null || it == null) yield break;
+            Vec3 d = (Hitboxes.Chest(rules, it.Pose(true)) - (me.position + Vec3.Up * rules.eyeHeight)).Normalized;
+            local.LookAt(Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg, -Mathf.Asin(d.y) * Mathf.Rad2Deg);
         }
 
         /// <summary>Once the dummy's model is up, show it firing (looks only; dummies don't shoot).</summary>
@@ -631,42 +637,13 @@ namespace DuckAndCover.Game
             yield return new WaitForSecondsRealtime(0.5f);
             var body = CombatView.Instance == null ? null : CombatView.Instance.BodyOf(dummyId);
             if (body == null || body.Model == null) { Debug.LogError("Duck and Cover: the Lancer dummy has no model (is Resources/HeroArt/lancer imported?)."); yield break; }
-            ReportLancerDummy(dummyId, "0.5 s");
             float until = Time.realtimeSinceStartup + 1f;
-            bool reported = false;
             while (Time.realtimeSinceStartup < until)
             {
                 body = CombatView.Instance == null ? null : CombatView.Instance.BodyOf(dummyId);
                 if (body != null && body.Model != null) body.Model.Fired();
-                if (!reported && Time.realtimeSinceStartup > until - 0.35f) { reported = true; ReportLancerDummy(dummyId, "shot time"); }
                 yield return new WaitForSecondsRealtime(0.1f);
             }
-        }
-
-        /// <summary>
-        /// A warning (it does not fail the run) describing the Lancer dummy's body as drawn, for shot 12d: the
-        /// hero the server and the client think it has, the body's hero, whether it has a model, where it is.
-        /// </summary>
-        static void ReportLancerDummy(int dummyId, string when)
-        {
-            var runner = SessionRunner.Instance;
-            var view = CombatView.Instance;
-            var server = runner == null || runner.Match == null ? null : runner.Match.State.Player(dummyId);
-            var client = runner == null || runner.Client == null || runner.Client.State == null ? null : runner.Client.State.Player(dummyId);
-            var body = view == null ? null : view.BodyOf(dummyId);
-            var cam = Camera.main;
-            string text = "Duck and Cover: 12d Lancer dummy " + dummyId + " at " + when +
-                ": server hero '" + (server == null ? "-" : server.heroId) + "', client hero '" + (client == null ? "-" : client.heroId) + "'";
-            if (body == null) text += ", no body";
-            else
-            {
-                text += ", body hero '" + body.HeroId + "', model " + (body.Model == null ? "none" : "yes (" + body.Model.gameObject.activeInHierarchy + ")") +
-                        ", active " + body.gameObject.activeInHierarchy + ", at " + body.transform.position;
-                var figure = body.transform.Find("Figure");
-                if (figure != null) text += ", stand-in shown " + figure.gameObject.activeSelf;
-            }
-            if (cam != null) text += ", camera at " + cam.transform.position + " looking " + cam.transform.forward;
-            Debug.LogWarning(text);
         }
 
         /// <summary>Back to the player's eyes after the bars shot (which watched from outside), HUD hidden.</summary>
