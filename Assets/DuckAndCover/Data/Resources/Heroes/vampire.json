@@ -190,14 +190,14 @@
             "abilityChanges": [
                 {
                     "ability": "vampire_sweep",
-                    "param": "radius",
+                    "param": "range",
                     "op": "add",
                     "value": 1.5,
                     "text": ""
                 },
                 {
                     "ability": "vampire_sweep",
-                    "param": "arcDegrees",
+                    "param": "spreadDegrees",
                     "op": "add",
                     "value": 60,
                     "text": ""

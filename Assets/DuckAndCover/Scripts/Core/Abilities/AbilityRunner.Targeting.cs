@@ -65,8 +65,7 @@ namespace DuckAndCover.Core
                         center = CastRay(casterId, origin, dir, t.range, tick, out var land) && land.kind != HitKind.Nothing ? land.point : origin + dir * t.range;
                         if (t.ground) center = Ground(casterId, origin, center, tick);
                     }
-                    var first = Query(center, radius, t.affects, casterId, team, t.maxTargets, tick, t.origin == Origins.Caster ? t.arcDegrees : 0f, dir);
-                    areas.Add(first);
+                    areas.Add(Query(center, radius, t.affects, casterId, team, t.maxTargets, tick));
                     for (int i = 1; i < count; i++)
                     {
                         // Extra areas sit in a ring, one radius out from the first.
@@ -74,6 +73,10 @@ namespace DuckAndCover.Core
                         var c = center + new Vec3((float)Math.Cos(a), 0f, (float)Math.Sin(a)) * radius;
                         areas.Add(Query(c, radius, t.affects, casterId, team, t.maxTargets, tick));
                     }
+                    break;
+
+                case Shapes.Arc:
+                    areas.Add(Arc(casterId, team, t, origin, dir, tick));
                     break;
 
                 default: // self
@@ -103,13 +106,11 @@ namespace DuckAndCover.Core
         /// the ones nearest the centre are kept (ties to the lower id), so a single-target grenade takes
         /// whoever is closest to where it lands.
         /// </summary>
-        EffectArea Query(Vec3 center, float radius, string affects, int sourceId, TeamId team, int maxTargets, int tick, float arcDegrees = 0f, Vec3 aim = default)
+        EffectArea Query(Vec3 center, float radius, string affects, int sourceId, TeamId team, int maxTargets, int tick)
         {
             var ids = new List<int>();
             foreach (int id in world.PlayersInSphere(center, radius, tick))
-                if (!ids.Contains(id) && Combat.IsAlive(id) && Matches(affects, sourceId, team, id)
-                    && (arcDegrees <= 0f || id == sourceId || !(world is IPositionQuery wq) || !wq.TryGetPosition(id, tick, out var spot) || InArc(center, aim, arcDegrees, spot)))
-                    ids.Add(id);
+                if (!ids.Contains(id) && Combat.IsAlive(id) && Matches(affects, sourceId, team, id)) ids.Add(id);
             ids.Sort();
             if (maxTargets > 0 && ids.Count > maxTargets)
             {
@@ -121,24 +122,53 @@ namespace DuckAndCover.Core
 
             var objects = new List<int>();
             foreach (var o in State.objects)
-                if (CanHitObject(affects, team, o) && Vec3.Distance(o.position, center) <= radius + Epsilon
-                    && (arcDegrees <= 0f || InArc(center, aim, arcDegrees, o.position))) objects.Add(o.id);
+                if (CanHitObject(affects, team, o) && Vec3.Distance(o.position, center) <= radius + Epsilon) objects.Add(o.id);
             return new EffectArea { point = center, targets = ids.ToArray(), objects = objects.ToArray() };
         }
 
         /// <summary>
-        /// Whether a spot is inside a sweep: within half of <paramref name="arcDegrees"/> either side of the level
-        /// aim, seen from <paramref name="center"/>. A spot right on the centre counts. 360 or more is all round.
+        /// A melee sweep (<see cref="Shapes.Arc"/>): living targets the rule reaches whose feet are within
+        /// the range (plus a body's width) of the caster, seen level, inside half the spread either side of
+        /// the aim and in sight; nearest first, ties to the lower id, cut to maxTargets. Enemy objects in
+        /// front within reach are caught too.
         /// </summary>
-        static bool InArc(Vec3 center, Vec3 aim, float arcDegrees, Vec3 spot)
+        EffectArea Arc(int casterId, TeamId team, TargetingDef t, Vec3 origin, Vec3 dir, int tick)
         {
-            if (arcDegrees >= 360f) return true;
-            var level = new Vec3(aim.x, 0f, aim.z);
-            var to = new Vec3(spot.x - center.x, 0f, spot.z - center.z);
-            if (level.Magnitude < 1e-4f || to.Magnitude < 1e-3f) return true;
-            float cos = Vec3.Dot(level.Normalized, to.Normalized);
+            Vec3 level = new Vec3(dir.x, 0f, dir.z);
+            level = level.Magnitude < 1e-4f ? Vec3.Forward : level.Normalized;
+            float reach = t.range + Rules.bodyRadius;
+            float halfArc = t.spreadDegrees * 0.5f;
+            var where = world as IPositionQuery;
+            var found = new List<int>();
+            var dist = new Dictionary<int, float>();
+            foreach (int id in world.PlayersInSphere(origin, reach + Rules.standHeight, tick))
+            {
+                if (found.Contains(id) || !Combat.IsAlive(id) || !Matches(t.affects, casterId, team, id)) continue;
+                if (where == null || !where.TryGetPosition(id, tick, out var feet)) continue;
+                if (!InArc(origin, level, feet, reach, halfArc, out float d)) continue;
+                if (world is ICasterQuery caster && !caster.HasLineOfSightFor(casterId, origin, id, tick)) continue;
+                found.Add(id);
+                dist[id] = d;
+            }
+            found.Sort((a, b) => { int c = dist[a].CompareTo(dist[b]); return c != 0 ? c : a.CompareTo(b); });
+            if (t.maxTargets > 0 && found.Count > t.maxTargets) found.RemoveRange(t.maxTargets, found.Count - t.maxTargets);
+
+            var objects = new List<int>();
+            foreach (var o in State.objects)
+                if (CanHitObject(t.affects, team, o) && InArc(origin, level, o.position, reach, halfArc, out _)) objects.Add(o.id);
+            return new EffectArea { point = origin + level * t.range, targets = found.ToArray(), objects = objects.ToArray() };
+        }
+
+        /// <summary>Whether a spot is within reach of the origin (flat) and inside the arc around the level aim.</summary>
+        bool InArc(Vec3 origin, Vec3 level, Vec3 at, float reach, float halfArc, out float d)
+        {
+            Vec3 flat = LaneDef.Flat(at - origin);
+            d = flat.Magnitude;
+            if (d > reach || Math.Abs(at.y - origin.y) > Rules.standHeight + 0.5f) return false;
+            if (d < 1e-3f || halfArc >= 180f) return true;
+            float cos = Vec3.Dot(flat / d, level);
             double angle = Math.Acos(Math.Max(-1f, Math.Min(1f, cos))) * 180.0 / Math.PI;
-            return angle <= arcDegrees * 0.5f + 1e-3f;
+            return angle <= halfArc;
         }
 
         bool CanHitObject(string affects, TeamId team, ObjectState o)
@@ -175,7 +205,20 @@ namespace DuckAndCover.Core
             if (e.affects == Affects.Self)
             {
                 if (areas.Count > 0) ctx.point = areas[0].point;
+                // An object's pulse reaches its owner only when they stand in it.
+                if (objectId != 0 && !areas.Exists(a => Array.IndexOf(a.targets, sourceId) >= 0)) return;
                 if (Combat.IsAlive(sourceId)) fx.Apply(ctx, sourceId);
+                return;
+            }
+            if (e.affects == Affects.SelfPerHero)
+            {
+                if (areas.Count > 0) ctx.point = areas[0].point;
+                var heroes = new List<int>();
+                foreach (var area in areas)
+                    foreach (int target in area.targets)
+                        if (target != sourceId && !UnitIds.IsUnit(target) && !heroes.Contains(target)) heroes.Add(target);
+                foreach (int unused in heroes)
+                    if (Combat.IsAlive(sourceId)) fx.Apply(ctx, sourceId);
                 return;
             }
             foreach (var area in areas)

@@ -83,10 +83,9 @@
       "description": "Rake your claws through everyone in a 120 degree arc up to 5 m in front of you: 55 damage each, and you heal for 40% of the damage dealt. Cooldown 16 s.",
       "cooldown": 16,
       "targeting": {
-        "shape": "sphere",
-        "origin": "caster",
-        "radius": 5,
-        "arcDegrees": 120,
+        "shape": "arc",
+        "range": 5,
+        "spreadDegrees": 120,
         "affects": "enemies"
       },
       "effects": [

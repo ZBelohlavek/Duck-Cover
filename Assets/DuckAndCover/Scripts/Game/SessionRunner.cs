@@ -170,6 +170,8 @@ namespace DuckAndCover.Game
                     Combat.Attach(Session.Host);
                     Heroes = new HeroServer(Combat, HeroData.Catalog, hostWorld, hostEvents);
                     Heroes.Attach(Session.Host);
+                    // The map's jungle, if it has one (jungle upgrades read it in every mode).
+                    Combat.Damage.Jungle = JungleArea.For(Map, Match.Rules);
                     if (Match.FlagMode)
                     {
                         // After the hero server: the flag wraps its ability check (no dashing with the flag).

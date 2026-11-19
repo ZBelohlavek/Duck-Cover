@@ -299,6 +299,16 @@ namespace DuckAndCover.Core
                 if (!script.CanActivate(Context(unit, use.slot, ability, null))) return CommandResult.Reject("can't be used right now");
             }
 
+            // A buff aimed at a teammate waits for one to be in reach rather than going to waste.
+            if (def.targeting.needsTarget && def.castTime <= 0f)
+            {
+                var team = Match.Player(unit.playerId).team;
+                bool any = false;
+                foreach (var area in FindAreas(unit.playerId, team, def.targeting, use.aimOrigin, dir, use.tick))
+                    if (area.targets.Length > 0) { any = true; break; }
+                if (!any) return CommandResult.Reject("no target in reach");
+            }
+
             // Anything that reaches past the caster gives a cloak away (and opens the ambush window first,
             // so the ability that breaks it already counts as an ambush).
             if (!SelfOnly(def)) BreakStealth(unit.playerId, "attacked");
@@ -353,6 +363,12 @@ namespace DuckAndCover.Core
                 {
                     e = e.Clone();
                     e.duration = def.duration;
+                }
+                if (e.kind == EffectKinds.Damage && string.IsNullOrEmpty(e.tag) && s.notches > 0 && def.notchDamage > 0f)
+                {
+                    // Notches earned by kills sharpen the ability's own hit.
+                    e = e.Clone();
+                    e.amount += Math.Min(s.notches, def.maxNotches) * def.notchDamage;
                 }
                 if (e.delay > 0f)
                 {
@@ -523,6 +539,7 @@ namespace DuckAndCover.Core
                 }
                 case DamagedEvent hit:
                     if (hit.attackerId >= 0 && hit.attackerId != hit.targetId) AddUltimateCharge(hit.attackerId, hit.amount * Rules.ultimateChargePerDamage * ChargeShare(hit.targetId));
+                    if (hit.eliminated) KillRewards(hit);
                     break;
                 case HealedEvent heal:
                     if (heal.healerId != heal.targetId) AddUltimateCharge(heal.healerId, heal.amount * Rules.ultimateChargePerHealing * ChargeShare(heal.targetId));
@@ -530,6 +547,63 @@ namespace DuckAndCover.Core
                 case ShieldedEvent shield:
                     if (shield.sourceId != shield.targetId) AddUltimateCharge(shield.sourceId, shield.amount * Rules.ultimateChargePerHealing * ChargeShare(shield.targetId));
                     break;
+            }
+        }
+
+        // ---- Kill rewards ----
+
+        /// <summary>
+        /// What a killing blow took down, for <see cref="KillRewardDef.victims"/>: a hero, a team's moving
+        /// lane unit (minion), a neutral camp creature, or null (a Bastion, a training dummy's team...).
+        /// Called while the victim is still in the roster (DamageRules publishes before it destroys).
+        /// </summary>
+        string VictimKind(int targetId)
+        {
+            if (!UnitIds.IsUnit(targetId)) return KillVictims.Hero;
+            var u = Combat.Roster.Get(targetId);
+            if (u == null) return null;
+            if (u.team == TeamId.None) return KillVictims.Camp;
+            return u.anchored ? null : KillVictims.Minion;
+        }
+
+        /// <summary>Pay the killer's kill rewards (slot abilities, then the passive) for a killing blow.</summary>
+        void KillRewards(DamagedEvent hit)
+        {
+            int killer = hit.attackerId;
+            if (killer < 0 || killer == hit.targetId || UnitIds.IsUnit(killer)) return;
+            var unit = State.Unit(killer);
+            var p = Match.Player(killer);
+            if (unit == null || p == null) return;
+            string victim = VictimKind(hit.targetId);
+            if (victim == null) return;
+            foreach (var slot in unit.slots) Reward(unit, p.team, slot, slot.abilityId, hit, victim);
+            if (!string.IsNullOrEmpty(unit.passiveId)) Reward(unit, p.team, null, unit.passiveId, hit, victim);
+        }
+
+        void Reward(HeroUnit unit, TeamId team, AbilitySlotState slot, string abilityId, DamagedEvent hit, string victim)
+        {
+            var ability = Resolved(unit, abilityId);
+            var def = ability.def;
+            if (def.onKill == null || def.onKill.Length == 0) return;
+            bool own = hit.abilityId == def.id;
+            foreach (var k in def.onKill)
+            {
+                if (!ability.IsOn(k) || !k.Counts(victim)) continue;
+                if (k.scope == KillScopes.Ability && !own || k.scope == KillScopes.Other && own) continue;
+                if (slot != null && k.notches > 0 && def.maxNotches > 0) slot.notches = Math.Min(def.maxNotches, slot.notches + k.notches);
+                if (Combat.IsAlive(unit.playerId) && k.effects != null)
+                {
+                    TryGetPosition(unit.playerId, out var at);
+                    var areas = new List<EffectArea> { new EffectArea { point = at, targets = new[] { unit.playerId } } };
+                    foreach (var effect in k.effects)
+                    {
+                        if (!ability.IsOn(effect)) continue;
+                        var e = effect.Clone();
+                        e.affects = Affects.Self;
+                        RunEffect(e, unit.playerId, team, def.id, 0, Vec3.Forward, areas, 1f, ability);
+                    }
+                }
+                Publish(new KillRewardEvent { playerId = unit.playerId, abilityId = def.id, victimId = hit.targetId, victim = victim, notches = slot == null ? 0 : slot.notches });
             }
         }
 

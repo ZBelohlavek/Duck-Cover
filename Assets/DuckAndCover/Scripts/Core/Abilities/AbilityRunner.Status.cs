@@ -107,7 +107,7 @@ namespace DuckAndCover.Core
             return n;
         }
 
-        static string StatusSource(string statusId) => "status:" + statusId;
+        static string StatusSource(string statusId) => DamageRules.StatusSourcePrefix + statusId;
 
         void WriteStatusStats(HeroUnit unit, StatusInstance s, StatusDef def)
         {
