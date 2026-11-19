@@ -61,6 +61,8 @@ Art must never change how a map plays, so the validator's numbers stay true:
   `MapDresser.MaxProud`, 7 cm, proud of it) or hang high overhead (gantries at 12 m).
 - Tall pieces (cliffs, trees, gantry legs) stand outside the outer walls, or grow out of a styled block
   (a tree line's trees), above its top.
+- Modelled pieces (`EnvArt`) are stretched to their block's box (`EnvArt.Fit`), so the drawing never
+  leaves the collider. Only a tree's crown may spread past its block, and only above 9 m.
 
 ## Sources and licences
 
@@ -72,8 +74,36 @@ Never use assets ripped from other games.
 | Asset | Source | Licence |
 |---|---|---|
 | All environment textures, meshes and skies | Made in code (`Game/Env`) | Ours |
+| Breakwater's modelled pieces (`Data/Resources/EnvArt`) | Made in Blender from our own scripts | Ours |
 
 Concept renders (Blender, made in code too) are in the project files under `art/env-jungle-moon/`.
+
+## Modelled pieces (Breakwater)
+
+Breakwater, the Overrun lane map, draws its blocks with modelled pieces instead of code-made shapes:
+tree-line hedges (some with a tree), rock walls, low walls, rock cover, crates and crate stacks, the
+temple side gates and broken temple wall, both teams' Forward and Core Bastions with a fallen stump,
+launch pads and the four camp pads. They carry the Bastions' design: teal crystal clusters, brass caps
+and Bastion stone.
+
+- Each piece is `Data/Resources/EnvArt/<name>.bytes` (a small binary mesh, format DCM2, read by
+  `Game/Env/EnvArt.cs`), `<name>_c.jpg` (painted colour, baked) and, for lightened pieces, `<name>_n.jpg`
+  (normal map). Binary meshes and JPEGs need no Git LFS. `Editor/EnvArtImport.cs` sets the texture import
+  settings.
+- Glowing parts (trim lights, crystals) are separate parts with a flat glowing colour. A Bastion's
+  crown crystal (`crystal_a`/`crystal_b`) is recoloured by `MapView` to show if it is sealed or open.
+- `MapDresser.DressArt` picks the piece for each block by kind and style (`treeline`, `rocks`,
+  `templegate`, `templeruin`); interior blocks walled in on all four sides keep the code-made look so the
+  map stays light. If the pieces are missing, every block falls back to the code-made look.
+- So walls don't read as one object copied over and over, tree-line and rock blocks that touch end to end
+  are drawn as one run (`MapDresser.FindRuns`; colliders stay per block). `EnvArt.FitRun` fills a run with
+  modules of uneven length picked from three variants (`EnvHedge`/`B`/`C`, `EnvRockWall`/`B`/`C`), overlapping
+  so their ends melt together, each turned or mirrored at random, set back a little from the face and a
+  little lower than the box. Trees (`EnvTree`, `EnvTreeB`) rise from about one hedge module in five.
+- The sources are in the project files under `art/env-assets-v1/`: `build.py` makes the Blender models,
+  `unity_export.py` bakes and exports them, `to_dcm2.py` writes the game files. To regenerate:
+  `pip install bpy`, then `python3 unity_export.py <out>` and `python3 to_dcm2.py <out>
+  Assets/DuckAndCover/Data/Resources/EnvArt`.
 
 ## Themes
 

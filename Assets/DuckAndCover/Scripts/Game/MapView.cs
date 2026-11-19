@@ -42,6 +42,8 @@ namespace DuckAndCover.Game
         {
             public MapBastion spot;
             public GameObject pillar, crown;
+            /// <summary>A modelled Bastion's stump (null for the code-made pillar).</summary>
+            public GameObject fallen;
             public bool down;
             public Color crownShown = Color.white;
         }
@@ -64,6 +66,10 @@ namespace DuckAndCover.Game
 
         public void AddBastion(MapBastion spot, GameObject pillar, GameObject crown) =>
             bastions.Add(new BastionMarks { spot = spot, pillar = pillar, crown = crown });
+
+        /// <summary>A modelled Bastion: the standing model, its crystal (the crown) and the stump shown once it falls.</summary>
+        public void AddBastion(MapBastion spot, GameObject standing, GameObject crystal, GameObject fallen) =>
+            bastions.Add(new BastionMarks { spot = spot, pillar = standing, crown = crystal, fallen = fallen, crownShown = TeamColor(spot.team) });
 
         /// <summary>The base a shift block belongs to in Overrun: Breakwater names each pair's blocks ...A and ...B.</summary>
         static TeamId BaseOf(MapBlock b)
@@ -115,11 +121,18 @@ namespace DuckAndCover.Game
                 }
                 // The crown says who may hurt it: grey while sealed, the enemy's colour while their minions
                 // are near (their heroes can hurt it now), white otherwise.
-                var crown = live == null || down ? Color.white : live.sealedOff ? Locked : live.openToHeroes ? TeamColor(b.spot.team.Other()) : Color.white;
+                // A modelled Bastion's crystal rests in its own team's colour instead of white.
+                var idle = b.fallen != null ? TeamColor(b.spot.team) : Color.white;
+                var crown = live == null || down ? idle : live.sealedOff ? Locked : live.openToHeroes ? TeamColor(b.spot.team.Other()) : idle;
                 if (b.crown != null && crown != b.crownShown)
                 {
                     b.crownShown = crown;
-                    Paint.Apply(b.crown, crown);
+                    if (b.fallen != null)
+                    {
+                        var r = b.crown.GetComponent<Renderer>();
+                        if (r != null) r.sharedMaterial = EnvArt.Glow(crown);
+                    }
+                    else Paint.Apply(b.crown, crown);
                 }
             }
 
@@ -145,6 +158,13 @@ namespace DuckAndCover.Game
         static void ShowBastion(BastionMarks b)
         {
             if (b.pillar == null) return;
+            if (b.fallen != null)
+            {
+                // Modelled: swap the standing Bastion for its broken stump.
+                b.pillar.SetActive(!b.down);
+                b.fallen.SetActive(b.down);
+                return;
+            }
             float h = MapScene.BastionHeight(b.spot.tier) * (b.down ? StumpShare : 1f);
             var p = b.spot.position.ToVector3();
             var size = b.pillar.transform.localScale;

@@ -139,6 +139,7 @@ namespace DuckAndCover.Game
             if (!map.IsLaneMap) return;
             foreach (var b in map.bastions)
             {
+                if (ArtBastion(parent, b, view)) continue;
                 var c = b.team == TeamId.A ? TeamA : TeamB;
                 float h = BastionHeight(b.tier);
                 var p = b.position.ToVector3();
@@ -151,7 +152,14 @@ namespace DuckAndCover.Game
             foreach (var camp in map.camps)
             {
                 var p = camp.pad.ToVector3();
-                Paint.Shape(PrimitiveType.Cylinder, parent, "Camp " + camp.id, p + new Vector3(0f, 0.03f, 0f),
+                var art = "EnvCamp" + camp.kind;
+                if (EnvArt.Has(art))
+                {
+                    // The modelled pad is flat (2 cm) and modelled at a 4 m radius.
+                    float k = camp.padRadius / 4f;
+                    EnvArt.Place(parent, art, p + new Vector3(0f, 0.01f, 0f), Quaternion.identity, new Vector3(k, 1f, k));
+                }
+                else Paint.Shape(PrimitiveType.Cylinder, parent, "Camp " + camp.id, p + new Vector3(0f, 0.03f, 0f),
                     new Vector3(camp.padRadius * 2f, 0.01f, camp.padRadius * 2f), CampColor(camp.kind), false);
                 foreach (var g in camp.guardSpots)
                     Paint.Shape(PrimitiveType.Cube, parent, "Camp " + camp.id + " Guard", g.ToVector3() + new Vector3(0f, 0.6f, 0f), new Vector3(0.8f, 1.2f, 0.8f), CampColor(camp.kind) * 0.6f, false);
@@ -159,7 +167,15 @@ namespace DuckAndCover.Game
             foreach (var pad in map.launchPads)
             {
                 var p = pad.center.ToVector3();
-                Paint.Shape(PrimitiveType.Cylinder, parent, "Launch " + pad.name, p + new Vector3(0f, 0.05f, 0f),
+                if (EnvArt.Has(MapDresser.ArtLaunchPad))
+                {
+                    // The modelled pad (radius 1.5, 4 cm tall) with its chevrons pointing where it throws you.
+                    var to = pad.landing.ToVector3() - p;
+                    float yaw = Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg;
+                    float k = pad.radius / 1.5f;
+                    EnvArt.Place(parent, MapDresser.ArtLaunchPad, p + new Vector3(0f, 0.01f, 0f), Quaternion.Euler(0f, yaw, 0f), new Vector3(k, 1f, k));
+                }
+                else Paint.Shape(PrimitiveType.Cylinder, parent, "Launch " + pad.name, p + new Vector3(0f, 0.05f, 0f),
                     new Vector3(pad.radius * 2f, 0.04f, pad.radius * 2f), LaunchColor, false);
                 // Small markers along the first part of the arc, so the pad reads as a launcher.
                 for (int k = 1; k <= 6; k++)
@@ -168,6 +184,25 @@ namespace DuckAndCover.Game
                     Paint.Shape(PrimitiveType.Sphere, parent, "Launch " + pad.name + " Arc " + k, q + new Vector3(0f, 0.6f, 0f), Vector3.one * 0.35f, LaunchColor, false);
                 }
             }
+        }
+
+        /// <summary>
+        /// A modelled Bastion (stone plinth, team-painted core, floating crystal) and its fallen stump, hidden
+        /// until it falls. Its crystal is the crown <see cref="MapView"/> recolours. False if the art is missing.
+        /// </summary>
+        static bool ArtBastion(Transform parent, MapBastion b, MapView view)
+        {
+            string name = "EnvBastion" + (b.tier == BastionTier.Core ? "Core" : "Forward") + (b.team == TeamId.A ? "A" : "B");
+            if (!EnvArt.Has(name)) return false;
+            var p = b.position.ToVector3();
+            // Turned so a fin faces the lane on both bases alike (the map is mirrored end to end).
+            var rotation = Quaternion.Euler(0f, b.team == TeamId.A ? 0f : 180f, 0f);
+            var standing = EnvArt.Place(parent, name, p, rotation, Vector3.one);
+            var fallen = EnvArt.Place(parent, "EnvBastionFallen", p, rotation, Vector3.one);
+            if (fallen != null) fallen.SetActive(false);
+            var crown = EnvArt.Part(standing, b.team == TeamId.A ? "crystal_a" : "crystal_b");
+            if (view != null) view.AddBastion(b, standing, crown, fallen);
+            return true;
         }
 
         static Color ColorOf(MapBlock b)

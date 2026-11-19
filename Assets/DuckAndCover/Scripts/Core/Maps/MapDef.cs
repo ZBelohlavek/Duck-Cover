@@ -87,7 +87,8 @@ namespace DuckAndCover.Core
 
         /// <summary>
         /// Art only: how the dresser draws this block, for example "treeline" or "rocks" for natural walls
-        /// that frame a lane. Empty draws it by its kind. Rules never read it.
+        /// that frame a lane, "templegate" for a gate lintel that carries the whole modelled gate (its jambs are
+        /// "templegate_jamb"), or "templeruin" for a broken temple wall. Empty draws it by its kind. Rules never read it.
         /// </summary>
         public string style = "";
 
