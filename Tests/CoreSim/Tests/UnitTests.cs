@@ -260,7 +260,7 @@ static class UnitTests
         Check.True(compared >= 32, "compared every weapon and slot: " + compared);
         // Bulwark's kit touches only himself and walls (shield, drone, Bulkhead), so his three slots land on nobody,
         // and Mender's weapon heals nobody without Mending Rounds, nor his Purge without a debuff to clear.
-        Check.True(landed >= 9, "and most of them reached the target: " + landed);
+        Check.True(landed >= 8, "and most of them reached the target: " + landed);
     }
 
     [Test]

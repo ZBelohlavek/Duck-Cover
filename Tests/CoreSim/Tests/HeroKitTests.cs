@@ -540,7 +540,6 @@ static class HeroKitTests
         Check.False(h.Unit(A1).HasStatus("mender_ward"), "a ward lasts 8 seconds");
     }
 
-    [Test]
     // ---- Rigger: RiggerKitTests ----
 
     // ---- Stats the weapons read ----
