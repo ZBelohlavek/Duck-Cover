@@ -108,7 +108,7 @@ namespace DuckAndCover.Game
         static Renderer SightDot(Transform marker)
         {
             if (dotBright == null) dotBright = DotMaterial(new Color(1f, 0.08f, 0.05f), true);
-            if (dotDim == null) dotDim = DotMaterial(new Color(0.32f, 0.05f, 0.04f), false);
+            if (dotDim == null) dotDim = DotMaterial(new Color(0.5f, 0.07f, 0.05f), true);
             var dot = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             dot.name = "Dot";
             Destroy(dot.GetComponent<Collider>());
