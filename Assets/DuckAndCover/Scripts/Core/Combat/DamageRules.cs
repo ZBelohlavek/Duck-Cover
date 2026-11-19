@@ -214,6 +214,9 @@ namespace DuckAndCover.Core
         /// Returns what was taken (health plus shield), 0 when nothing happened.
         /// <paramref name="attackerId"/> is a player or unit id; -1 = the world.
         /// </summary>
+        /// <summary>What a status's ticking effects are credited as: "status:" and the status id.</summary>
+        public const string StatusSourcePrefix = "status:";
+
         public float Damage(int attackerId, int targetId, float amount, string abilityId = "", int objectId = 0)
         {
             if (amount <= 0f || !match.State.IsPlaying || !IsAlive(targetId)) return 0f;
@@ -253,6 +256,13 @@ namespace DuckAndCover.Core
                 objectId = objectId,
                 eliminated = down,
             });
+            // Damage over time (a status ticking, credited "status:<id>") can heal its source.
+            if (attacker && attackerId != targetId && lost + absorbed > 0f && IsAlive(attackerId)
+                && abilityId != null && abilityId.StartsWith(StatusSourcePrefix))
+            {
+                float steal = Stat(attackerId, StatIds.StatusLifeSteal);
+                if (steal > 0f) Heal(attackerId, attackerId, (lost + absorbed) * steal, StatIds.StatusLifeSteal);
+            }
             if (down)
             {
                 int killer = attacker && attackerId != targetId ? attackerId : -1;
@@ -283,6 +293,12 @@ namespace DuckAndCover.Core
             if (restored <= 0f) return 0f;
             target.health += restored;
             Publish(new HealedEvent { healerId = healerId, targetId = targetId, amount = restored, healthNow = target.health, abilityId = abilityId ?? "", objectId = objectId });
+            // Healing a teammate hero can heal the healer too (healShare). Their own heal doesn't, so it stops here.
+            if (healerId != targetId && IsAlive(healerId) && !UnitIds.IsUnit(targetId) && !UnitIds.IsUnit(healerId))
+            {
+                float share = Stat(healerId, StatIds.HealShare);
+                if (share > 0f) Heal(healerId, healerId, restored * share, StatIds.HealShare);
+            }
             return restored;
         }
 

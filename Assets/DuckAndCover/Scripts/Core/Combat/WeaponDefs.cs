@@ -76,6 +76,29 @@ namespace DuckAndCover.Core
             return 1f + (falloffMinShare - 1f) * t;
         }
 
+        /// <summary>
+        /// The direction to fire from <paramref name="from"/> to hit <paramref name="to"/>: straight for a
+        /// hitscan weapon or one without gravity, and the low arc for a lobbed projectile (bots and tests
+        /// aim with it; players aim by eye). Out of reach, the 45° throw that goes furthest.
+        /// </summary>
+        public Vec3 AimAt(Vec3 from, Vec3 to)
+        {
+            Vec3 d = to - from;
+            if (kind != WeaponKind.Projectile || projectileGravity <= 0f || projectileSpeed <= 0f) return d.Normalized;
+            var flat = new Vec3(d.x, 0f, d.z);
+            float x = flat.Magnitude;
+            if (x < 1e-4f) return d.Normalized;
+            double v2 = (double)projectileSpeed * projectileSpeed, g = projectileGravity;
+            double root = v2 * v2 - g * (g * x * x + 2.0 * d.y * v2);
+            double angle = root < 0.0 ? Math.PI / 4.0 : Math.Atan((v2 - Math.Sqrt(root)) / (g * x));
+            Vec3 across = flat * (1f / x);
+            return (across * (float)Math.Cos(angle) + Vec3.Up * (float)Math.Sin(angle)).Normalized;
+        }
+
+        /// <summary>Furthest a lobbed projectile carries on flat ground (v²/g); a straight weapon's range.</summary>
+        public float Reach => kind == WeaponKind.Projectile && projectileGravity > 0f
+            ? projectileSpeed * projectileSpeed / projectileGravity : range;
+
         public float PartMultiplier(int bodyPart) =>
             bodyPart == BodyParts.Head ? headMultiplier : bodyPart == BodyParts.Legs ? legsMultiplier : 1f;
 
@@ -221,6 +244,9 @@ namespace DuckAndCover.Core
                     splashRadius = 3.5f, splashDamage = 70f, splashMinShare = 0.3f },
                 new WeaponDef { id = "mender_sidearm", displayName = "Mending sidearm", automatic = true, fireInterval = 0.16f, magazine = 18, reloadSeconds = 1.4f,
                     damage = 15f, headMultiplier = 1.5f, legsMultiplier = 0.85f, range = 60f, falloffStart = 15f, falloffEnd = 35f, falloffMinShare = 0.5f },
+                new WeaponDef { id = "spore_bombs", displayName = "Spore bombs", kind = WeaponKind.Projectile, automatic = false, fireInterval = 0.7f, magazine = 6, reloadSeconds = 2f,
+                    damage = 15f, headMultiplier = 1f, legsMultiplier = 1f, projectileSpeed = 24f, projectileGravity = 12f,
+                    splashRadius = 2.5f, splashDamage = 30f, splashMinShare = 0.4f },
             },
             loadouts =
             {
@@ -229,6 +255,7 @@ namespace DuckAndCover.Core
                 new WeaponLoadout { heroId = "lancer", weapons = new[] { "rifle", "pistol" } },
                 new WeaponLoadout { heroId = "mender", weapons = new[] { "mender_sidearm" } },
                 new WeaponLoadout { heroId = "rigger", weapons = new[] { "smg", "pistol" } },
+                new WeaponLoadout { heroId = "bolete", weapons = new[] { "spore_bombs" } },
             },
         };
 

@@ -298,6 +298,16 @@ namespace DuckAndCover.Core
                 if (!script.CanActivate(Context(unit, use.slot, ability, null))) return CommandResult.Reject("can't be used right now");
             }
 
+            // A buff aimed at a teammate waits for one to be in reach rather than going to waste.
+            if (def.targeting.needsTarget && def.castTime <= 0f)
+            {
+                var team = Match.Player(unit.playerId).team;
+                bool any = false;
+                foreach (var area in FindAreas(unit.playerId, team, def.targeting, use.aimOrigin, dir, use.tick))
+                    if (area.targets.Length > 0) { any = true; break; }
+                if (!any) return CommandResult.Reject("no target in reach");
+            }
+
             // Anything that reaches past the caster gives a cloak away (and opens the ambush window first,
             // so the ability that breaks it already counts as an ambush).
             if (!SelfOnly(def)) BreakStealth(unit.playerId, "attacked");

@@ -26,7 +26,7 @@ sealed class HeroHarness
     public Ruleset R => Match.Rules;
     public AbilityRunner Abilities => Combat.Abilities;
 
-    public static string[] StarterIds = { "bulwark", "lancer", "mender", "rigger" };
+    public static string[] StarterIds = { "bulwark", "lancer", "mender", "rigger", "bolete" };
 
     /// <summary>Every ability file, loaded the strict way (an unknown key fails).</summary>
     public static AbilityLibrary DataLibrary() =>
@@ -113,7 +113,8 @@ sealed class HeroHarness
     public CommandResult FireAt(int shooter, Vec3 target) => Combat.Apply(new FireCommand
     {
         playerId = shooter, tick = S.tick, weaponId = Combat.Weapons.Weapons(shooter).CurrentId, origin = Eye(shooter),
-        direction = (target - Eye(shooter)).Normalized,
+        // Lobbed weapons aim on their arc so the throw lands where the test points.
+        direction = Combat.Weapons.Library.Weapon(Combat.Weapons.Weapons(shooter).CurrentId)?.AimAt(Eye(shooter), target) ?? (target - Eye(shooter)).Normalized,
     });
 
     /// <summary>Reach a level (experience straight from the leveling rules) and fill the ultimate.</summary>

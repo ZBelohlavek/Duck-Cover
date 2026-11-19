@@ -160,7 +160,7 @@ namespace DuckAndCover.Core
                 string x = w + e.kind + ": ";
                 if (!EffectKinds.IsKnown(e.kind)) { errors.Add(w + "unknown effect kind '" + e.kind + "'"); continue; }
                 if (e.amount < 0f || e.duration < 0f || e.delay < 0f || e.interval < 0f || e.radius < 0f) errors.Add(x + "amount, duration, delay, interval and radius can't be negative");
-                if (!string.IsNullOrEmpty(e.affects) && !Affects.IsKnown(e.affects)) errors.Add(x + "unknown affects '" + e.affects + "'");
+                if (!string.IsNullOrEmpty(e.affects) && !Affects.IsKnownForEffect(e.affects)) errors.Add(x + "unknown affects '" + e.affects + "'");
                 switch (e.kind)
                 {
                     case EffectKinds.Damage:

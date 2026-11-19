@@ -167,8 +167,8 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
   it over the network (scripted players join their wave with `ScriptedToLaneCommand`).
 - Teams are 4v4 (`Ruleset.maxPlayersPerTeam`). Recommended lineup, never a lock: tank, healer, DPS, utility or flex
   (`Core/Heroes/Roles.cs` maps them to the role ids in hero data; duplicates stay allowed).
-- Heroes (WP11): Bulwark (vanguard), Lancer (striker), Mender (support), Rigger (controller), as data in
-  Data/Resources. `HeroServer` (Core/Heroes) gives a pick its kit, runs leveling beside the match and
+- Heroes (WP11): Bulwark (vanguard), Lancer (striker), Mender (support), Rigger (controller), plus Bolete (support,
+  the fungal healer with lobbed spore bombs), as data in Data/Resources. `HeroServer` (Core/Heroes) gives a pick its kit, runs leveling beside the match and
   applies upgrades; `HeroKitTests` checks every ability and all 80 upgrades. Levels run 1 to 20 (picks on even levels); each hero has two upgrade paths, left and right (`docs/HEROES.md`).
 - Stealth (Rigger's Cloak) is a status flag, `StatusDef.stealth`: `HeroUnit.stealthed` is on while a stealth status is
   up and no reveal status is. Turrets (objects with maxTargets), minions and Bastions skip a stealthed enemy

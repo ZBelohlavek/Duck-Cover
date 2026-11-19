@@ -1,0 +1,239 @@
+{
+  "abilities": [
+    {
+      "id": "bolete_bloom",
+      "displayName": "Bloom Cap",
+      "description": "Plant a healing mushroom where you aim. For 6 seconds, you and teammates within 3.5 m of it heal 18 health a second, and keep healing for a second after stepping out.",
+      "cooldown": 12,
+      "targeting": {
+        "shape": "sphere",
+        "origin": "aimPoint",
+        "range": 15,
+        "radius": 0.5,
+        "affects": "alliesAndSelf"
+      },
+      "effects": [
+        {
+          "kind": "spawn",
+          "objectId": "bolete_bloom"
+        }
+      ]
+    },
+    {
+      "id": "bolete_rot",
+      "displayName": "Rot Spore",
+      "description": "Throw a rotten spore pod where you aim. It bursts a second later: enemies within 3.5 m are poisoned for 10 damage a second and Wilt (deal 20% less damage) for 5 seconds.",
+      "cooldown": 12,
+      "targeting": {
+        "shape": "sphere",
+        "origin": "aimPoint",
+        "range": 20,
+        "radius": 3.5,
+        "affects": "enemies"
+      },
+      "effects": [
+        {
+          "kind": "status",
+          "status": "bolete_poison",
+          "duration": 5,
+          "delay": 1
+        },
+        {
+          "kind": "status",
+          "status": "bolete_wilt",
+          "duration": 5,
+          "delay": 1
+        },
+        {
+          "kind": "status",
+          "status": "bolete_leech",
+          "duration": 6,
+          "delay": 1,
+          "affects": "selfPerHero",
+          "tag": "leech"
+        }
+      ]
+    },
+    {
+      "id": "bolete_frenzy",
+      "displayName": "Frenzy Cap",
+      "description": "Ultimate. Grow a frenzy mushroom on the teammate you aim at: for 6 seconds they fire 25% faster and deal 15% more damage. With no teammate there, nothing is spent.",
+      "ultimate": true,
+      "ultimateCost": 100,
+      "targeting": {
+        "shape": "sphere",
+        "origin": "aimPoint",
+        "range": 30,
+        "radius": 1.5,
+        "affects": "allies",
+        "maxTargets": 1,
+        "needsTarget": true
+      },
+      "effects": [
+        {
+          "kind": "status",
+          "status": "bolete_frenzy",
+          "duration": 6
+        },
+        {
+          "kind": "status",
+          "status": "bolete_stride",
+          "duration": 6,
+          "tag": "stride"
+        },
+        {
+          "kind": "status",
+          "status": "bolete_frenzy",
+          "duration": 6,
+          "affects": "self",
+          "tag": "kindred"
+        }
+      ]
+    }
+  ],
+  "statuses": [
+    {
+      "id": "bolete_bloom_heal",
+      "displayName": "Blooming",
+      "negative": false,
+      "duration": 1,
+      "stacking": "refresh",
+      "interval": 0.5,
+      "scaleWithStrength": true,
+      "tickEffects": [
+        {
+          "kind": "heal",
+          "amount": 9
+        }
+      ]
+    },
+    {
+      "id": "bolete_heartwood",
+      "displayName": "Heartwood",
+      "negative": false,
+      "duration": 1,
+      "stacking": "refresh",
+      "stats": [
+        {
+          "stat": "damageTaken",
+          "op": "percent",
+          "value": -0.15,
+          "when": ""
+        }
+      ]
+    },
+    {
+      "id": "bolete_poison",
+      "displayName": "Poisoned",
+      "negative": true,
+      "duration": 5,
+      "stacking": "refresh",
+      "interval": 0.5,
+      "tickEffects": [
+        {
+          "kind": "damage",
+          "amount": 5
+        }
+      ]
+    },
+    {
+      "id": "bolete_wilt",
+      "displayName": "Wilted",
+      "negative": true,
+      "duration": 5,
+      "stacking": "refresh",
+      "stats": [
+        {
+          "stat": "damageDealt",
+          "op": "percent",
+          "value": -0.2,
+          "when": ""
+        }
+      ]
+    },
+    {
+      "id": "bolete_leech",
+      "displayName": "Leeching",
+      "negative": false,
+      "duration": 6,
+      "stacking": "stack",
+      "maxStacks": 3,
+      "stats": [
+        {
+          "stat": "damageDealt",
+          "op": "percent",
+          "value": 0.06,
+          "when": ""
+        },
+        {
+          "stat": "moveSpeed",
+          "op": "percent",
+          "value": 0.05,
+          "when": ""
+        }
+      ]
+    },
+    {
+      "id": "bolete_frenzy",
+      "displayName": "Frenzy",
+      "negative": false,
+      "duration": 6,
+      "stacking": "refresh",
+      "stats": [
+        {
+          "stat": "fireRate",
+          "op": "percent",
+          "value": 0.25,
+          "when": ""
+        },
+        {
+          "stat": "damageDealt",
+          "op": "percent",
+          "value": 0.15,
+          "when": ""
+        }
+      ]
+    },
+    {
+      "id": "bolete_stride",
+      "displayName": "Wild Stride",
+      "negative": false,
+      "duration": 6,
+      "stacking": "refresh",
+      "stats": [
+        {
+          "stat": "moveSpeed",
+          "op": "percent",
+          "value": 0.2,
+          "when": ""
+        }
+      ]
+    }
+  ],
+  "objects": [
+    {
+      "id": "bolete_bloom",
+      "displayName": "Bloom Cap",
+      "lifetime": 6,
+      "radius": 3.5,
+      "trigger": "pulse",
+      "interval": 0.5,
+      "affects": "alliesAndSelf",
+      "effects": [
+        {
+          "kind": "status",
+          "status": "bolete_bloom_heal",
+          "amount": 1,
+          "duration": 1
+        },
+        {
+          "kind": "status",
+          "status": "bolete_heartwood",
+          "duration": 1,
+          "affects": "self",
+          "tag": "heartwood"
+        }
+      ]
+    }
+  ]
+}
