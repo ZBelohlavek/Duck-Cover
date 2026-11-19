@@ -215,6 +215,38 @@ static class LaneTests
     }
 
     [Test]
+    static void WardensWalkUpAndFightInMelee()
+    {
+        var h = new LaneHarness(waves: false);
+        var def = h.L.Rules.units.Single(k => k.id == LaneRuleset.Warden);
+        Check.True(def.melee && def.attackRange < 2.5f, "the Warden is a melee minion");
+        h.H.NoShield(CombatHarness.B1);
+        h.H.Place(CombatHarness.B1, 5f, -80f); // 5 m off the line: a Scrapper would shoot from here
+        int id = h.L.Waves.SpawnMinion(LaneRuleset.Warden, TeamId.A, 0);
+        var u = h.H.Combat.Units.Unit(id);
+        float firstHitGap = -1f;
+        h.Run(12f, () =>
+        {
+            h.H.Place(CombatHarness.B1, 5f, -80f);
+            if (firstHitGap < 0f && h.H.Of<DamagedEvent>().Any(d => d.attackerId == id && d.targetId == CombatHarness.B1))
+                firstHitGap = LaneDef.Flat(new Vec3(5f, 0f, -80f) - u.position).Magnitude;
+        });
+        int hits = h.H.Of<DamagedEvent>().Count(d => d.attackerId == id && d.targetId == CombatHarness.B1);
+        Check.True(hits >= 5, "it reached the hero and kept hitting: " + hits);
+        Check.True(firstHitGap > 0f && firstHitGap <= def.attackRange + h.H.Combat.Rules.bodyRadius + 0.05f, "only at arm's length: " + firstHitGap);
+
+        // A Bastion's footprint counts toward reach, so a melee minion can hit one from its outside.
+        var big = new UnitDef { id = "test_pillar", name = "Pillar", maxHealth = 5000f, size = 2.2f, moveSpeed = 0f, anchored = true, footprint = 2.5f };
+        h.H.Combat.Units.Library.Add(big);
+        int pillar = h.H.Combat.Units.Spawn("test_pillar", TeamId.B, new Vec3(0f, 0f, -40f));
+        h.H.Place(CombatHarness.B1, 300f, 0f);
+        h.H.Forget();
+        h.Run(20f, () => h.H.Place(CombatHarness.B1, 300f, 0f));
+        Check.True(h.H.Of<DamagedEvent>().Any(d => d.attackerId == id && d.targetId == pillar), "it hits a wide target from its edge");
+        Check.True(u.position.z < -40f - 2.5f + 0.01f || Math.Abs(u.position.x) > 0f, "without walking into it: " + u.position);
+    }
+
+    [Test]
     static void MinionsIgnoreNeutralUnitsAndFriends()
     {
         var h = new LaneHarness(waves: false);

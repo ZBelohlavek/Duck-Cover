@@ -160,7 +160,8 @@ namespace DuckAndCover.Core
                 Vec3 at = FeetOf(m.targetId);
                 Vec3 toward = LaneDef.Flat(at - u.position);
                 float dist = toward.Magnitude;
-                if (dist <= def.attackRange && CanHit(m.unitId, m.targetId))
+                float reach = def.attackRange + (def.melee ? EdgeOf(m.targetId) : 0f);
+                if (dist <= reach && CanHit(m.unitId, m.targetId))
                 {
                     Face(u, toward);
                     if (m.cooldown <= 0f)
@@ -372,6 +373,17 @@ namespace DuckAndCover.Core
             if (UnitIds.IsUnit(id)) { var u = Units.Unit(id); return u == null ? Vec3.Zero : u.position; }
             var m = combat.Movement.Motion(id);
             return m == null ? Vec3.Zero : m.position;
+        }
+
+        /// <summary>Metres from a body's centre to its outside: a unit kind's footprint, else a body's radius by size.</summary>
+        float EdgeOf(int id)
+        {
+            float radius = combat.Rules.bodyRadius;
+            if (!UnitIds.IsUnit(id)) return radius;
+            var u = Units.Unit(id);
+            var kind = u == null ? null : Units.Library.Unit(u.typeId);
+            if (kind != null && kind.footprint > 0f) return kind.footprint;
+            return radius * (u == null ? 1f : u.size);
         }
 
         Vec3 ChestOf(int id)
