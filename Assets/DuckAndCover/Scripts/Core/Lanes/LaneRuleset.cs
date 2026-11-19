@@ -28,6 +28,11 @@ namespace DuckAndCover.Core
         public CampKind kind;
         /// <summary>The unit kind of its guards.</summary>
         public string guardType = LaneRuleset.CampGuard;
+        /// <summary>
+        /// Kinds by guard, in spot order and repeating, for a camp with mixed guards (the Damage camp's
+        /// Mossback with its Thornbacks). Empty means every guard is <see cref="guardType"/>.
+        /// </summary>
+        public string[] guardMix = new string[0];
         /// <summary>Guards placed around the pad when the map gives no spots.</summary>
         public int guards = 2;
         /// <summary>Seconds one hero needs on the pad, once the guards are down, to take it.</summary>
@@ -41,7 +46,16 @@ namespace DuckAndCover.Core
         /// <summary>Experience split between the heroes who helped (Experience camps).</summary>
         public float experience;
 
-        public CampKindDef Clone() => (CampKindDef)MemberwiseClone();
+        /// <summary>The kind of the camp's guard at this spot.</summary>
+        public string GuardTypeAt(int index) =>
+            guardMix != null && guardMix.Length > 0 ? guardMix[index % guardMix.Length] : guardType;
+
+        public CampKindDef Clone()
+        {
+            var c = (CampKindDef)MemberwiseClone();
+            c.guardMix = (string[])(guardMix ?? new string[0]).Clone();
+            return c;
+        }
     }
 
     /// <summary>
@@ -57,6 +71,12 @@ namespace DuckAndCover.Core
         public const string Juggernaut = "juggernaut";
         public const string CampGuard = "camp_guard";
         public const string CampBrute = "camp_brute";
+        /// <summary>Speed camp: Reedrunners, fast jungle birds.</summary>
+        public const string CampRunner = "camp_runner";
+        /// <summary>Experience camp: corrupted Scrappers, lane minions the jungle grew over.</summary>
+        public const string CampHusk = "camp_husk";
+        /// <summary>Juggernaut camp: Rootjaw, one boss beast.</summary>
+        public const string CampBoss = "camp_boss";
 
         /// <summary>The ability id minion and guard shots carry in damage events.</summary>
         public const string AttackId = "minion_attack";
@@ -99,18 +119,21 @@ namespace DuckAndCover.Core
         {
             new UnitDef { id = Scrapper, name = "Scrapper", maxHealth = 150f, size = 0.7f, moveSpeed = 4f, attackDamage = 12f, attackSeconds = 1f, attackRange = 10f, sightRange = 14f },
             new UnitDef { id = Warden, name = "Warden", maxHealth = 200f, size = 0.85f, moveSpeed = 4f, attackDamage = 6f, attackSeconds = 1f, attackRange = 10f, sightRange = 14f },
-            new UnitDef { id = Juggernaut, name = "Juggernaut", maxHealth = 1200f, size = 1.5f, moveSpeed = 3.5f, attackDamage = 40f, attackSeconds = 1.5f, attackRange = 8f, sightRange = 14f },
-            new UnitDef { id = CampGuard, name = "Camp guard", maxHealth = 300f, size = 0.9f, moveSpeed = 0f, attackDamage = 15f, attackSeconds = 1f, attackRange = 12f, sightRange = 12f },
-            new UnitDef { id = CampBrute, name = "Camp brute", maxHealth = 900f, size = 1.3f, moveSpeed = 0f, attackDamage = 30f, attackSeconds = 1.2f, attackRange = 12f, sightRange = 12f },
+            new UnitDef { id = Juggernaut, name = "Juggernaut", maxHealth = 1200f, size = 1.15f, moveSpeed = 3.5f, attackDamage = 40f, attackSeconds = 1.5f, attackRange = 8f, sightRange = 14f },
+            new UnitDef { id = CampGuard, name = "Thornback", maxHealth = 300f, size = 0.9f, moveSpeed = 0f, attackDamage = 15f, attackSeconds = 1f, attackRange = 12f, sightRange = 12f },
+            new UnitDef { id = CampBrute, name = "Mossback", maxHealth = 500f, size = 1.3f, moveSpeed = 0f, attackDamage = 20f, attackSeconds = 1.2f, attackRange = 12f, sightRange = 12f },
+            new UnitDef { id = CampRunner, name = "Reedrunner", maxHealth = 150f, size = 0.95f, moveSpeed = 0f, attackDamage = 8f, attackSeconds = 0.6f, attackRange = 10f, sightRange = 12f },
+            new UnitDef { id = CampHusk, name = "Corrupted Scrapper", maxHealth = 300f, size = 0.7f, moveSpeed = 0f, attackDamage = 12f, attackSeconds = 1f, attackRange = 12f, sightRange = 12f },
+            new UnitDef { id = CampBoss, name = "Rootjaw", maxHealth = 3600f, size = 2f, moveSpeed = 0f, attackDamage = 70f, attackSeconds = 1.4f, attackRange = 12f, sightRange = 12f },
         };
 
         /// <summary>One entry per camp kind.</summary>
         public CampKindDef[] camps =
         {
-            new CampKindDef { kind = CampKind.Juggernaut, guardType = CampBrute, guards = 2, captureSeconds = 5f, respawnSeconds = 240f },
-            new CampKindDef { kind = CampKind.Damage, guardType = CampGuard, guards = 3, captureSeconds = 5f, respawnSeconds = 180f, boost = 0.10f, boostSeconds = 90f },
-            new CampKindDef { kind = CampKind.Experience, guardType = CampGuard, guards = 2, captureSeconds = 5f, respawnSeconds = 120f, experience = 150f },
-            new CampKindDef { kind = CampKind.Speed, guardType = CampGuard, guards = 1, captureSeconds = 5f, respawnSeconds = 90f, boost = 0.15f, boostSeconds = 60f },
+            new CampKindDef { kind = CampKind.Juggernaut, guardType = CampBoss, guards = 1, captureSeconds = 5f, respawnSeconds = 240f },
+            new CampKindDef { kind = CampKind.Damage, guardType = CampGuard, guardMix = new[] { CampBrute, CampGuard, CampGuard }, guards = 3, captureSeconds = 5f, respawnSeconds = 180f, boost = 0.10f, boostSeconds = 90f },
+            new CampKindDef { kind = CampKind.Experience, guardType = CampHusk, guards = 2, captureSeconds = 5f, respawnSeconds = 120f, experience = 150f },
+            new CampKindDef { kind = CampKind.Speed, guardType = CampRunner, guards = 2, captureSeconds = 5f, respawnSeconds = 90f, boost = 0.15f, boostSeconds = 60f },
         };
 
         public CampKindDef Camp(CampKind kind)
@@ -161,6 +184,8 @@ namespace DuckAndCover.Core
                 var c = Camp(kind);
                 if (c == null) { e.Add("camps needs an entry for " + kind); continue; }
                 if (lib.Unit(c.guardType) == null) e.Add(kind + " camp: unknown guard kind '" + c.guardType + "'");
+                foreach (var g in c.guardMix ?? new string[0])
+                    if (lib.Unit(g) == null) e.Add(kind + " camp: unknown guard kind '" + g + "' in guardMix");
                 if (c.guards < 1 || c.captureSeconds <= 0f || c.respawnSeconds < 0f) e.Add(kind + " camp: needs a guard, positive captureSeconds and respawnSeconds not negative");
                 if ((kind == CampKind.Damage || kind == CampKind.Speed) && (c.boost <= 0f || c.boostSeconds <= 0f)) e.Add(kind + " camp: needs a positive boost and boostSeconds");
                 if (kind == CampKind.Experience && c.experience <= 0f) e.Add("Experience camp: needs positive experience");

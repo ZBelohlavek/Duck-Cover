@@ -315,6 +315,23 @@ static class LaneTests
     }
 
     [Test]
+    static void EachCampKindHasItsOwnCreatures()
+    {
+        var camps = new List<CampDef>
+        {
+            Camp("spd", CampKind.Speed, 60f, -40f, TeamId.A), Camp("exp", CampKind.Experience, 60f, 40f, TeamId.B),
+            Camp("dmg", CampKind.Damage, -60f, 40f, TeamId.B), Camp("jugg", CampKind.Juggernaut, -60f, -40f),
+        };
+        var h = new LaneHarness(camps, waves: false);
+        string[] Kinds(string id) => h.L.State.Camp(id).guardIds.Select(g => h.H.Combat.Units.Unit(g).typeId).OrderBy(k => k).ToArray();
+        Check.True(Kinds("spd").SequenceEqual(new[] { LaneRuleset.CampRunner, LaneRuleset.CampRunner }), "Speed: a pair of Reedrunners");
+        Check.True(Kinds("exp").All(k => k == LaneRuleset.CampHusk) && Kinds("exp").Length == 2, "Experience: corrupted Scrappers");
+        Check.True(Kinds("dmg").SequenceEqual(new[] { LaneRuleset.CampBrute, LaneRuleset.CampGuard, LaneRuleset.CampGuard }), "Damage: a Mossback and two Thornbacks");
+        Check.True(Kinds("jugg").SequenceEqual(new[] { LaneRuleset.CampBoss }), "Juggernaut: one Rootjaw");
+        Check.Near(3600f, h.H.Health(h.L.State.Camp("jugg").guardIds[0]), "the boss is as tough as the four brutes it replaces");
+    }
+
+    [Test]
     static void CampGuardsDefendAndThePadIsTakenLikeAPoint()
     {
         var camps = new List<CampDef> { Camp("exp_a", CampKind.Experience, 60f, -40f, TeamId.A) };
@@ -363,8 +380,8 @@ static class LaneTests
     {
         var camps = new List<CampDef> { Camp("jugg", CampKind.Juggernaut, 40f, 0f) };
         var h = new LaneHarness(camps, waves: false);
-        Check.Equal(2, h.L.State.Camp("jugg").guardIds.Length, "two brutes");
-        Check.True(h.L.State.Camp("jugg").guardIds.All(g => h.H.Combat.Units.Unit(g).typeId == LaneRuleset.CampBrute), "the toughest guards");
+        Check.Equal(1, h.L.State.Camp("jugg").guardIds.Length, "one boss");
+        Check.Equal(LaneRuleset.CampBoss, h.H.Combat.Units.Unit(h.L.State.Camp("jugg").guardIds[0]).typeId, "Rootjaw guards it");
         ClearGuards(h, "jugg", CombatHarness.B1);
         Hold(h, "jugg", 5.1f, CombatHarness.B1);
         Check.True(h.L.State.juggernautB, "team B's next wave brings a Juggernaut");
@@ -392,6 +409,8 @@ static class LaneTests
         var camps = new List<CampDef> { Camp("dmg_b", CampKind.Damage, 60f, 40f, TeamId.B) };
         var h = new LaneHarness(camps, waves: false);
         Check.Equal(3, h.L.State.Camp("dmg_b").guardIds.Length, "three guards");
+        Check.Equal(1, h.L.State.Camp("dmg_b").guardIds.Count(g => h.H.Combat.Units.Unit(g).typeId == LaneRuleset.CampBrute), "a Mossback");
+        Check.Equal(2, h.L.State.Camp("dmg_b").guardIds.Count(g => h.H.Combat.Units.Unit(g).typeId == LaneRuleset.CampGuard), "with two Thornbacks");
         ClearGuards(h, "dmg_b", CombatHarness.A1);
         Hold(h, "dmg_b", 5.1f, CombatHarness.A1); // team A steals team B's camp
         Check.Near(1.1f, h.H.Combat.Damage.Stat(CombatHarness.A1, StatIds.DamageDealt), "+10% damage for the taker");
@@ -435,7 +454,7 @@ static class LaneTests
     {
         var camps = new List<CampDef> { Camp("spd_a", CampKind.Speed, 60f, -70f, TeamId.A) };
         var h = new LaneHarness(camps, waves: false);
-        Check.Equal(1, h.L.State.Camp("spd_a").guardIds.Length, "one guard: a lone hero can clear it");
+        Check.Equal(2, h.L.State.Camp("spd_a").guardIds.Length, "two light Reedrunners: a lone hero can clear them");
         ClearGuards(h, "spd_a", CombatHarness.A1);
         float top = h.H.Combat.Movement.TopSpeed(CombatHarness.A1);
         Hold(h, "spd_a", 5.1f, CombatHarness.A1);
