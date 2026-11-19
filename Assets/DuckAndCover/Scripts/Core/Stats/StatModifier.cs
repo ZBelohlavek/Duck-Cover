@@ -121,6 +121,15 @@ namespace DuckAndCover.Core
         /// (Ruleset.healRicochetRange, Ruleset.healRicochetShare of the heal). 0 = none.
         /// </summary>
         public const string HealRicochet = "healRicochet";
+        /// <summary>
+        /// Share of the healing this hero gives a teammate (a hero, not a minion) that heals this hero too
+        /// (0.3 = 30%). Healing themselves doesn't count, so it never feeds itself.
+        /// </summary>
+        public const string HealShare = "healShare";
+        /// <summary>Share of the damage this hero's damage-over-time statuses deal (poison, burns) that heals them.</summary>
+        public const string StatusLifeSteal = "statusLifeSteal";
+        /// <summary>Multiplier on the splash radius of this hero's projectile weapons.</summary>
+        public const string SplashRadius = "splashRadius";
         /// <summary>Capture speed multiplier on points, for the zone rules to read.</summary>
         public const string CaptureSpeed = "captureSpeed";
         /// <summary>Seconds added to the ambush window (Ruleset.ambushSeconds) that attacking out of stealth opens.</summary>
@@ -149,6 +158,7 @@ namespace DuckAndCover.Core
                 case WeaponDamage:
                 case MagazineSize:
                 case WeaponRange:
+                case SplashRadius:
                 case CaptureSpeed:
                     return 1f;
                 default:
@@ -173,9 +183,14 @@ namespace DuckAndCover.Core
         public const string Stealthed = "stealthed";
         /// <summary>Just attacked out of stealth: Ruleset.ambushSeconds plus the ambushSeconds stat.</summary>
         public const string Ambush = "ambush";
+        /// <summary>
+        /// In the jungle: on a map with one (<see cref="JungleArea"/>, Breakwater), on a jungle trail or camp
+        /// clearing and off the lane; on a map without one (Gantry Yard), anywhere off a live point.
+        /// </summary>
+        public const string Jungle = "jungle";
 
         public static bool IsKnown(string when) =>
             string.IsNullOrEmpty(when) || when == OnHeldPoint || when == OnPoint || when == LowHealth || when == Shielded
-            || when == Stealthed || when == Ambush;
+            || when == Stealthed || when == Ambush || when == Jungle;
     }
 }

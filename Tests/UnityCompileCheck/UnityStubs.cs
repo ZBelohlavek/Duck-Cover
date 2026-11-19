@@ -810,6 +810,9 @@ namespace UnityEngine.InputSystem
         public Controls.KeyControl digit2Key => null;
         public Controls.KeyControl digit3Key => null;
         public Controls.KeyControl digit4Key => null;
+        public Controls.KeyControl digit5Key => null;
+        public Controls.KeyControl digit6Key => null;
+        public Controls.KeyControl digit7Key => null;
         public Controls.KeyControl eKey => null;
         public Controls.KeyControl fKey => null;
         public Controls.KeyControl xKey => null;

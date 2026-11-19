@@ -590,10 +590,13 @@ namespace DuckAndCover.Core
         void Explode(ProjectileState p, Vec3 point, int direct, int directObject)
         {
             var w = Library.Weapon(p.weaponId);
+            // The shooter's splashRadius stat widens the blast; damage still falls off from centre to edge.
+            float widen = combat.IsKnown(p.ownerId) ? Math.Max(0f, combat.Stat(p.ownerId, StatIds.SplashRadius)) : 1f;
+            float splashRadius = w == null ? 0f : w.splashRadius * widen;
             Publish(new ProjectileExplodedEvent
             {
                 projectileId = p.id, ownerId = p.ownerId, weaponId = p.weaponId, point = point, directHit = direct,
-                splashRadius = w == null ? 0f : w.splashRadius,
+                splashRadius = splashRadius,
             });
             if (w == null) return;
             float scale = WeaponDamage(p.ownerId);
@@ -602,13 +605,13 @@ namespace DuckAndCover.Core
             if (direct >= 0 && w.damage > 0f) { targets.Add(direct); amounts.Add(w.damage * scale); }
             if (directObject >= 0)
                 HurtObjects(p.ownerId, new List<int> { directObject }, new List<float> { (w.damage + w.splashDamage) * scale });
-            if (w.splashRadius > 0f && w.splashDamage > 0f)
+            if (splashRadius > 0f && w.splashDamage > 0f)
             {
-                foreach (int id in world.PlayersInSphere(point, w.splashRadius, State.tick))
+                foreach (int id in world.PlayersInSphere(point, splashRadius, State.tick))
                 {
                     if (!world.History.PoseAt(id, State.tick, out var pose)) continue;
                     float dist = Vec3.Distance(Hitboxes.Chest(Rules, pose), point);
-                    float amount = w.SplashAt(dist) * scale;
+                    float amount = w.SplashAt(widen > 0f ? dist / widen : dist) * scale;
                     if (id == p.ownerId) amount *= Rules.selfSplashShare;
                     if (amount <= 0f) continue;
                     Vec3 toward = (Hitboxes.Chest(Rules, pose) - point).Normalized;

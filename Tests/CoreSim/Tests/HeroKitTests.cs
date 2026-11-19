@@ -35,7 +35,14 @@ static class HeroKitTests
             Check.Equal(20, h.upgrades.Length, id + ": twenty options");
             Check.Equal(6, h.upgrades.Count(u => u.Kind == UpgradeKind.Trait), id + ": six traits");
             Check.Equal(2, h.upgrades.Count(u => u.Kind == UpgradeKind.Passive), id + ": two passives");
-            Check.Equal("", h.passiveId, id + ": no passive in the base kit");
+            // The passive is an upgrade pick, except for a hero who asked for one in the base kit (Skulk's
+            // Jungle Stalker): then it takes F's place, and E and X are the abilities.
+            if (h.abilities.Length == 2) Check.Equal("", h.passiveId, id + ": no passive in the base kit");
+            else
+            {
+                Check.Equal(1, h.abilities.Length, id + ": E and X besides the passive");
+                Check.True(lib.Ability(h.passiveId) != null && lib.Ability(h.passiveId).passive && !string.IsNullOrEmpty(lib.Ability(h.passiveId).description), id + ": its base passive is described");
+            }
             Check.Equal(8, h.upgrades.Count(u => u.Kind == UpgradeKind.Talent), id + ": eight talents");
             Check.Equal(2, h.upgrades.Count(u => u.Kind == UpgradeKind.Ultimate), id + ": two ultimate forms");
             Check.Equal(2, h.upgrades.Count(u => u.Kind == UpgradeKind.Capstone), id + ": two capstones");
@@ -114,22 +121,42 @@ static class HeroKitTests
         {
             var h = With(A1, heroId, B1, "bulwark");
             Check.Equal(1, h.S.Player(A1).level, heroId + " starts at level 1");
-            Check.Equal(3, h.Unit(A1).slots.Count, heroId + " has three abilities");
+            var unit = h.Unit(A1);
+            bool basePassive = !string.IsNullOrEmpty(unit.passiveId);
+            Check.Equal(3, unit.slots.Count + (basePassive ? 1 : 0), heroId + " has three abilities (a base passive counts as one)");
+            int x = AbilityKeys.SlotFor(AbilityKeys.X, unit.slots.Count, basePassive);
+            Check.Equal(unit.slots.Count - 1, x, heroId + ": X is the last slot");
             Check.True(h.Use(A1, 0, Ahead).IsAccepted, heroId + ": E works at level 1");
             h.Run(2f);
-            Check.True(h.Use(A1, 1, Ahead).IsAccepted, heroId + ": F works at level 1");
-            h.Run(2f);
-            if (!h.Abilities.AbilityIn(A1, 2).ultimate)
+            int f = AbilityKeys.SlotFor(AbilityKeys.F, unit.slots.Count, basePassive);
+            if (basePassive) Check.Equal(-1, f, heroId + ": the base passive takes F's place");
+            else
             {
-                Check.True(h.Use(A1, 2, Ahead).IsAccepted, heroId + ": X runs on a cooldown and works at level 1");
+                Check.True(h.Use(A1, f, Ahead).IsAccepted, heroId + ": F works at level 1");
+                h.Run(2f);
+            }
+            if (h.Abilities.AbilityIn(A1, x).targeting.needsTarget)
+            {
+                // A buff for a teammate (Frenzy Cap) waits for one in its sights and spends nothing meanwhile.
+                Check.Equal("no target in reach", h.Use(A1, x, Ahead).reason, heroId + ": X needs a teammate to aim at");
+                h.Place(A1, 0f, 0f);
+                h.Place(A2, 0f, 6f);
+                h.Tick();
+                if (h.Abilities.AbilityIn(A1, x).ultimate) h.Unit(A1).ultimateCharge = 100f;
+                Check.True(h.UseAt(A1, x, A2).IsAccepted, heroId + ": X works at level 1 on a teammate");
                 continue;
             }
-            var empty = h.Use(A1, 2, Ahead);
+            if (!h.Abilities.AbilityIn(A1, x).ultimate)
+            {
+                Check.True(h.Use(A1, x, Ahead).IsAccepted, heroId + ": X runs on a cooldown and works at level 1");
+                continue;
+            }
+            var empty = h.Use(A1, x, Ahead);
             Check.Equal("ultimate not charged", empty.reason, heroId + ": X is only waiting for charge");
             h.Run(5f);
             Check.True(h.Unit(A1).ultimateCharge > 0f, heroId + ": charge builds at level 1");
             h.Unit(A1).ultimateCharge = 100f;
-            Check.True(h.Use(A1, 2, Ahead).IsAccepted, heroId + ": X works at level 1 once charged");
+            Check.True(h.Use(A1, x, Ahead).IsAccepted, heroId + ": X works at level 1 once charged");
         }
     }
 

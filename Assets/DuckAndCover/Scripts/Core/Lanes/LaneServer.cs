@@ -53,7 +53,11 @@ namespace DuckAndCover.Core
 
         /// <summary>From a map's own lanes and camps.</summary>
         public LaneServer(MatchRules match, CombatServer combat, IWorldQuery geometry, IGameEvents events, MapDef map, ProgressionRules progression = null)
-            : this(match, combat, geometry, events, map == null ? null : map.lanes, map == null ? null : map.camps, progression) { }
+            : this(match, combat, geometry, events, map == null ? null : map.lanes, map == null ? null : map.camps, progression)
+        {
+            // The map's jungle, for upgrades that work in it (StatConditions.Jungle).
+            combat.Damage.Jungle = JungleArea.For(map, match.Rules);
+        }
 
         public void Dispose() => events.Unsubscribe(OnEvent);
 

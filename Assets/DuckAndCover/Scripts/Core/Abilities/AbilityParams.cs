@@ -13,6 +13,7 @@ namespace DuckAndCover.Core
         public readonly HashSet<string> enabled = new HashSet<string>();
 
         public bool IsOn(EffectDef e) => e != null && (string.IsNullOrEmpty(e.tag) || enabled.Contains(e.tag));
+        public bool IsOn(KillRewardDef k) => k != null && (string.IsNullOrEmpty(k.tag) || enabled.Contains(k.tag));
     }
 
     /// <summary>
@@ -28,10 +29,13 @@ namespace DuckAndCover.Core
     ///          | reflect | regen | regenDelay | hitRadius | followAlly (0 or 1)
     ///   object.effect.KEY.amount | duration | delay | interval | radius
     ///   stat.NAME   (a passive's stat change, e.g. stat.healthRegen)
+    ///   notchDamage | maxNotches
+    ///   kill.NAME.notches   (the kill reward with that name)
+    ///   kill.effect.KEY.amount | duration | delay | interval | radius   (effects of the kill rewards)
     /// where KEY is an effect's kind ("damage", "heal", "slow"...), its status id or its tag; every
     /// matching effect changes.
     /// Text params (op "set", value in text): targeting.shape, targeting.origin, targeting.affects, object.affects
-    /// Switch: enable (text = an effect tag on the ability or its objects).
+    /// Switch: enable (text = an effect or kill reward tag on the ability or its objects).
     /// </summary>
     public static class AbilityParams
     {
@@ -157,6 +161,7 @@ namespace DuckAndCover.Core
         {
             foreach (var e in r.def.effects) if (e != null && e.tag == tag) return true;
             foreach (var o in r.objects.Values) foreach (var e in o.effects) if (e != null && e.tag == tag) return true;
+            foreach (var k in r.def.onKill) if (k != null && k.tag == tag) return true;
             return false;
         }
 
@@ -178,6 +183,8 @@ namespace DuckAndCover.Core
                 case "count": found.Add(new Slot { get = () => t.count, set = v => t.count = (int)v, whole = true, min = 1f }); return found;
                 case "spreadDegrees": found.Add(new Slot { get = () => t.spreadDegrees, set = v => t.spreadDegrees = v }); return found;
                 case "maxTargets": found.Add(new Slot { get = () => t.maxTargets, set = v => t.maxTargets = (int)v, whole = true }); return found;
+                case "notchDamage": if (d.maxNotches > 0) found.Add(new Slot { get = () => d.notchDamage, set = v => d.notchDamage = v }); return found;
+                case "maxNotches": if (d.maxNotches > 0) found.Add(new Slot { get = () => d.maxNotches, set = v => d.maxNotches = (int)v, whole = true }); return found;
                 case "breaksControl": found.Add(new Slot { get = () => d.breaksControl ? 1f : 0f, set = v => d.breaksControl = v >= 0.5f }); return found;
             }
 
@@ -188,6 +195,18 @@ namespace DuckAndCover.Core
                 {
                     var m = mod;
                     if (m != null && m.stat == parts[1]) found.Add(new Slot { get = () => m.value, set = v => m.value = v, min = float.MinValue });
+                }
+            }
+            else if (parts[0] == "kill" && parts.Length == 4 && parts[1] == "effect")
+            {
+                foreach (var k in d.onKill) if (k != null) AddEffectSlots(found, k.effects, parts[2], parts[3]);
+            }
+            else if (parts[0] == "kill" && parts.Length == 3 && parts[2] == "notches")
+            {
+                foreach (var kill in d.onKill)
+                {
+                    var k = kill;
+                    if (k != null && k.name == parts[1] && parts[1].Length > 0) found.Add(new Slot { get = () => k.notches, set = v => k.notches = (int)v, whole = true });
                 }
             }
             else if (parts[0] == "effect" && parts.Length == 3)

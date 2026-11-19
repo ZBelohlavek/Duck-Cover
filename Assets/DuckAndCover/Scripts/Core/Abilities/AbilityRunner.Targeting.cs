@@ -75,6 +75,10 @@ namespace DuckAndCover.Core
                     }
                     break;
 
+                case Shapes.Arc:
+                    areas.Add(Arc(casterId, team, t, origin, dir, tick));
+                    break;
+
                 default: // self
                     areas.Add(new EffectArea { point = origin, targets = new[] { casterId } });
                     break;
@@ -122,6 +126,51 @@ namespace DuckAndCover.Core
             return new EffectArea { point = center, targets = ids.ToArray(), objects = objects.ToArray() };
         }
 
+        /// <summary>
+        /// A melee sweep (<see cref="Shapes.Arc"/>): living targets the rule reaches whose feet are within
+        /// the range (plus a body's width) of the caster, seen level, inside half the spread either side of
+        /// the aim and in sight; nearest first, ties to the lower id, cut to maxTargets. Enemy objects in
+        /// front within reach are caught too.
+        /// </summary>
+        EffectArea Arc(int casterId, TeamId team, TargetingDef t, Vec3 origin, Vec3 dir, int tick)
+        {
+            Vec3 level = new Vec3(dir.x, 0f, dir.z);
+            level = level.Magnitude < 1e-4f ? Vec3.Forward : level.Normalized;
+            float reach = t.range + Rules.bodyRadius;
+            float halfArc = t.spreadDegrees * 0.5f;
+            var where = world as IPositionQuery;
+            var found = new List<int>();
+            var dist = new Dictionary<int, float>();
+            foreach (int id in world.PlayersInSphere(origin, reach + Rules.standHeight, tick))
+            {
+                if (found.Contains(id) || !Combat.IsAlive(id) || !Matches(t.affects, casterId, team, id)) continue;
+                if (where == null || !where.TryGetPosition(id, tick, out var feet)) continue;
+                if (!InArc(origin, level, feet, reach, halfArc, out float d)) continue;
+                if (world is ICasterQuery caster && !caster.HasLineOfSightFor(casterId, origin, id, tick)) continue;
+                found.Add(id);
+                dist[id] = d;
+            }
+            found.Sort((a, b) => { int c = dist[a].CompareTo(dist[b]); return c != 0 ? c : a.CompareTo(b); });
+            if (t.maxTargets > 0 && found.Count > t.maxTargets) found.RemoveRange(t.maxTargets, found.Count - t.maxTargets);
+
+            var objects = new List<int>();
+            foreach (var o in State.objects)
+                if (CanHitObject(t.affects, team, o) && InArc(origin, level, o.position, reach, halfArc, out _)) objects.Add(o.id);
+            return new EffectArea { point = origin + level * t.range, targets = found.ToArray(), objects = objects.ToArray() };
+        }
+
+        /// <summary>Whether a spot is within reach of the origin (flat) and inside the arc around the level aim.</summary>
+        bool InArc(Vec3 origin, Vec3 level, Vec3 at, float reach, float halfArc, out float d)
+        {
+            Vec3 flat = LaneDef.Flat(at - origin);
+            d = flat.Magnitude;
+            if (d > reach || Math.Abs(at.y - origin.y) > Rules.standHeight + 0.5f) return false;
+            if (d < 1e-3f || halfArc >= 180f) return true;
+            float cos = Vec3.Dot(flat / d, level);
+            double angle = Math.Acos(Math.Max(-1f, Math.Min(1f, cos))) * 180.0 / Math.PI;
+            return angle <= halfArc;
+        }
+
         bool CanHitObject(string affects, TeamId team, ObjectState o)
         {
             if (o == null || o.def.health <= 0f) return false;
@@ -156,7 +205,20 @@ namespace DuckAndCover.Core
             if (e.affects == Affects.Self)
             {
                 if (areas.Count > 0) ctx.point = areas[0].point;
+                // An object's pulse reaches its owner only when they stand in it.
+                if (objectId != 0 && !areas.Exists(a => Array.IndexOf(a.targets, sourceId) >= 0)) return;
                 if (Combat.IsAlive(sourceId)) fx.Apply(ctx, sourceId);
+                return;
+            }
+            if (e.affects == Affects.SelfPerHero)
+            {
+                if (areas.Count > 0) ctx.point = areas[0].point;
+                var heroes = new List<int>();
+                foreach (var area in areas)
+                    foreach (int target in area.targets)
+                        if (target != sourceId && !UnitIds.IsUnit(target) && !heroes.Contains(target)) heroes.Add(target);
+                foreach (int unused in heroes)
+                    if (Combat.IsAlive(sourceId)) fx.Apply(ctx, sourceId);
                 return;
             }
             foreach (var area in areas)

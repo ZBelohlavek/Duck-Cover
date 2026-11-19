@@ -57,6 +57,8 @@ namespace DuckAndCover.Core
         public float reserve = 1f;
         /// <summary>Seconds since a held ability went down (its regen waits for ObjectDef.regenDelay).</summary>
         public float downFor;
+        /// <summary>Notches earned by kills (<see cref="AbilityDef.onKill"/>), each adding notchDamage. Kept for the match, through deaths.</summary>
+        public int notches;
 
         public AbilitySlotState Clone() => (AbilitySlotState)MemberwiseClone();
     }
