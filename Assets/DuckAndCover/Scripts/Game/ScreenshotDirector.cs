@@ -452,6 +452,14 @@ namespace DuckAndCover.Game
             var view = CombatView.Instance;
             if (view == null || view.Local == null) return;
             view.StartCoroutine(Burst(view.Local, 6, () => { }));
+            // The flash lasts a few hundredths of a second in play; hold it for the picture.
+            view.StartCoroutine(HoldFlash(view.Local));
+        }
+
+        static IEnumerator HoldFlash(LocalPlayer local)
+        {
+            yield return new WaitForSecondsRealtime(0.06f);
+            if (local.ViewModel != null) local.ViewModel.Fired(0.5f);
         }
 
         static Transform lineup;

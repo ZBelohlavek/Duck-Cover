@@ -55,6 +55,8 @@ namespace DuckAndCover.Game
 
         CharacterController controller;
         FirstPersonRig viewModel;
+        /// <summary>The arms and weapon in front of the camera (null until the player is in the world).</summary>
+        public FirstPersonRig ViewModel => viewModel;
         string heroId = "";
         CombatView view;
         SessionClient client;

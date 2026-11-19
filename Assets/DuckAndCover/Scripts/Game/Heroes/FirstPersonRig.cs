@@ -83,10 +83,10 @@ namespace DuckAndCover.Game
             return root;
         }
 
-        public void Fired()
+        public void Fired(float flashSeconds = 0.04f)
         {
             kick = 1f;
-            flashLeft = 0.04f;
+            flashLeft = flashSeconds;
         }
 
         void LateUpdate()

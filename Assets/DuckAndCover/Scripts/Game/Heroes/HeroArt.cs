@@ -87,8 +87,12 @@ namespace DuckAndCover.Game
             set.model = Resources.Load<GameObject>(dir + def.model);
             set.firstPerson = string.IsNullOrEmpty(def.firstPerson) ? null : Resources.Load<GameObject>(dir + def.firstPerson);
             var texture = string.IsNullOrEmpty(def.texture) ? null : Resources.Load<Texture2D>(dir + def.texture);
+            if (texture == null && !string.IsNullOrEmpty(def.texture))
+                Debug.LogError("Duck and Cover: hero art for " + heroId + " names texture " + def.texture + ", which did not load as a texture from Resources/" + dir + ".");
             set.paint = texture != null ? Paint.Textured(texture) : Paint.For(new Color(0.6f, 0.6f, 0.65f));
             var fpTexture = string.IsNullOrEmpty(def.firstPersonTexture) ? null : Resources.Load<Texture2D>(dir + def.firstPersonTexture);
+            if (fpTexture == null && !string.IsNullOrEmpty(def.firstPersonTexture))
+                Debug.LogError("Duck and Cover: hero art for " + heroId + " names texture " + def.firstPersonTexture + ", which did not load as a texture from Resources/" + dir + ".");
             set.firstPersonPaint = fpTexture != null ? Paint.Textured(fpTexture) : set.paint;
             if (set.model == null)
             {
