@@ -22,7 +22,7 @@
             "level": 4,
             "options": [
                 "rigger_ambush",
-                "rigger_wide_hush"
+                "rigger_quick_hush"
             ]
         },
         {
@@ -132,17 +132,17 @@
             "scriptId": ""
         },
         {
-            "id": "rigger_wide_hush",
-            "displayName": "Wide Hush",
-            "description": "Hush Grenade reaches 1 m further.",
+            "id": "rigger_quick_hush",
+            "displayName": "Quick Hush",
+            "description": "Hush Grenade recovers 3 seconds sooner.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
                     "ability": "rigger_hush",
-                    "param": "radius",
+                    "param": "cooldown",
                     "op": "add",
-                    "value": 1,
+                    "value": -3,
                     "text": ""
                 }
             ],
@@ -284,7 +284,7 @@
         {
             "id": "rigger_hamper",
             "displayName": "Hamper",
-            "description": "Enemies Hush Grenade hits deal 20% less damage and heal 25% less for 5 seconds.",
+            "description": "The enemy Hush Grenade hits deals 20% less damage and heals 25% less for 5 seconds.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
@@ -317,7 +317,7 @@
         {
             "id": "rigger_wide_reach",
             "displayName": "Wide Reach",
-            "description": "Your abilities reach 15% further.",
+            "description": "Your abilities reach 15% further (Hush Grenade still hits one enemy).",
             "kind": "trait",
             "stats": [
                 {
@@ -357,7 +357,7 @@
         {
             "id": "rigger_tracking_hush",
             "displayName": "Tracking Hush",
-            "description": "Enemies Hush Grenade hits show through walls to your team for 4 seconds, cloaked ones too.",
+            "description": "The enemy Hush Grenade hits shows through walls to your team for 4 seconds, even if cloaked.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
@@ -430,7 +430,7 @@
         {
             "id": "rigger_blackout",
             "displayName": "Blackout",
-            "description": "Enemies Hush Grenade hits take 15% more damage while they are silenced, and the silence lasts 1 second longer.",
+            "description": "The enemy Hush Grenade hits takes 15% more damage while silenced, and the silence lasts 1 second longer.",
             "kind": "capstone",
             "stats": [],
             "abilityChanges": [

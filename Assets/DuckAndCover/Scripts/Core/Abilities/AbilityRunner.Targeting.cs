@@ -79,14 +79,24 @@ namespace DuckAndCover.Core
             return areas;
         }
 
-        /// <summary>Who an area catches: living players and units the rule reaches (lowest ids first, up to the limit) and enemy objects.</summary>
+        /// <summary>
+        /// Who an area catches: living players and units the rule reaches and enemy objects. With a limit,
+        /// the ones nearest the centre are kept (ties to the lower id), so a single-target grenade takes
+        /// whoever is closest to where it lands.
+        /// </summary>
         EffectArea Query(Vec3 center, float radius, string affects, int sourceId, TeamId team, int maxTargets, int tick)
         {
             var ids = new List<int>();
             foreach (int id in world.PlayersInSphere(center, radius, tick))
                 if (!ids.Contains(id) && Combat.IsAlive(id) && Matches(affects, sourceId, team, id)) ids.Add(id);
             ids.Sort();
-            if (maxTargets > 0 && ids.Count > maxTargets) ids.RemoveRange(maxTargets, ids.Count - maxTargets);
+            if (maxTargets > 0 && ids.Count > maxTargets)
+            {
+                var dist = new Dictionary<int, float>();
+                foreach (int id in ids) dist[id] = world is IPositionQuery where && where.TryGetPosition(id, tick, out var at) ? Vec3.Distance(at, center) : float.MaxValue;
+                ids.Sort((a, b) => { int c = dist[a].CompareTo(dist[b]); return c != 0 ? c : a.CompareTo(b); });
+                ids.RemoveRange(maxTargets, ids.Count - maxTargets);
+            }
 
             var objects = new List<int>();
             foreach (var o in State.objects)
