@@ -605,11 +605,24 @@ namespace DuckAndCover.Game
             HideHud = true;
             var runner = SessionRunner.Instance;
             var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
-            var dummy = runner == null || runner.Match == null ? null : runner.Match.State.Player(CombatServer.FirstDummyId);
+            // The first enemy dummy still standing (earlier shots may have knocked the first one down).
+            int id = -1;
+            for (int i = 0; i < 3 && id < 0 && runner != null && runner.Match != null; i++)
+                if (runner.Match.State.IsAlive(CombatServer.FirstDummyId + i)) id = CombatServer.FirstDummyId + i;
+            var dummy = id < 0 ? null : runner.Match.State.Player(id);
             if (dummy == null || local == null) { Debug.LogError("Duck and Cover: the capture found no practice dummy to show as a Lancer."); return; }
             dummy.heroId = "lancer";
             local.freeCamera = false;
-            CombatView.Instance.StartCoroutine(DummyFires(CombatServer.FirstDummyId));
+            // Face it, so the soldier model is in the middle of the picture.
+            var rules = runner.ClientRules;
+            var me = runner.Combat.Movement.Motion(runner.Client.PlayerId);
+            var it = runner.Combat.Movement.Motion(id);
+            if (me != null && it != null)
+            {
+                Vec3 d = (Hitboxes.Chest(rules, it.Pose(true)) - (me.position + Vec3.Up * rules.eyeHeight)).Normalized;
+                local.LookAt(Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg, -Mathf.Asin(d.y) * Mathf.Rad2Deg);
+            }
+            CombatView.Instance.StartCoroutine(DummyFires(id));
         }
 
         /// <summary>Once the dummy's model is up, show it firing (looks only; dummies don't shoot).</summary>
