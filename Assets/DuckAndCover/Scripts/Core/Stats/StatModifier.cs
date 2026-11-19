@@ -173,9 +173,14 @@ namespace DuckAndCover.Core
         public const string Stealthed = "stealthed";
         /// <summary>Just attacked out of stealth: Ruleset.ambushSeconds plus the ambushSeconds stat.</summary>
         public const string Ambush = "ambush";
+        /// <summary>
+        /// In the jungle: on a map with one (<see cref="JungleArea"/>, Breakwater), on a jungle trail or camp
+        /// clearing and off the lane; on a map without one (Gantry Yard), anywhere off a live point.
+        /// </summary>
+        public const string Jungle = "jungle";
 
         public static bool IsKnown(string when) =>
             string.IsNullOrEmpty(when) || when == OnHeldPoint || when == OnPoint || when == LowHealth || when == Shielded
-            || when == Stealthed || when == Ambush;
+            || when == Stealthed || when == Ambush || when == Jungle;
     }
 }

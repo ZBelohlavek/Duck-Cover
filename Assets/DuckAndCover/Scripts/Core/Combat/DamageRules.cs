@@ -44,6 +44,12 @@ namespace DuckAndCover.Core
         /// </summary>
         public Func<int, int, bool> RestoreGate;
 
+        /// <summary>
+        /// The map's jungle, for <see cref="StatConditions.Jungle"/>: set by the lane rules on a map that has
+        /// one. Null: the map has no jungle, and the condition holds anywhere off a live point instead.
+        /// </summary>
+        public JungleArea Jungle { get; set; }
+
         // ---- Who is who ----
 
         /// <summary>A player in the match or a living unit: someone whose stats count when they act.</summary>
@@ -149,9 +155,26 @@ namespace DuckAndCover.Core
                         if (Array.IndexOf(world.PlayersInZone(z.id), u.playerId) >= 0) return true;
                     }
                     return NearOwnUnits(p);
+                case StatConditions.Jungle:
+                    return InJungle(u.playerId);
                 default:
                     return false;
             }
+        }
+
+        /// <summary>
+        /// Whether a living player stands in the jungle (<see cref="StatConditions.Jungle"/>). On a map
+        /// without a jungle, anywhere off a live point counts, so jungle upgrades still pay off as a flanker.
+        /// </summary>
+        public bool InJungle(int playerId)
+        {
+            var p = match.State.Player(playerId);
+            if (p == null || !p.alive || !(world is IPositionQuery where)) return false;
+            if (!where.TryGetPosition(playerId, match.State.tick, out var at)) return false;
+            if (Jungle != null) return Jungle.Contains(at);
+            foreach (var z in match.State.zones)
+                if (z.active && Array.IndexOf(world.PlayersInZone(z.id), playerId) >= 0) return false;
+            return true;
         }
 
         /// <summary>

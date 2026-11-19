@@ -144,6 +144,41 @@ harmful effect.
 | 18 talent | **Wide Landing**: War Leap's landing reaches 1.5 m further. | **Twin Axes**: Axe Throw holds two charges. |
 | 20 capstone | **Berserker**: Rage gives 20% more damage on top, and you swing 20% faster while it is up. | **Warlord**: Your stuns, knock-ups and Rage last 25% longer, and Rage lasts 2 seconds longer. |
 
+## Skulk (striker)
+
+Health 200. Weapon: Scrap Rifle, his only gun (automatic, 22 damage a round, 20 rounds). A goblin jungler: fast in the
+jungle, fed by camp kills, and finishing enemies up close with a knife that gets sharper with every kill.
+
+- **E: Shrapnel Charge.** Toss a charge up to 8 m ahead. After 0.6 seconds it bursts, dealing 40 damage to each enemy within 3 m. Cooldown 14 s.
+- **Passive (in F's place): Jungle Stalker.** Move 15% faster in the jungle. Finishing off a camp creature (any way) heals you 35 and gives you Spoils: 10% more damage for 15 seconds.
+- **X: Serrated Knife.** Slash the nearest enemy in a 110° arc within 2.5 m in front of you for 45 damage (one target: area damage stays lower per target than single-target damage). Every enemy the knife kills (hero, minion or camp creature, not a Bastion) adds a notch: 3 more knife damage, up to 10 notches, kept for the whole match, through deaths. Cooldown 13 s.
+
+Skulk is the one hero with a passive in his base kit (Zach asked for it), so he has no F ability: E and X are his
+abilities and the HUD shows the passive in F's slot. **In the jungle** (`StatConditions.Jungle`): on a map with one
+(Breakwater), on a jungle trail or within 9 m of a camp pad, and never on the lane (`Core/Maps/JungleArea`,
+`Ruleset.jungleTrailMargin`, `jungleClearingRadius`); on a map without one (Gantry Yard), anywhere off a live point.
+Kill rewards are data (`AbilityDef.onKill`, `KillRewardDef`): who counts (hero, minion, camp), and whether the kill must
+be by that ability, by anything else, or either. No single use of his abilities kills a full-health 200 hero, at any
+level down either path (`SkulkKitTests.NoOneUseKillsAFullHealthHero`).
+
+Left (Z) is the **Jungle** path: faster, tougher and quicker to recover in the jungle, bigger camp rewards, a knife
+that heals him on kills and holds more notches, and two Shrapnel Charges. Right (V) is the **Headhunter** path: more gun
+damage, hero kills by anything notch the knife and pay Jungle Stalker's rewards, a bleeding knife, Shrapnel that makes
+enemies take more damage, and notches worth more.
+
+| Level | Left (hold Z) | Right (hold V) |
+|---|---|---|
+| 2 trait | **Trailwise**: In the jungle you move another 5% faster. | **Sharp Sights**: Your weapons deal 5% more damage. |
+| 4 talent | **Big Game**: Jungle Stalker's kill rewards heal you 25 more. | **Head Count**: A hero you kill with anything else (your rifle, Shrapnel Charge) also adds a notch to Serrated Knife. |
+| 6 trait | **Thick Hide**: Take 8% less damage in the jungle. | **Scrap Mag**: Your magazine holds 25% more rounds. |
+| 8 third ability | **Field Dressing**: Every kill with Serrated Knife heals you 30. | **Bloodletter**: Serrated Knife makes enemies bleed for 6 damage a second for 4 seconds. |
+| 10 passive | **Lurker**: In the jungle, regain 8 health a second when you haven't been hit for a while. | **Restless**: Move 7% faster everywhere. |
+| 12 talent | **Rich Pickings**: Spoils lasts 10 seconds longer and adds another 10% damage. | **Trophy Hunter**: Killing a hero also gives you Jungle Stalker's rewards: the heal and Spoils. |
+| 14 trait | **Undergrowth**: In the jungle your abilities recover 20% faster. | **Long Barrel**: Your weapons deal 8% more damage and keep full damage 30% further out. |
+| 16 talent | **Trophy Rack**: Serrated Knife holds 5 more notches. | **Shredder**: Enemies Shrapnel Charge hits take 15% more damage for 4 seconds. |
+| 18 talent | **Satchel**: Shrapnel Charge holds two charges. | **Keen Edge**: Each Serrated Knife notch adds 2 more damage. |
+| 20 capstone | **Jungle King**: In the jungle you deal 15% more damage and move another 10% faster. | **Headhunter**: Hero kills give Serrated Knife two notches instead of one. |
+
 ## Against minion waves (WP20)
 
 Every ability and weapon hits minions, Bastions and camp guards as it hits heroes. Each hero's job against a wave,
@@ -155,6 +190,7 @@ as `Tests/CoreSim/Tests/WaveKitTests.cs` checks it:
 - **Mender** protects his own wave: Mending Canister regenerates minions, Purge frees them from slows, and Mending Rounds heal the minion he shoots.
 - **Gashrak** cleaves: every swing hits every minion in front of him, so he clears a wave fastest of all from up
   close, but has to walk into it to do so.
+- **Skulk** clears with the Scrap Rifle and Shrapnel Charge, and every minion his knife finishes notches it for the match.
 - **Rigger** slips past a lane: minions and Bastions don't shoot him while he is cloaked, so he can get behind a wave
   or reach the enemy's heroes. Against the wave itself he is the SMG, sped up by Combat Stim.
 
