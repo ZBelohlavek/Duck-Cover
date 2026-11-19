@@ -101,16 +101,14 @@ static class WaveHarness
 
     /// <summary>
     /// A simple bot clearing a standing wave: the hero stands <paramref name="distance"/> m away,
-    /// fires at the first living unit, and uses every ability and the ultimate at the wave whenever
+    /// fires at the first living unit, and uses every ability at the wave whenever
     /// they are ready (except loading healing rounds, which only heal). The Warden pulses its shield. Nothing shoots back (minion attacks are WP15's).
     /// </summary>
     public static ClearResult Clear(string heroId, int level, int path, float distance = 9f, float cap = 40f)
     {
         var h = Hero(heroId, level, path);
-        h.R.ultimateChargePerSecond = 0f;
         h.Place(A1, 0f, 0f);
         var wave = Spawn(h.Combat.Units, TeamId.B, new Vec3(0f, 0f, distance));
-        h.Unit(A1).ultimateCharge = h.R.ultimateChargeMax;
         h.Tick();
         h.Forget();
         float t = 0f, wardenIn = 0f;
@@ -151,23 +149,22 @@ static class WaveHarness
 
     /// <summary>
     /// dotnet run --project Tests/CoreSim -- report kitwaves: how long each starter hero takes to clear
-    /// one stand-in wave alone, at level 1, 8 and 20 down each path, and the ultimate charge it gives.
+    /// one stand-in wave alone, at level 1, 8 and 20 down each path.
     /// </summary>
     public static int Report(string[] args)
     {
         var r = Ruleset.Default;
         Console.WriteLine("One stand-in wave (3 Scrappers at 150, a Warden at 200, Warden shields 25 every 4 s), standing still, 3 m and 9 m away.");
         Console.WriteLine("The hero fires at the first living unit and uses every ability at the wave when ready. Nothing shoots back.");
-        Console.WriteLine("Charge = ultimate charge the hero gets from that damage (" + r.ultimateChargePerDamage + " a point, x" + r.ultimateChargeUnitShare + " against units).");
         Console.WriteLine();
-        Console.WriteLine(string.Format("{0,-9} {1,-12} {2,5} {3,8} {4,6} {5,8} {6,10} {7,8}", "hero", "build", "at", "clear s", "left", "damage", "abilities", "charge"));
+        Console.WriteLine(string.Format("{0,-9} {1,-12} {2,5} {3,8} {4,6} {5,8} {6,10}", "hero", "build", "at", "clear s", "left", "damage", "abilities"));
         foreach (var heroId in StarterIds)
             foreach (var (level, path, label) in new[] { (1, 0, "level 1"), (8, 0, "level 8 L"), (8, 1, "level 8 R"), (20, 0, "level 20 L"), (20, 1, "level 20 R") })
                 foreach (float at in new[] { 3f, 9f })
                 {
                     var c = Clear(heroId, level, path, at);
-                    Console.WriteLine(string.Format("{0,-9} {1,-12} {2,4}m {3,8:0.0} {4,6} {5,8:0} {6,9:0}% {7,8:0.0}", heroId, label, at,
-                        c.seconds, c.left, c.damage, c.abilityShare * 100f, c.damage * r.ultimateChargePerDamage * r.ultimateChargeUnitShare));
+                    Console.WriteLine(string.Format("{0,-9} {1,-12} {2,4}m {3,8:0.0} {4,6} {5,8:0} {6,9:0}%", heroId, label, at,
+                        c.seconds, c.left, c.damage, c.abilityShare * 100f));
                 }
         return 0;
     }

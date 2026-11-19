@@ -47,6 +47,8 @@ namespace DuckAndCover.Game
         public int Magazine { get; private set; }
         /// <summary>The weapon in hand is a melee weapon: no ammo to show, nothing to reload.</summary>
         public bool Melee { get; private set; }
+        /// <summary>The weapon in hand spends no ammo (a melee weapon, or endless thrown darts): no ammo to show, nothing to reload.</summary>
+        public bool NoAmmo { get; private set; }
         public string WeaponName { get; private set; } = "";
         public bool Reloading { get; private set; }
         /// <summary>The magazine in hand holds healing rounds (Mender's Mending Rounds).</summary>
@@ -277,7 +279,7 @@ namespace DuckAndCover.Game
             // Held abilities (a shield): up while the key is down, down when it is let go.
             for (int i = 0; i < unit.slots.Count; i++)
             {
-                var key = AbilityKey(keyboard, i, unit.slots.Count);
+                var key = AbilityKey(keyboard, i, unit);
                 var def = key == null ? null : HeroData.Abilities.Ability(unit.slots[i].abilityId);
                 if (def == null || !def.held) continue;
                 if (focused && key.wasPressedThisFrame) UseAbility(i, def.id);
@@ -286,9 +288,10 @@ namespace DuckAndCover.Game
             }
             if (!focused || Time.time < abilityBlockUntil) return;
             int slot = -1;
-            if (keyboard.eKey.wasPressedThisFrame) slot = 0;
-            else if (keyboard.fKey.wasPressedThisFrame) slot = 1;
-            else if (keyboard.xKey.wasPressedThisFrame) slot = unit.slots.Count - 1;
+            bool basePassive = !string.IsNullOrEmpty(unit.passiveId);
+            if (keyboard.eKey.wasPressedThisFrame) slot = AbilityKeys.SlotFor(AbilityKeys.E, unit.slots.Count, basePassive);
+            else if (keyboard.fKey.wasPressedThisFrame) slot = AbilityKeys.SlotFor(AbilityKeys.F, unit.slots.Count, basePassive);
+            else if (keyboard.xKey.wasPressedThisFrame) slot = AbilityKeys.SlotFor(AbilityKeys.X, unit.slots.Count, basePassive);
             if (slot < 0 || slot >= unit.slots.Count) return;
             var chosen = HeroData.Abilities.Ability(unit.slots[slot].abilityId);
             if (chosen != null && chosen.held) return; // handled above
@@ -297,13 +300,16 @@ namespace DuckAndCover.Game
 
         readonly bool[] heldDown = new bool[8];
 
-        /// <summary>E is the first ability, F the second, X the last (the ultimate).</summary>
-        static UnityEngine.InputSystem.Controls.KeyControl AbilityKey(Keyboard keyboard, int slot, int count)
+        /// <summary>E is the first ability, F the second, X the last; a hero with a base passive has no F.</summary>
+        static UnityEngine.InputSystem.Controls.KeyControl AbilityKey(Keyboard keyboard, int slot, HeroUnit unit)
         {
-            if (slot == count - 1 && count > 2) return keyboard.xKey;
-            if (slot == 0) return keyboard.eKey;
-            if (slot == 1) return keyboard.fKey;
-            return null;
+            switch (AbilityKeys.ForSlot(slot, unit.slots.Count, !string.IsNullOrEmpty(unit.passiveId)))
+            {
+                case AbilityKeys.E: return keyboard.eKey;
+                case AbilityKeys.F: return keyboard.fKey;
+                case AbilityKeys.X: return keyboard.xKey;
+                default: return null;
+            }
         }
 
         /// <summary>Whether one of the hero's held abilities that stops the weapon (Rampart) is up.</summary>
@@ -599,7 +605,8 @@ namespace DuckAndCover.Game
             Ammo = Reloading ? 0 : Mathf.Max(0, state.CurrentAmmo - unacknowledged);
             HealRounds = !Reloading && state.healRounds > 0;
             Melee = def.kind == WeaponKind.Melee;
-            if (Melee) { Ammo = Magazine; shotsSent = 0; } // a swing spends nothing
+            NoAmmo = def.NoAmmo();
+            if (NoAmmo) { Ammo = Magazine; shotsSent = 0; } // a swing or an endless weapon spends nothing
             if (!focused || scripted || stunned) return;
 
             int slot = SlotAsked(keyboard, mouse, state);
@@ -610,7 +617,7 @@ namespace DuckAndCover.Game
                 client.Send(new SwitchWeaponCommand { slot = slot });
                 return;
             }
-            if (keyboard != null && keyboard.rKey.wasPressedThisFrame && !Reloading && Ammo < Magazine && !Melee)
+            if (keyboard != null && keyboard.rKey.wasPressedThisFrame && !Reloading && Ammo < Magazine && !NoAmmo)
             {
                 client.Send(new ReloadCommand());
                 return;
@@ -647,7 +654,7 @@ namespace DuckAndCover.Game
             var cam = Camera.main;
             if (cam == null) return false;
             nextFireAt = Time.time + def.fireInterval / fireRate;
-            if (def.kind != WeaponKind.Melee) shotsSent++;
+            if (!def.NoAmmo()) shotsSent++;
 
             Vec3 origin = (transform.position + Vector3.up * eyeHeight).ToVec3();
             Vec3 direction = MoveMath.AimDirection(yaw, pitch);

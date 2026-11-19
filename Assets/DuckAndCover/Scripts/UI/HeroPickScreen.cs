@@ -62,7 +62,7 @@ namespace DuckAndCover.UI
             subtitle = UIKit.Readout(layer, "Subtitle", new Vector2(960f, 806f), new Vector2(900f, 28f), "", 20, UITheme.Text, TextAnchor.MiddleCenter);
             lineupTitle = UIKit.Readout(layer, "LineupTitle", new Vector2(960f, LineupY + 56f), new Vector2(900f, 22f), "", 16, UITheme.TextDim, TextAnchor.MiddleCenter, true);
             hint = UIKit.Readout(layer, "Hint", new Vector2(960f, 96f), new Vector2(1200f, 26f), "", 19, UITheme.Warning, TextAnchor.MiddleCenter, true);
-            UIKit.Readout(layer, "Keys", new Vector2(960f, 62f), new Vector2(900f, 22f), "PRESS 1 - 4 OR CLICK A HERO", 17, UITheme.TextDim, TextAnchor.MiddleCenter);
+            UIKit.Readout(layer, "Keys", new Vector2(960f, 62f), new Vector2(900f, 22f), "PRESS 1 - " + HeroData.Pickable().Count + " OR CLICK A HERO", 17, UITheme.TextDim, TextAnchor.MiddleCenter);
             for (int j = 0; j < Roles.Lineup.Length; j++)
             {
                 float x = ChipX(j);
@@ -97,7 +97,7 @@ namespace DuckAndCover.UI
             }
         }
 
-        /// <summary>The hero's abilities, one a line, the ultimate last.</summary>
+        /// <summary>The hero's abilities, one a line: E, F, then X.</summary>
         static string Kit(HeroDef hero)
         {
             var lib = HeroData.Abilities;
@@ -108,6 +108,8 @@ namespace DuckAndCover.UI
                 var a = lib.Ability(hero.abilities[i]);
                 if (a != null) text.Append(keys[i]).Append("   ").Append(a.displayName).Append('\n');
             }
+            var passive = string.IsNullOrEmpty(hero.passiveId) ? null : lib.Ability(hero.passiveId);
+            if (passive != null && hero.abilities.Length < keys.Length) text.Append("PASSIVE   ").Append(passive.displayName).Append('\n');
             var ult = lib.Ability(hero.ultimateId);
             if (ult != null) text.Append("X   ").Append(ult.displayName);
             return text.ToString();
@@ -146,6 +148,9 @@ namespace DuckAndCover.UI
                 if (keyboard.digit2Key.wasPressedThisFrame) return 1;
                 if (keyboard.digit3Key.wasPressedThisFrame) return 2;
                 if (keyboard.digit4Key.wasPressedThisFrame) return 3;
+                if (keyboard.digit5Key.wasPressedThisFrame) return 4;
+                if (keyboard.digit6Key.wasPressedThisFrame) return 5;
+                if (keyboard.digit7Key.wasPressedThisFrame) return 6;
             }
             var mouse = Mouse.current;
             if (mouse != null && mouse.leftButton.wasPressedThisFrame) return CardUnder(mouse.position.ReadValue());

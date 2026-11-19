@@ -44,6 +44,12 @@ namespace DuckAndCover.Core
         /// </summary>
         public Func<int, int, bool> RestoreGate;
 
+        /// <summary>
+        /// The map's jungle, for <see cref="StatConditions.Jungle"/>: set by the lane rules on a map that has
+        /// one. Null: the map has no jungle, and the condition holds anywhere off a live point instead.
+        /// </summary>
+        public JungleArea Jungle { get; set; }
+
         // ---- Who is who ----
 
         /// <summary>A player in the match or a living unit: someone whose stats count when they act.</summary>
@@ -149,9 +155,26 @@ namespace DuckAndCover.Core
                         if (Array.IndexOf(world.PlayersInZone(z.id), u.playerId) >= 0) return true;
                     }
                     return NearOwnUnits(p);
+                case StatConditions.Jungle:
+                    return InJungle(u.playerId);
                 default:
                     return false;
             }
+        }
+
+        /// <summary>
+        /// Whether a living player stands in the jungle (<see cref="StatConditions.Jungle"/>). On a map
+        /// without a jungle, anywhere off a live point counts, so jungle upgrades still pay off as a flanker.
+        /// </summary>
+        public bool InJungle(int playerId)
+        {
+            var p = match.State.Player(playerId);
+            if (p == null || !p.alive || !(world is IPositionQuery where)) return false;
+            if (!where.TryGetPosition(playerId, match.State.tick, out var at)) return false;
+            if (Jungle != null) return Jungle.Contains(at);
+            foreach (var z in match.State.zones)
+                if (z.active && Array.IndexOf(world.PlayersInZone(z.id), playerId) >= 0) return false;
+            return true;
         }
 
         /// <summary>
@@ -214,6 +237,9 @@ namespace DuckAndCover.Core
         /// Returns what was taken (health plus shield), 0 when nothing happened.
         /// <paramref name="attackerId"/> is a player or unit id; -1 = the world.
         /// </summary>
+        /// <summary>What a status's ticking effects are credited as: "status:" and the status id.</summary>
+        public const string StatusSourcePrefix = "status:";
+
         public float Damage(int attackerId, int targetId, float amount, string abilityId = "", int objectId = 0)
         {
             if (amount <= 0f || !match.State.IsPlaying || !IsAlive(targetId)) return 0f;
@@ -221,6 +247,8 @@ namespace DuckAndCover.Core
             var target = Unit(targetId);
             bool attacker = IsKnown(attackerId);
             if (attacker && attackerId != targetId && SameTeam(attackerId, targetId) && !Rules.friendlyFire) return 0f;
+
+            if (target.invulnerable && !(attacker && attackerId != targetId && SameTeam(attackerId, targetId))) return 0f;
 
             float scaled = amount * Math.Max(0f, Stat(targetId, StatIds.DamageTaken));
             if (attacker) scaled *= Math.Max(0f, Stat(attackerId, StatIds.DamageDealt));
@@ -253,12 +281,45 @@ namespace DuckAndCover.Core
                 objectId = objectId,
                 eliminated = down,
             });
+            // Damage over time (a status ticking, credited "status:<id>") can heal its source.
+            if (attacker && attackerId != targetId && lost + absorbed > 0f && IsAlive(attackerId)
+                && abilityId != null && abilityId.StartsWith(StatusSourcePrefix))
+            {
+                float steal = Stat(attackerId, StatIds.StatusLifeSteal);
+                if (steal > 0f) Heal(attackerId, attackerId, (lost + absorbed) * steal, StatIds.StatusLifeSteal);
+            }
             if (down)
             {
                 int killer = attacker && attackerId != targetId ? attackerId : -1;
                 if (UnitIds.IsUnit(targetId)) DestroyUnit(targetId, killer, "killed");
                 else match.EliminatePlayer(targetId, killer);
             }
+            return lost + absorbed;
+        }
+
+        /// <summary>
+        /// Finish off an enemy hero whose health is at or below <paramref name="share"/> of their max health: they
+        /// lose all their health and shields at once (a DamagedEvent and the elimination, credited to the
+        /// attacker). Units are never executed, and an untouchable hero isn't. Returns what was taken, 0 when
+        /// the target was too healthy or out of reach.
+        /// </summary>
+        public float Execute(int attackerId, int targetId, float share, string abilityId = "")
+        {
+            if (share <= 0f || UnitIds.IsUnit(targetId) || !match.State.IsPlaying || !IsAlive(targetId)) return 0f;
+            if (attackerId == targetId || !IsKnown(attackerId) || SameTeam(attackerId, targetId)) return 0f;
+            if (DamageGate != null && !DamageGate(attackerId, targetId)) return 0f;
+            var target = Unit(targetId);
+            if (target.invulnerable || target.health > share * MaxHealth(targetId) + 1e-3f) return 0f;
+            float absorbed = target.Shield, lost = target.health;
+            target.shields.Clear();
+            target.health = 0f;
+            target.sinceDamaged = 0f;
+            Publish(new DamagedEvent
+            {
+                attackerId = attackerId, targetId = targetId, amount = lost + absorbed, absorbed = absorbed,
+                healthLeft = 0f, abilityId = abilityId ?? "", objectId = 0, eliminated = true,
+            });
+            match.EliminatePlayer(targetId, attackerId);
             return lost + absorbed;
         }
 
@@ -283,6 +344,12 @@ namespace DuckAndCover.Core
             if (restored <= 0f) return 0f;
             target.health += restored;
             Publish(new HealedEvent { healerId = healerId, targetId = targetId, amount = restored, healthNow = target.health, abilityId = abilityId ?? "", objectId = objectId });
+            // Healing a teammate hero can heal the healer too (healShare). Their own heal doesn't, so it stops here.
+            if (healerId != targetId && IsAlive(healerId) && !UnitIds.IsUnit(targetId) && !UnitIds.IsUnit(healerId))
+            {
+                float share = Stat(healerId, StatIds.HealShare);
+                if (share > 0f) Heal(healerId, healerId, restored * share, StatIds.HealShare);
+            }
             return restored;
         }
 

@@ -34,7 +34,7 @@ static class CombatSessionTests
         Check.True(mine != null && theirs != null, "positions are in the state");
         Check.True(Vec3.Distance(mine.position, theirs.position) > 30f, "the teams start at opposite ends");
         Check.Equal("rifle", a.Snapshot.Weapons(a.PlayerId).CurrentId, "weapons are in the state");
-        Check.Near(rules.personalShield, a.Snapshot.abilities.Unit(b.PlayerId).Shield, "shields are in the state");
+        Check.Near(0f, a.Snapshot.abilities.Unit(b.PlayerId).Shield, "heroes carry no shield of their own (taken out Nov 19, 2026)");
 
         // A walks a step: B sees it in the next state.
         h.Send(a, new MoveCommand { position = mine.position + new Vec3(0.3f, 0f, 0.2f), yaw = 12f, crouched = true, placement = mine.placement });

@@ -9,14 +9,14 @@ https://claude.ai/artifact/7qbJG2ukrZDQ6ZTfX3nXGs
 ## Teams
 
 Four a side (Nov 18; it was 5v5). The recommended lineup is one tank, one healer, one DPS and one utility or flex
-pick: Bulwark, Mender, Lancer and Rigger. It is a recommendation, not a lock: teams may pick any mix and the same
+pick: Bulwark, Mender, Lancer and Rigger (Bolete is a second healer). It is a recommendation, not a lock: teams may pick any mix and the same
 hero twice. The pick panel labels each hero's role and names the lineup roles a team hasn't covered yet
 (`Core/Heroes/Roles.cs`). `report teamsize`, `report flagrush` and `report overrun [matches] [seed] [players per team]`
 compare 4v4 with 5v5 bot matches.
 
 ## Modes
 
-- **Overrun:** one-lane push on Breakwater. Scrapper waves every 30 s; destroy the enemy Forward Bastion,
+- **Overrun:** one-lane push on Breakwater. Scrapper waves every 36 s on a fixed timer; destroy the enemy Forward Bastion,
   then the Core Bastion. Minions always damage Bastions; heroes only while their own Scrappers are within
   12 m. Seven jungle camps (one Juggernaut, two damage, two experience, two speed), launch pads, ledges.
 - **King of the Hill:** one moving hill, on Gantry Yard (built in WP1 and WP9). First to 1000 at 2.6 points a second
@@ -81,7 +81,7 @@ WP17 (Salvage and build pads) was dropped on Nov 18.
   Tests in `UnitTests.cs`, including every starter kit and both upgrade paths compared on a hero and on a unit.
 - WP15: `Core/Lanes`. `LaneDef` and `CampDef` are map data (`MapDef.lanes`, `MapDef.camps`, in `MapDef.Lanes.cs`);
   numbers in `Ruleset.lanes` (`LaneRuleset`: minion and guard kinds, wave rows by minute, camp kinds); `LaneServer`
-  holds `WaveRules` (waves every 30 s, minions walk the lane within its leash, fight the closest enemy-team hero or unit,
+  holds `WaveRules` (waves every 36 s, minions walk the lane within its leash, fight the closest enemy-team hero or unit,
   all of a tick's moves and shots land together so mirrored waves stay even; Wardens shield Scrappers) and `CampRules`
   (neutral guards, then a pad held like a point; Juggernaut, damage, experience and speed rewards). `UnitDef` gained
   attack fields. Tests in `LaneTests.cs`; `dotnet run --project Tests/CoreSim -- report waves` runs waves on a test

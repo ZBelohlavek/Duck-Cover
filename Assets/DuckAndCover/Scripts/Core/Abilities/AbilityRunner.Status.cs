@@ -16,6 +16,8 @@ namespace DuckAndCover.Core
             var def = Library.Status(statusId);
             if (def == null || !Match.IsPlaying || !Combat.IsAlive(targetId)) return false;
             var unit = Combat.Unit(targetId);
+            // Untouchable: no harmful status from an enemy (or the world) lands.
+            if (def.negative && unit.invulnerable && !(sourceId >= 0 && Combat.IsKnown(sourceId) && Combat.SameTeam(sourceId, targetId))) return false;
             if (def.negative && BlockedByWard(unit, statusId, sourceId, abilityId)) return false;
             if (seconds <= 0f) seconds = def.duration;
             if (Combat.IsKnown(sourceId)) seconds *= Math.Max(0f, Combat.Stat(sourceId, StatIds.StatusDuration));
@@ -105,7 +107,7 @@ namespace DuckAndCover.Core
             return n;
         }
 
-        static string StatusSource(string statusId) => "status:" + statusId;
+        static string StatusSource(string statusId) => DamageRules.StatusSourcePrefix + statusId;
 
         void WriteStatusStats(HeroUnit unit, StatusInstance s, StatusDef def)
         {
@@ -130,17 +132,22 @@ namespace DuckAndCover.Core
             Publish(new StatusEndedEvent { targetId = unit.playerId, statusId = s.statusId, reason = reason });
         }
 
-        /// <summary>Keep <see cref="HeroUnit.stealthed"/> in step with the statuses: a stealth status and no reveal.</summary>
+        /// <summary>
+        /// Keep <see cref="HeroUnit.stealthed"/> (a stealth status and no reveal) and
+        /// <see cref="HeroUnit.invulnerable"/> (an invulnerable status) in step with the statuses.
+        /// </summary>
         void UpdateStealth(HeroUnit unit)
         {
-            bool stealth = false, reveal = false;
+            bool stealth = false, reveal = false, untouchable = false;
             foreach (var s in unit.statuses)
             {
                 var def = Library.Status(s.statusId);
                 if (def == null) continue;
                 stealth |= def.stealth;
                 reveal |= def.reveal;
+                untouchable |= def.invulnerable;
             }
+            unit.invulnerable = untouchable;
             bool now = stealth && !reveal;
             if (now == unit.stealthed) return;
             unit.stealthed = now;

@@ -7,27 +7,21 @@ namespace DuckAndCover.Game
     /// Another player's body. A hero with a model (<see cref="HeroArt"/>) shows it, animated by
     /// <see cref="HeroModel"/> and scaled to the hitboxes; the rest get the stand-in: legs, torso and head
     /// built from the same numbers as the hitboxes (so what you see is what you can hit), in the team's
-    /// colour, with a dark visor and a gun to show which way it faces. Both carry a health and shield
-    /// bar overhead with a strip in the team's colour under it (heroes keep their own colours, so the
-    /// strip says whose side they are on). It has no colliders: hits are decided by the rules, not by physics.
+    /// colour, with a dark visor and a gun to show which way it faces. Both carry an <see cref="OverheadBar"/>
+    /// (health and level). It has no colliders: hits are decided by the rules, not by physics.
     /// </summary>
     public class PlaceholderBody : MonoBehaviour
     {
         public static readonly Color TeamA = new Color(0.24f, 0.60f, 0.95f);
         public static readonly Color TeamB = new Color(0.95f, 0.55f, 0.20f);
         static readonly Color Dark = new Color(0.08f, 0.09f, 0.11f);
-        static readonly Color BarBack = new Color(0.05f, 0.05f, 0.06f);
-        static readonly Color HealthColor = new Color(0.35f, 0.90f, 0.40f);
-        static readonly Color ShieldColor = new Color(0.45f, 0.85f, 1.00f);
-        const float BarWidth = 0.9f;
+        const float BarWidth = 1.05f;
 
         Transform figure;
         Transform heroRoot;
         public HeroModel Model { get; private set; }
         public string HeroId { get; private set; } = "";
-        Transform bar;
-        Transform healthFill;
-        Transform shieldFill;
+        OverheadBar bar;
         float crouchScale = 1f;
 
         public static Color ColorFor(TeamId team) => team == TeamId.B ? TeamB : TeamA;
@@ -58,14 +52,7 @@ namespace DuckAndCover.Game
             Paint.Block(figure, "Visor", new Vector3(0f, r.headHeight + 0.02f, r.headRadius * 0.75f), new Vector3(r.headRadius * 1.5f, r.headRadius * 0.7f, r.headRadius * 0.7f), Dark, false);
             Paint.Block(figure, "Gun", new Vector3(r.torsoRadius * 0.8f, r.torsoTop - 0.12f, r.torsoRadius + 0.25f), new Vector3(0.09f, 0.12f, 0.7f), Dark, false);
 
-            var barObject = new GameObject("Bar");
-            bar = barObject.transform;
-            bar.SetParent(transform, false);
-            bar.localPosition = new Vector3(0f, r.standHeight + 0.35f, 0f);
-            Paint.Block(bar, "Back", new Vector3(0f, 0f, 0.01f), new Vector3(BarWidth + 0.06f, 0.2f, 0.01f), BarBack, false);
-            healthFill = Paint.Block(bar, "Health", new Vector3(0f, -0.035f, 0f), new Vector3(BarWidth, 0.09f, 0.012f), HealthColor, false).transform;
-            shieldFill = Paint.Block(bar, "Shield", new Vector3(0f, 0.05f, 0f), new Vector3(BarWidth, 0.05f, 0.012f), ShieldColor, false).transform;
-            Paint.Block(bar, "Team", new Vector3(0f, -0.13f, 0.01f), new Vector3(BarWidth + 0.06f, 0.045f, 0.01f), main, false);
+            bar = OverheadBar.Create(transform, new Vector3(0f, r.standHeight + 0.4f, 0f), BarWidth, PhysicsWorld.PlayerLayer);
 
             var art = HeroArt.For(heroId);
             if (art != null)
@@ -117,21 +104,10 @@ namespace DuckAndCover.Game
         /// <summary>Where this body's shots leave: the model's muzzle, or <paramref name="fallback"/>.</summary>
         public Vector3 MuzzleOr(Vector3 fallback) => Model != null && Model.Muzzle != null ? Model.Muzzle.position : fallback;
 
-        /// <summary>Health and shield as shares of their maximum (0..1), and turn the bar to face a camera.</summary>
-        public void ShowBars(float health, float shield, Camera viewer)
-        {
-            Fill(healthFill, health);
-            Fill(shieldFill, shield);
-            if (viewer != null) bar.rotation = Quaternion.LookRotation(bar.position - viewer.transform.position);
-        }
-
-        static void Fill(Transform fill, float share)
-        {
-            share = Mathf.Clamp01(share);
-            var scale = fill.localScale;
-            fill.localScale = new Vector3(Mathf.Max(0.0001f, BarWidth * share), scale.y, scale.z);
-            var p = fill.localPosition;
-            fill.localPosition = new Vector3(-BarWidth * (1f - share) * 0.5f, p.y, p.z);
-        }
+        /// <summary>
+        /// Health as a share of the maximum (0..1), green when <paramref name="friendly"/> (on this player's
+        /// team) and red when not, the hero's level, and turn the bar to face a camera.
+        /// </summary>
+        public void ShowBar(float health, bool friendly, int level, Camera viewer) => bar.Show(health, friendly, level, viewer);
     }
 }

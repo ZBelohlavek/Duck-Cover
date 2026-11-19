@@ -19,7 +19,10 @@ namespace DuckAndCover.Core
         public float maxHealth;
         /// <summary>The two ability ids (AbilityDef ids from the Abilities module).</summary>
         public string[] abilities = new string[0];
-        /// <summary>The third ability (key X), usable from level 1 like the other two. It may run on ultimate charge or on a cooldown. The level-8 "ultimate" pick upgrades it.</summary>
+        /// <summary>
+        /// The third ability (key X), usable from level 1 and on a cooldown like the other two (there is no
+        /// ultimate charge). The name is kept from when it was an ultimate; the level-8 "ultimate" pick upgrades it.
+        /// </summary>
         public string ultimateId = "";
         /// <summary>
         /// An always-on passive ability in the base kit, or empty. The starter heroes have none: their
@@ -52,6 +55,33 @@ namespace DuckAndCover.Core
             if (abilityId == ultimateId || abilityId == passiveId) return true;
             if (abilities != null) foreach (var a in abilities) if (a == abilityId) return true;
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Which key uses which ability slot. Slots are the hero's abilities in order, the third (X) last
+    /// (<see cref="HeroServer.Slots"/>). A hero with a base passive has one ability before X, so its second
+    /// slot is X and F is the passive's place (no key).
+    /// </summary>
+    public static class AbilityKeys
+    {
+        public const string E = "E", F = "F", X = "X";
+
+        /// <summary>"E", "F", "X", or "" for a slot no key uses.</summary>
+        public static string ForSlot(int slot, int count, bool basePassive)
+        {
+            if (slot < 0 || slot >= count) return "";
+            if (slot == count - 1 && (count > 2 || count == 2 && basePassive)) return X;
+            if (slot == 0) return E;
+            if (slot == 1) return F;
+            return "";
+        }
+
+        /// <summary>The slot a key uses, or -1.</summary>
+        public static int SlotFor(string key, int count, bool basePassive)
+        {
+            for (int i = 0; i < count; i++) if (ForSlot(i, count, basePassive) == key) return i;
+            return -1;
         }
     }
 

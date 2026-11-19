@@ -9,7 +9,7 @@ namespace DuckAndCover.Core
     /// add, percent and multiply (sets apply last, in pick order).
     ///
     /// Params (see AbilityParams for the full list):
-    ///   cooldown, charges, castTime, range, radius, count, spreadDegrees, maxTargets, ultimateCost
+    ///   cooldown, charges, castTime, range, radius, count, spreadDegrees, maxTargets
     ///   targeting.shape, targeting.origin, targeting.affects   (text, op "set")
     ///   effect.&lt;kind&gt;.amount | duration | delay | interval   (every effect of that kind, e.g. effect.heal.amount)
     ///   object.lifetime | health | radius | interval | armTime | maxPerOwner | width | height   (objects this ability spawns)

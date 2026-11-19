@@ -187,7 +187,7 @@ namespace DuckAndCover.Core
             flagSpots = { new Vec3(-10f, 0f, 0f), new Vec3(0f, 0f, 0f), new Vec3(10f, 0f, 0f) },
         };
 
-        /// <summary>The usual ruleset with a short hero pick and deploy, a capped overtime and quick ultimates, so a scripted run starts, uses everything and ends.</summary>
+        /// <summary>The usual ruleset with a short hero pick and deploy, a capped overtime so a scripted run starts, uses everything and ends.</summary>
         public static Ruleset SmokeRuleset()
         {
             var r = Ruleset.Default;
@@ -195,7 +195,6 @@ namespace DuckAndCover.Core
             r.deploySeconds = 2f;
             r.matchEndSeconds = 5f;
             r.overtimeMaxSeconds = 30f; // scripted players never give a point up, so overtime needs an end
-            r.ultimateChargePerSecond = 4f; // ultimates come up within a short scripted match
             r.flagFirstSpawnSeconds = 5f;   // Flag Rush: flags come round quickly too
             r.flagAfterCaptureSeconds = 4f;
             return r;
@@ -211,8 +210,11 @@ namespace DuckAndCover.Core
     /// </summary>
     public sealed class ScriptedPlayer
     {
-        /// <summary>The four starter heroes, and an id with no data (it plays the catalog's fallback hero).</summary>
-        static readonly string[] Heroes = { "bulwark", "lancer", "mender", "rigger", "generic" };
+        /// <summary>
+        /// The heroes and an id with no data (it plays the catalog's fallback hero). New heroes go after "generic",
+        /// so the first four players keep the lineup the session tests were tuned on.
+        /// </summary>
+        static readonly string[] Heroes = { "bulwark", "lancer", "mender", "rigger", "generic", "bolete" };
 
         /// <summary>Seconds of match time between changes of plan.</summary>
         const float PlanSeconds = 12f;
@@ -334,7 +336,7 @@ namespace DuckAndCover.Core
                 int enemy = FirstLivingEnemy(state, me);
                 if (enemy > 0) ShootAt(enemy);
             }
-            // Once a plan, use an ability at the nearest enemy (the ultimate when it is ready), and
+            // Once a plan, use an ability at the nearest enemy (the next one that is ready), and
             // take every upgrade as soon as it is offered: abilities and leveling run over the network too.
             if (plan != abilityPlan && plan % 3 == 1)
             {
@@ -428,9 +430,14 @@ namespace DuckAndCover.Core
             var mine = snap == null || snap.abilities == null ? null : snap.abilities.Unit(me.id);
             var m = snap == null ? null : snap.Motion(me.id);
             if (mine == null || m == null || mine.slots.Count == 0) return;
-            int slot = (plan / 3 + me.id) % Math.Min(2, mine.slots.Count);
-            int ult = mine.slots.Count - 1;
-            if (mine.slots.Count > 2 && mine.ultimateCharge >= rules.ultimateChargeMax - 0.01f) slot = ult;
+            // Take turns through the slots, skipping any still recharging.
+            int first = (plan / 3 + me.id) % mine.slots.Count, slot = -1;
+            for (int k = 0; k < mine.slots.Count && slot < 0; k++)
+            {
+                int i = (first + k) % mine.slots.Count;
+                if (mine.slots[i].charges > 0) slot = i;
+            }
+            if (slot < 0) return;
             Vec3 eye = m.position + Vec3.Up * Hitboxes.EyeHeight(rules, m.crouched);
             Vec3 aim = Vec3.Forward;
             int enemy = FirstLivingEnemy(state, me);
@@ -482,12 +489,13 @@ namespace DuckAndCover.Core
             float distance = Vec3.Distance(eye, chest);
 
             var w = weapons.Weapon(arms.CurrentId);
-            if (w == null || w.kind != WeaponKind.Hitscan || w.range < distance + 1f)
+            // Lobbed weapons (Bolete's spore bombs) count when the target is well inside their throw.
+            if (w == null || w.Reach < distance + 1f)
             {
                 for (int i = 0; i < arms.weapons.Length; i++)
                 {
                     var other = weapons.Weapon(arms.weapons[i]);
-                    if (i != arms.current && other != null && other.kind == WeaponKind.Hitscan && other.range >= distance + 1f)
+                    if (i != arms.current && other != null && other.Reach >= distance + 1f)
                     {
                         Send(new SwitchWeaponCommand { slot = i });
                         return;
@@ -497,7 +505,7 @@ namespace DuckAndCover.Core
             }
             if (arms.Reloading || arms.switchLeft > 0f || arms.CurrentAmmo <= 0 || arms.fireCredit < 1f) return;
             firesSent++;
-            Send(new FireCommand { weaponId = w.id, origin = eye, direction = (chest - eye).Normalized });
+            Send(new FireCommand { weaponId = w.id, origin = eye, direction = w.AimAt(eye, chest) });
         }
 
         static ZoneId ChooseZone(MatchState state, PlayerState me, int plan)

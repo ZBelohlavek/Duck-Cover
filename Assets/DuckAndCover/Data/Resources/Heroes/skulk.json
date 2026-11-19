@@ -1,0 +1,443 @@
+{
+    "id": "skulk",
+    "displayName": "Skulk",
+    "role": "striker",
+    "weaponId": "scrap_rifle",
+    "maxHealth": 200,
+    "abilities": [
+        "skulk_shrapnel"
+    ],
+    "ultimateId": "skulk_knife",
+    "passiveId": "skulk_jungle_stalker",
+    "levels": [
+        {
+            "level": 2,
+            "options": [
+                "skulk_trailwise",
+                "skulk_sharp_sights"
+            ]
+        },
+        {
+            "level": 4,
+            "options": [
+                "skulk_big_game",
+                "skulk_head_count"
+            ]
+        },
+        {
+            "level": 6,
+            "options": [
+                "skulk_thick_hide",
+                "skulk_scrap_mag"
+            ]
+        },
+        {
+            "level": 8,
+            "options": [
+                "skulk_field_dressing",
+                "skulk_bloodletter"
+            ]
+        },
+        {
+            "level": 10,
+            "options": [
+                "skulk_lurker",
+                "skulk_restless"
+            ]
+        },
+        {
+            "level": 12,
+            "options": [
+                "skulk_rich_pickings",
+                "skulk_trophy_hunter"
+            ]
+        },
+        {
+            "level": 14,
+            "options": [
+                "skulk_undergrowth",
+                "skulk_long_barrel"
+            ]
+        },
+        {
+            "level": 16,
+            "options": [
+                "skulk_trophy_rack",
+                "skulk_shredder"
+            ]
+        },
+        {
+            "level": 18,
+            "options": [
+                "skulk_satchel",
+                "skulk_keen_edge"
+            ]
+        },
+        {
+            "level": 20,
+            "options": [
+                "skulk_jungle_king",
+                "skulk_headhunter"
+            ]
+        }
+    ],
+    "upgrades": [
+        {
+            "id": "skulk_trailwise",
+            "displayName": "Trailwise",
+            "description": "In the jungle you move another 5% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "moveSpeed",
+                    "op": "percent",
+                    "value": 0.05,
+                    "when": "jungle"
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_sharp_sights",
+            "displayName": "Sharp Sights",
+            "description": "Your weapons deal 5% more damage.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "weaponDamage",
+                    "op": "percent",
+                    "value": 0.05,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_big_game",
+            "displayName": "Big Game",
+            "description": "Jungle Stalker's kill rewards heal you 25 more.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "skulk_jungle_stalker",
+                    "param": "kill.effect.heal.amount",
+                    "op": "add",
+                    "value": 25,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_head_count",
+            "displayName": "Head Count",
+            "description": "A hero you kill with anything else (your rifle, Shrapnel Charge) also adds a notch to Serrated Knife.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "skulk_knife",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "headCount"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_thick_hide",
+            "displayName": "Thick Hide",
+            "description": "Take 8% less damage in the jungle.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "damageTaken",
+                    "op": "percent",
+                    "value": -0.08,
+                    "when": "jungle"
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_scrap_mag",
+            "displayName": "Scrap Mag",
+            "description": "Your magazine holds 25% more rounds.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "magazineSize",
+                    "op": "percent",
+                    "value": 0.25,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_field_dressing",
+            "displayName": "Field Dressing",
+            "description": "Every kill with Serrated Knife heals you 30.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "skulk_knife",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "dressing"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_bloodletter",
+            "displayName": "Bloodletter",
+            "description": "Serrated Knife makes enemies bleed for 6 damage a second for 4 seconds.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "skulk_knife",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "bleed"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_lurker",
+            "displayName": "Lurker",
+            "description": "In the jungle, regain 8 health a second when you haven't been hit for a while.",
+            "kind": "passive",
+            "stats": [
+                {
+                    "stat": "healthRegen",
+                    "op": "add",
+                    "value": 8,
+                    "when": "jungle"
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_restless",
+            "displayName": "Restless",
+            "description": "Move 7% faster everywhere.",
+            "kind": "passive",
+            "stats": [
+                {
+                    "stat": "moveSpeed",
+                    "op": "percent",
+                    "value": 0.07,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_rich_pickings",
+            "displayName": "Rich Pickings",
+            "description": "Spoils lasts 10 seconds longer and adds another 10% damage.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "skulk_jungle_stalker",
+                    "param": "kill.effect.skulk_spoils.duration",
+                    "op": "add",
+                    "value": 10,
+                    "text": ""
+                },
+                {
+                    "ability": "skulk_jungle_stalker",
+                    "param": "kill.effect.skulk_spoils.amount",
+                    "op": "add",
+                    "value": 0.1,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_trophy_hunter",
+            "displayName": "Trophy Hunter",
+            "description": "Killing a hero also gives you Jungle Stalker's rewards: the heal and Spoils.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "skulk_jungle_stalker",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "trophyHunter"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_undergrowth",
+            "displayName": "Undergrowth",
+            "description": "In the jungle your abilities recover 20% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "cooldownRate",
+                    "op": "percent",
+                    "value": 0.2,
+                    "when": "jungle"
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_long_barrel",
+            "displayName": "Long Barrel",
+            "description": "Your weapons deal 8% more damage and keep full damage 30% further out.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "weaponDamage",
+                    "op": "percent",
+                    "value": 0.08,
+                    "when": ""
+                },
+                {
+                    "stat": "weaponRange",
+                    "op": "percent",
+                    "value": 0.3,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_trophy_rack",
+            "displayName": "Trophy Rack",
+            "description": "Serrated Knife holds 5 more notches.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "skulk_knife",
+                    "param": "maxNotches",
+                    "op": "add",
+                    "value": 5,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_shredder",
+            "displayName": "Shredder",
+            "description": "Enemies Shrapnel Charge hits take 15% more damage for 4 seconds.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "skulk_shrapnel",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "shred"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_satchel",
+            "displayName": "Satchel",
+            "description": "Shrapnel Charge holds two charges.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "skulk_shrapnel",
+                    "param": "charges",
+                    "op": "add",
+                    "value": 1,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_keen_edge",
+            "displayName": "Keen Edge",
+            "description": "Each Serrated Knife notch adds 2 more damage.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "skulk_knife",
+                    "param": "notchDamage",
+                    "op": "add",
+                    "value": 2,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_jungle_king",
+            "displayName": "Jungle King",
+            "description": "In the jungle you deal 15% more damage and move another 10% faster.",
+            "kind": "capstone",
+            "stats": [
+                {
+                    "stat": "damageDealt",
+                    "op": "percent",
+                    "value": 0.15,
+                    "when": "jungle"
+                },
+                {
+                    "stat": "moveSpeed",
+                    "op": "percent",
+                    "value": 0.1,
+                    "when": "jungle"
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "skulk_headhunter",
+            "displayName": "Headhunter",
+            "description": "Hero kills give Serrated Knife two notches instead of one.",
+            "kind": "capstone",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "skulk_knife",
+                    "param": "kill.heroes.notches",
+                    "op": "add",
+                    "value": 1,
+                    "text": ""
+                },
+                {
+                    "ability": "skulk_knife",
+                    "param": "kill.headCount.notches",
+                    "op": "add",
+                    "value": 1,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        }
+    ]
+}

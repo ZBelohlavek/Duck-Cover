@@ -6,9 +6,9 @@ namespace DuckAndCover.Core
     /// <summary>
     /// The ability rules on the server. Each hero has slots holding abilities from the
     /// <see cref="AbilityLibrary"/>; a client asks to use one with a UseAbilityCommand, and this
-    /// checks it (alive, unlocked, charges or ultimate charge, not stunned), spends the resource,
+    /// checks it (alive, unlocked, charges, not stunned), spends the resource,
     /// finds the targets and applies the ability's standard effects. It also runs status effects,
-    /// spawned objects, delayed effects and ultimate charge. Create one per match after MatchRules,
+    /// spawned objects and delayed effects. Create one per match after MatchRules,
     /// send it the commands MatchRules.Apply returns NotHandled for, and call <see cref="Tick"/> after
     /// MatchRules.Tick with the same dt.
     ///
@@ -30,7 +30,7 @@ namespace DuckAndCover.Core
         readonly Dictionary<string, IEffect> effects = new Dictionary<string, IEffect>();
         readonly Dictionary<string, ResolvedAbility> resolved = new Dictionary<string, ResolvedAbility>();
 
-        Ruleset Rules => match.Rules;
+        internal Ruleset Rules => match.Rules;
         MatchState Match => match.State;
 
         /// <summary>
@@ -64,6 +64,7 @@ namespace DuckAndCover.Core
             effects[EffectKinds.Cleanse] = new CleanseEffect();
             effects[EffectKinds.Push] = new PushEffect();
             effects[EffectKinds.Spawn] = new SpawnEffect();
+            effects[EffectKinds.Execute] = new ExecuteEffect();
 
             events.Subscribe(OnEvent);
         }
@@ -97,7 +98,7 @@ namespace DuckAndCover.Core
         }
 
         /// <summary>
-        /// Give a hero their abilities: slot 0, 1, 2... in order (by convention the ultimate is last).
+        /// Give a hero their abilities: slot 0, 1, 2... in order (E, F, then X).
         /// <paramref name="maxHealth"/> above 0 sets the hero's own max health, and
         /// <paramref name="passiveId"/> names the hero's passive. Called when the hero is known (hero
         /// pick), by whoever reads the hero data.
@@ -184,20 +185,40 @@ namespace DuckAndCover.Core
             return Resolved(unit, unit.slots[slot].abilityId).def;
         }
 
-        /// <summary>Seconds until the slot has a charge. 0 when ready (ultimates: see <see cref="UltimateReady"/>).</summary>
+        /// <summary>Seconds until the slot has a charge. 0 when ready.</summary>
         public float CooldownLeft(int playerId, int slot)
         {
             var unit = Combat.Unit(playerId);
             if (unit == null || slot < 0 || slot >= unit.slots.Count) return 0f;
             var s = unit.slots[slot];
             if (s.charges > 0) return 0f;
-            return s.rechargeLeft / Math.Max(0.01f, Combat.Stat(playerId, StatIds.CooldownRate));
+            return s.rechargeLeft / Math.Max(0.01f, RechargeRate(unit, Resolved(unit, s.abilityId).def));
         }
 
-        public bool UltimateReady(int playerId, int slot)
+        /// <summary>
+        /// How fast a slot recharges: the hero's cooldownRate, held back so the ability never comes round
+        /// faster than <see cref="Ruleset.abilityCooldownFloor"/>. An ability whose own cooldown is under the
+        /// floor (it gives a shortCooldownReason) is sped up as usual.
+        /// </summary>
+        public float RechargeRate(HeroUnit unit, AbilityDef def) =>
+            RechargeRate(Combat.Stat(unit.playerId, StatIds.CooldownRate), def.cooldown, Rules.abilityCooldownFloor);
+
+        /// <summary>The same for a cooldownRate stat value, so a client can show the cooldown the host runs.</summary>
+        public static float RechargeRate(float cooldownRate, float cooldown, float floor)
         {
-            var def = AbilityIn(playerId, slot);
-            return def != null && def.ultimate && Combat.Unit(playerId).ultimateCharge >= def.ultimateCost - Epsilon;
+            float rate = Math.Max(0f, cooldownRate);
+            // Abilities with their own short cooldown (a held shield, a reload) are exempt from the floor.
+            if (rate <= 1f || cooldown < floor || floor <= 0f) return rate;
+            return Math.Min(rate, cooldown / floor);
+        }
+
+        /// <summary>Seconds the ability takes to come round for this hero, cooldown-rate stats and the floor included.</summary>
+        public float EffectiveCooldown(int playerId, int slot)
+        {
+            var unit = Combat.Unit(playerId);
+            if (unit == null || slot < 0 || slot >= unit.slots.Count) return 0f;
+            var def = Resolved(unit, unit.slots[slot].abilityId).def;
+            return def.cooldown / Math.Max(0.01f, RechargeRate(unit, def));
         }
 
         public bool IsStunned(int playerId) => HasFlag(playerId, s => s.stun);
@@ -233,11 +254,7 @@ namespace DuckAndCover.Core
             if (!string.IsNullOrEmpty(why)) return CommandResult.Reject(why);
             if (IsSilenced(playerId) && !def.breaksControl) return CommandResult.Reject(IsStunned(playerId) ? "stunned" : "silenced");
             foreach (var other in unit.slots) if (other.casting) return CommandResult.Reject("already casting");
-            if (def.ultimate)
-            {
-                if (unit.ultimateCharge < def.ultimateCost - Epsilon) return CommandResult.Reject("ultimate not charged");
-            }
-            else if (s.charges <= 0) return CommandResult.Reject("on cooldown");
+            if (s.charges <= 0) return CommandResult.Reject("on cooldown");
             if (!string.IsNullOrEmpty(def.scriptId) && !scripts.ContainsKey(def.scriptId)) return CommandResult.Reject("script '" + def.scriptId + "' is not registered");
             return CommandResult.Accepted;
         }
@@ -298,17 +315,23 @@ namespace DuckAndCover.Core
                 if (!script.CanActivate(Context(unit, use.slot, ability, null))) return CommandResult.Reject("can't be used right now");
             }
 
+            // A buff aimed at a teammate waits for one to be in reach rather than going to waste.
+            if (def.targeting.needsTarget && def.castTime <= 0f)
+            {
+                var team = Match.Player(unit.playerId).team;
+                bool any = false;
+                foreach (var area in FindAreas(unit.playerId, team, def.targeting, use.aimOrigin, dir, use.tick))
+                    if (area.targets.Length > 0) { any = true; break; }
+                if (!any) return CommandResult.Reject("no target in reach");
+            }
+
             // Anything that reaches past the caster gives a cloak away (and opens the ambush window first,
             // so the ability that breaks it already counts as an ambush).
             if (!SelfOnly(def)) BreakStealth(unit.playerId, "attacked");
 
             // Spend.
-            if (def.ultimate) unit.ultimateCharge = Math.Max(0f, unit.ultimateCharge - def.ultimateCost);
-            else
-            {
-                s.charges--;
-                if (s.rechargeLeft <= 0f) s.rechargeLeft = def.cooldown;
-            }
+            s.charges--;
+            if (s.rechargeLeft <= 0f) s.rechargeLeft = def.cooldown;
 
             if (def.castTime > 0f)
             {
@@ -346,11 +369,18 @@ namespace DuckAndCover.Core
             foreach (var effect in def.effects)
             {
                 if (!ability.IsOn(effect)) continue;
+                if (effect.minTargets > 0 && all.Count < effect.minTargets) continue; // didn't catch enough
                 var e = effect;
                 if (e.duration <= 0f && def.duration > 0f && LastsForAbility(e.kind))
                 {
                     e = e.Clone();
                     e.duration = def.duration;
+                }
+                if (e.kind == EffectKinds.Damage && string.IsNullOrEmpty(e.tag) && s.notches > 0 && def.notchDamage > 0f)
+                {
+                    // Notches earned by kills sharpen the ability's own hit.
+                    e = e.Clone();
+                    e.amount += Math.Min(s.notches, def.maxNotches) * def.notchDamage;
                 }
                 if (e.delay > 0f)
                 {
@@ -416,7 +446,6 @@ namespace DuckAndCover.Core
             {
                 TickSlots(unit, dt);
                 if (!Combat.IsAlive(unit.playerId)) continue;
-                TickUltimate(unit, dt);
                 if (unit.ambushLeft > 0f) unit.ambushLeft = Math.Max(0f, unit.ambushLeft - dt);
                 TickStatuses(unit, dt);
             }
@@ -426,14 +455,13 @@ namespace DuckAndCover.Core
 
         void TickSlots(HeroUnit unit, float dt)
         {
-            float rate = Math.Max(0f, Combat.Stat(unit.playerId, StatIds.CooldownRate));
             for (int i = 0; i < unit.slots.Count; i++)
             {
                 var s = unit.slots[i];
                 var def = Resolved(unit, s.abilityId).def;
-                if (!def.ultimate && s.charges < def.charges)
+                if (s.charges < def.charges)
                 {
-                    s.rechargeLeft -= dt * rate;
+                    s.rechargeLeft -= dt * RechargeRate(unit, def);
                     while (s.rechargeLeft <= Epsilon && s.charges < def.charges)
                     {
                         s.charges++;
@@ -451,29 +479,6 @@ namespace DuckAndCover.Core
                     if (scripts.TryGetValue(def.scriptId ?? "", out var script)) script.Tick(Context(unit, i, Resolved(unit, s.abilityId), null), dt);
                     s.activeLeft = Math.Max(0f, s.activeLeft - dt);
                 }
-            }
-        }
-
-        void TickUltimate(HeroUnit unit, float dt) => AddUltimateCharge(unit, Rules.ultimateChargePerSecond * dt);
-
-        /// <summary>Add ultimate charge (scaled by the hero's ultimateChargeRate), from level 1 on.</summary>
-        public void AddUltimateCharge(int playerId, float amount)
-        {
-            var unit = Combat.Unit(playerId);
-            if (unit != null) AddUltimateCharge(unit, amount);
-        }
-
-        void AddUltimateCharge(HeroUnit unit, float amount)
-        {
-            var p = Match.Player(unit.playerId);
-            if (amount <= 0f || p == null) return;
-            float before = unit.ultimateCharge;
-            unit.ultimateCharge = Math.Min(Rules.ultimateChargeMax, before + amount * Math.Max(0f, Combat.Stat(unit.playerId, StatIds.UltimateChargeRate)));
-            foreach (var s in unit.slots)
-            {
-                var def = Resolved(unit, s.abilityId).def;
-                if (def.ultimate && before < def.ultimateCost - Epsilon && unit.ultimateCharge >= def.ultimateCost - Epsilon)
-                    Publish(new UltimateReadyEvent { playerId = unit.playerId, abilityId = def.id });
             }
         }
 
@@ -520,19 +525,67 @@ namespace DuckAndCover.Core
                     break;
                 }
                 case DamagedEvent hit:
-                    if (hit.attackerId >= 0 && hit.attackerId != hit.targetId) AddUltimateCharge(hit.attackerId, hit.amount * Rules.ultimateChargePerDamage * ChargeShare(hit.targetId));
-                    break;
-                case HealedEvent heal:
-                    if (heal.healerId != heal.targetId) AddUltimateCharge(heal.healerId, heal.amount * Rules.ultimateChargePerHealing * ChargeShare(heal.targetId));
-                    break;
-                case ShieldedEvent shield:
-                    if (shield.sourceId != shield.targetId) AddUltimateCharge(shield.sourceId, shield.amount * Rules.ultimateChargePerHealing * ChargeShare(shield.targetId));
+                    if (hit.eliminated) KillRewards(hit);
                     break;
             }
         }
 
-        /// <summary>Ultimate charge counts in full against heroes and at a share against units.</summary>
-        float ChargeShare(int targetId) => UnitIds.IsUnit(targetId) ? Rules.ultimateChargeUnitShare : 1f;
+        // ---- Kill rewards ----
+
+        /// <summary>
+        /// What a killing blow took down, for <see cref="KillRewardDef.victims"/>: a hero, a team's moving
+        /// lane unit (minion), a neutral camp creature, or null (a Bastion, a training dummy's team...).
+        /// Called while the victim is still in the roster (DamageRules publishes before it destroys).
+        /// </summary>
+        string VictimKind(int targetId)
+        {
+            if (!UnitIds.IsUnit(targetId)) return KillVictims.Hero;
+            var u = Combat.Roster.Get(targetId);
+            if (u == null) return null;
+            if (u.team == TeamId.None) return KillVictims.Camp;
+            return u.anchored ? null : KillVictims.Minion;
+        }
+
+        /// <summary>Pay the killer's kill rewards (slot abilities, then the passive) for a killing blow.</summary>
+        void KillRewards(DamagedEvent hit)
+        {
+            int killer = hit.attackerId;
+            if (killer < 0 || killer == hit.targetId || UnitIds.IsUnit(killer)) return;
+            var unit = State.Unit(killer);
+            var p = Match.Player(killer);
+            if (unit == null || p == null) return;
+            string victim = VictimKind(hit.targetId);
+            if (victim == null) return;
+            foreach (var slot in unit.slots) Reward(unit, p.team, slot, slot.abilityId, hit, victim);
+            if (!string.IsNullOrEmpty(unit.passiveId)) Reward(unit, p.team, null, unit.passiveId, hit, victim);
+        }
+
+        void Reward(HeroUnit unit, TeamId team, AbilitySlotState slot, string abilityId, DamagedEvent hit, string victim)
+        {
+            var ability = Resolved(unit, abilityId);
+            var def = ability.def;
+            if (def.onKill == null || def.onKill.Length == 0) return;
+            bool own = hit.abilityId == def.id;
+            foreach (var k in def.onKill)
+            {
+                if (!ability.IsOn(k) || !k.Counts(victim)) continue;
+                if (k.scope == KillScopes.Ability && !own || k.scope == KillScopes.Other && own) continue;
+                if (slot != null && k.notches > 0 && def.maxNotches > 0) slot.notches = Math.Min(def.maxNotches, slot.notches + k.notches);
+                if (Combat.IsAlive(unit.playerId) && k.effects != null)
+                {
+                    TryGetPosition(unit.playerId, out var at);
+                    var areas = new List<EffectArea> { new EffectArea { point = at, targets = new[] { unit.playerId } } };
+                    foreach (var effect in k.effects)
+                    {
+                        if (!ability.IsOn(effect)) continue;
+                        var e = effect.Clone();
+                        e.affects = Affects.Self;
+                        RunEffect(e, unit.playerId, team, def.id, 0, Vec3.Forward, areas, 1f, ability);
+                    }
+                }
+                Publish(new KillRewardEvent { playerId = unit.playerId, abilityId = def.id, victimId = hit.targetId, victim = victim, notches = slot == null ? 0 : slot.notches });
+            }
+        }
 
         void CancelCasts(HeroUnit unit, string reason)
         {
@@ -543,7 +596,6 @@ namespace DuckAndCover.Core
                 s.casting = false;
                 s.castLeft = 0f;
                 var def = Resolved(unit, s.abilityId).def;
-                if (def.ultimate) unit.ultimateCharge = Math.Min(Rules.ultimateChargeMax, unit.ultimateCharge + def.ultimateCost * Rules.ultimateInterruptRefund);
                 Publish(new AbilityCancelledEvent { playerId = unit.playerId, slot = i, abilityId = def.id, reason = reason });
             }
         }

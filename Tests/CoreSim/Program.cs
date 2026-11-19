@@ -26,9 +26,11 @@ static class Program
         { "flagrush", FlagSim.Report },
         { "map", MapTests.Report },
         { "kitwaves", WaveHarness.Report },
+        { "abilities", AbilityRulesTests.Report },
         { "lanestudy", LaneStudyTests.Report },
         { "waves", LaneTests.Report },
         { "overrun", OverrunSim.Report },
+        { "wavepace", WavePaceTests.Report },
         { "breakwater", BreakwaterTests.Report },
     };
 

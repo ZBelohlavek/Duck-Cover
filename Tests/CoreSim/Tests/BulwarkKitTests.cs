@@ -234,7 +234,7 @@ static class BulwarkKitTests
     static void BrawlerPathBuildsUpTheDrone()
     {
         var h = Lineup();
-        foreach (var id in new[] { "bulwark_spare_parts", "bulwark_armoured_drone", "bulwark_shield_drone", "bulwark_field_repairs" })
+        foreach (var id in new[] { "bulwark_spare_parts", "bulwark_armoured_drone", "bulwark_fast_rotors", "bulwark_field_repairs" })
             Check.True(h.Heroes.ApplyUpgrade(A1, "bulwark", id).IsAccepted, id);
         h.Unit(A1).health = 100f;
         h.Unit(A2).health = 100f;
@@ -243,9 +243,10 @@ static class BulwarkKitTests
         var drone = Held(h, "bulwark_drone");
         Check.Near(200f, drone.health, "Armoured Drone: twice the health", 0.01f);
         Check.Near(14f, drone.timeLeft, "and 4 s longer", 0.01f);
-        h.Run(1.05f);
-        Check.Near(126f, h.Health(A1), "Spare Parts: 30% more healing (26 a second)", 0.5f);
-        Check.True(h.Shield(A1) > 0f, "Shield Drone: a shield too");
+        h.Run(1.25f);
+        // 13 a pulse (Spare Parts: 30% more), three pulses in 1.25 s at Fast Rotors' 0.4 s instead of two at 0.5 s.
+        Check.Near(139f, h.Health(A1), "Spare Parts and Fast Rotors: 13 a pulse, every 0.4 s", 0.5f);
+        Check.Near(0f, h.Shield(A1), "and no shield: heroes have none");
         Check.True(h.Health(A2) > 100f, "Field Repairs: the teammate beside him is healed");
     }
 
@@ -256,7 +257,6 @@ static class BulwarkKitTests
         var h = Lineup();
         h.LevelTo(A1, h.Heroes.Progression.Rules.UltimateFormLevel());
         Check.True(h.PickForm(A1, form).IsAccepted, "pick " + form);
-        h.Unit(A1).ultimateCharge = h.R.ultimateChargeMax;
         return h;
     }
 
@@ -265,10 +265,9 @@ static class BulwarkKitTests
     {
         var h = Lineup();
         Check.Equal(1, h.Heroes.Progression.Level(A1), "level 1, no upgrade picked");
-        h.Unit(A1).ultimateCharge = h.R.ultimateChargeMax;
-        Check.True(h.Use(A1, Bulkhead, new Vec3(0f, 0f, 10f) - h.Eye(A1)).IsAccepted, "Bulkhead goes up once charged");
+        Check.True(h.Use(A1, Bulkhead, new Vec3(0f, 0f, 10f) - h.Eye(A1)).IsAccepted, "Bulkhead goes up straight away");
         Check.True(Held(h, "bulwark_bulkhead") != null, "the wall is out");
-        Check.False(h.Use(A1, Bulkhead, Ahead).IsAccepted, "and needs charging again");
+        Check.Equal("on cooldown", h.Use(A1, Bulkhead, Ahead).reason, "and then waits out its cooldown");
     }
 
     [Test]

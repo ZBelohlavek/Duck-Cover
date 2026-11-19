@@ -13,7 +13,7 @@ namespace DuckAndCover.UI
     /// rounds; the hero's abilities as slanted slots that fill as they recharge; the upgrade on offer;
     /// the score header at the top (team bars meeting at the clock) with each mode's own parts: the
     /// zones in the zone modes, the flag line in Flag Rush (WP21), and in Overrun (WP19) the four
-    /// Bastions with their shields and health, the next wave and the late push. Also the respawn
+    /// Bastions with their shields and health and the late push. Also the respawn
     /// countdown and who took whom down.
     /// The visor's edge takes the hero's identity colour; team colours stay on everything about teams.
     /// It reads the latest state and the local player; it decides nothing.
@@ -77,6 +77,10 @@ namespace DuckAndCover.UI
         }
         readonly List<BastionCard> bastionCards = new List<BastionCard>();
         const float CardWidth = 196f, CardHeight = 54f;
+        /// <summary>Pixels a Bastion card's top leans sideways: A's lean left, B's right, mirrored across the clock.</summary>
+        static float CardSlant(TeamId team) => team == TeamId.A ? -10f : 10f;
+        /// <summary>Pixels between a card's leaning side and its labels.</summary>
+        const float CardLabelMargin = 12f;
 
         readonly List<KeyValuePair<float, string>> feed = new List<KeyValuePair<float, string>>();
         SessionClient client;
@@ -169,12 +173,11 @@ namespace DuckAndCover.UI
         {
             for (int i = 0; i < 3; i++)
             {
-                bool ultimate = i == 2;
                 var slot = new AbilitySlot
                 {
-                    x = 960f + (i - 1) * 156f + (ultimate ? 8f : 0f),
-                    width = ultimate ? 128f : 112f,
-                    height = ultimate ? 76f : 66f,
+                    x = 960f + (i - 1) * 156f,
+                    width = 112f,
+                    height = 66f,
                 };
                 slot.lines = UIKit.Lines(f, "Ability" + i);
                 float top = SlotY + slot.height;
@@ -255,9 +258,14 @@ namespace DuckAndCover.UI
                 string name = "Bastion" + team + tier;
                 var card = new BastionCard { team = team, tier = tier, x = x };
                 card.lines = UIKit.Lines(overrunRow.transform, name);
-                float top = HeaderY + CardHeight * 0.5f;
-                UIKit.Readout(overrunRow.transform, name + "Name", new Vector2(x - 44f, top - 14f), new Vector2(110f, 20f), TierName(tier).ToUpperInvariant(), 17, UITheme.Text, TextAnchor.MiddleLeft, true);
-                card.state = UIKit.Readout(overrunRow.transform, name + "State", new Vector2(x + 50f, top - 14f), new Vector2(90f, 20f), "", 16, UITheme.TextDim, TextAnchor.MiddleRight, true);
+                // The card leans (see CardSlant), so its sides move with height: keep both labels inside the
+                // edges at the height they sit, with a margin, or they hang out of the leaning side.
+                float labelY = HeaderY + CardHeight * 0.5f - 14f;
+                float lean = CardSlant(team) * (labelY - (HeaderY - CardHeight * 0.5f)) / CardHeight;
+                float inner = x - CardWidth * 0.5f + lean + CardLabelMargin, outer = x + CardWidth * 0.5f + lean - CardLabelMargin;
+                const float nameWidth = 110f, stateWidth = 80f;
+                UIKit.Readout(overrunRow.transform, name + "Name", new Vector2(inner + nameWidth * 0.5f, labelY), new Vector2(nameWidth, 20f), TierName(tier).ToUpperInvariant(), 17, UITheme.Text, TextAnchor.MiddleLeft, true);
+                card.state = UIKit.Readout(overrunRow.transform, name + "State", new Vector2(outer - stateWidth * 0.5f, labelY), new Vector2(stateWidth, 20f), "", 16, UITheme.TextDim, TextAnchor.MiddleRight, true);
                 bastionCards.Add(card);
             }
         }
@@ -496,9 +504,9 @@ namespace DuckAndCover.UI
         void ShowWeapon(LocalPlayer local)
         {
             weaponText.text = local.WeaponName.ToUpperInvariant();
-            ammoText.text = local.Melee ? "" : local.Ammo.ToString();
+            ammoText.text = local.NoAmmo ? "" : local.Ammo.ToString();
             ammoText.color = local.Reloading ? UITheme.TextDim : local.Ammo == 0 ? UITheme.Danger : local.HealRounds ? UITheme.Health : UITheme.Text;
-            magazineText.text = local.Melee ? "MELEE" : "/ " + local.Magazine;
+            magazineText.text = local.Melee ? "MELEE" : local.NoAmmo ? "NO RELOAD" : "/ " + local.Magazine;
             reloadText.text = local.Reloading ? "RELOADING" : local.Ammo == 0 ? "RELOAD (R)" : local.HealRounds ? "HEALING ROUNDS" : "";
             reloadText.color = local.Reloading ? UITheme.Warning : local.HealRounds && local.Ammo > 0 ? UITheme.Health : UITheme.Danger;
 
@@ -507,7 +515,7 @@ namespace DuckAndCover.UI
             int cells = mag <= 40 ? mag : 20;
             var g = ammoRow;
             g.Clear();
-            if (local.Melee) { g.Commit(); return; } // a swing spends nothing: no ammo bar
+            if (local.NoAmmo) { g.Commit(); return; } // a swing or endless darts spend nothing: no ammo bar
             g.SegmentedBar(1884f - 300f, 164f, 300f, 14f, 3f, cells, cells > 24 ? 2f : 3f, (float)local.Ammo / mag,
                            local.HealRounds ? UITheme.Health : local.Ammo * 4 <= mag ? UITheme.Warning : UITheme.Visor, UITheme.VisorFaint, true);
             g.Commit();
@@ -519,11 +527,24 @@ namespace DuckAndCover.UI
             var rules = SessionRunner.Instance.ClientRules;
             Color hero = UITheme.ForHero(me.heroId);
             ShowSelfState(unit);
+            bool basePassive = unit != null && !string.IsNullOrEmpty(unit.passiveId);
             for (int i = 0; i < slots.Count; i++)
             {
                 var s = slots[i];
-                var slot = unit != null && i < unit.slots.Count ? unit.slots[i] : null;
+                // The HUD's E, F and X slots; a hero with a base passive shows it in F's place.
+                int at = unit == null ? -1 : Core.AbilityKeys.SlotFor(AbilityKeys[i], unit.slots.Count, basePassive);
+                var slot = at >= 0 ? unit.slots[at] : null;
                 var baseDef = slot == null ? null : lib.Ability(slot.abilityId);
+                if (baseDef == null && basePassive && AbilityKeys[i] == Core.AbilityKeys.F && lib.Ability(unit.passiveId) != null)
+                {
+                    s.key.text = "";
+                    s.name.text = lib.Ability(unit.passiveId).displayName.ToUpperInvariant();
+                    s.name.color = UITheme.Text;
+                    s.status.text = "PASSIVE";
+                    s.status.color = UITheme.TextDim;
+                    DrawSlot(s, 1f, false, 0, hero, hero);
+                    continue;
+                }
                 if (baseDef == null)
                 {
                     s.lines.Clear();
@@ -532,22 +553,16 @@ namespace DuckAndCover.UI
                     continue;
                 }
                 var def = AbilityParams.Resolve(baseDef, unit.changes, lib, rules.minCooldownSeconds).def;
-                s.key.text = i < AbilityKeys.Length ? AbilityKeys[i] : "";
+                s.key.text = AbilityKeys[i];
                 s.name.text = def.displayName.ToUpperInvariant();
 
-                // How full the slot is (recharge or ultimate charge), whether it is ready, and what it says.
+                // How full the slot is, whether it is ready, and what it says.
                 float fill;
                 bool ready = false;
                 int pips = 0;
                 string status = "";
                 Color edge = UITheme.VisorFaint, text = UITheme.Text;
-                if (def.ultimate)
-                {
-                    fill = Mathf.Clamp01(unit.ultimateCharge / Mathf.Max(1f, def.ultimateCost));
-                    if (unit.ultimateCharge >= def.ultimateCost - 0.01f) { status = "READY"; text = UITheme.Warning; edge = UITheme.Warning; ready = true; }
-                    else status = Mathf.FloorToInt(100f * fill) + "%";
-                }
-                else if (def.held && (slot.raised || slot.charges > 0))
+                if (def.held && (slot.raised || slot.charges > 0))
                 {
                     // A held shield: how much strength it has, and whether it is up.
                     fill = Mathf.Clamp01(slot.raised ? ShieldShare(snapshot, slot) : slot.reserve);
@@ -566,15 +581,17 @@ namespace DuckAndCover.UI
                 }
                 else
                 {
-                    float rate = Mathf.Max(0.01f, unit.stats.Get(StatIds.CooldownRate));
+                    float rate = Mathf.Max(0.01f, AbilityRunner.RechargeRate(unit.stats.Get(StatIds.CooldownRate), def.cooldown, rules.abilityCooldownFloor));
                     fill = def.cooldown > 0f ? 1f - Mathf.Clamp01(slot.rechargeLeft / def.cooldown) : 0f;
                     status = (slot.rechargeLeft / rate).ToString("0.0");
                     text = UITheme.TextDim;
                 }
+                // Notches earned by kills (the goblin's knife) show beside the slot's state.
+                if (slot.notches > 0 && def.maxNotches > 0) status = (status.Length > 0 ? status + "  " : "") + "+" + Mathf.RoundToInt(Mathf.Min(slot.notches, def.maxNotches) * def.notchDamage);
                 s.status.text = status;
                 s.status.color = text;
                 s.name.color = UITheme.Text;
-                DrawSlot(s, fill, ready, pips, edge, def.ultimate ? UITheme.Warning : hero);
+                DrawSlot(s, fill, ready, pips, edge, hero);
             }
         }
 
@@ -798,7 +815,7 @@ namespace DuckAndCover.UI
                 var b = o.Bastion(card.team, card.tier);
                 if (b == null) continue;
                 Color team = UITheme.ForTeam(card.team);
-                float slant = card.team == TeamId.A ? -10f : 10f;
+                float slant = CardSlant(card.team);
                 float left = card.x - CardWidth * 0.5f, bottom = HeaderY - CardHeight * 0.5f;
                 var g = card.lines;
                 g.Clear();
@@ -843,10 +860,7 @@ namespace DuckAndCover.UI
                     color = UITheme.Danger;
                 }
                 else
-                {
-                    float next = snapshot.lanes == null ? 0f : snapshot.lanes.nextWaveIn;
-                    line = "Next wave in " + Mathf.Max(0, Mathf.CeilToInt(next)) + "   Heroes hurt a Bastion only with their own minions near it";
-                }
+                    line = "Heroes hurt a Bastion only with their own minions near it";
             }
             SetStatus(line, color);
         }

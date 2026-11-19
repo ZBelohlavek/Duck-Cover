@@ -9,7 +9,7 @@ namespace DuckAndCover.Core
     // ones), so the rules treat an empty kind or id as "not set".
 
     /// <summary>
-    /// One ability: a resource (cooldown with charges, or ultimate charge), an optional wind-up,
+    /// One ability: a cooldown with charges, an optional wind-up,
     /// a targeting shape, and a list of standard effects. A test ability needs nothing but this.
     /// </summary>
     [Serializable]
@@ -19,12 +19,16 @@ namespace DuckAndCover.Core
         public string displayName = "";
         public string description = "";
 
-        /// <summary>Uses ultimate charge instead of a cooldown. Like every ability, usable from level 1.</summary>
-        public bool ultimate;
-        /// <summary>Charge an ultimate costs.</summary>
-        public float ultimateCost = 100f;
-        /// <summary>Seconds to recover one charge.</summary>
+        /// <summary>
+        /// Seconds to recover one charge. Every ability runs on a cooldown (there is no ultimate charge),
+        /// and most sit between <see cref="Ruleset.abilityCooldownFloor"/> and <see cref="Ruleset.abilityCooldownCeiling"/>.
+        /// </summary>
         public float cooldown;
+        /// <summary>
+        /// Why this ability may recharge faster than <see cref="Ruleset.abilityCooldownFloor"/> (a held shield,
+        /// a reload). Empty for every other ability; the ability rules test lists the exceptions.
+        /// </summary>
+        public string shortCooldownReason = "";
         /// <summary>Uses banked before the cooldown blocks it.</summary>
         public int charges = 1;
         /// <summary>Wind-up: the effects land this many seconds after the cast starts. A stun cancels it.</summary>
@@ -65,25 +69,101 @@ namespace DuckAndCover.Core
         /// </summary>
         public bool breaksControl;
 
+        /// <summary>
+        /// Rewards when the hero lands a killing blow (<see cref="KillRewardDef"/>): effects on themselves and
+        /// notches on this ability. Read on the hero's slot abilities and their passive.
+        /// </summary>
+        public KillRewardDef[] onKill = new KillRewardDef[0];
+        /// <summary>
+        /// Damage each notch adds to this ability's damage effects (untagged ones). Notches come from
+        /// <see cref="onKill"/> rewards and stay for the whole match (<see cref="AbilitySlotState.notches"/>).
+        /// </summary>
+        public float notchDamage;
+        /// <summary>Most notches the ability holds. 0 = it takes none.</summary>
+        public int maxNotches;
+
         public AbilityDef Clone()
         {
             var c = (AbilityDef)MemberwiseClone();
             c.targeting = (targeting ?? new TargetingDef()).Clone();
             c.effects = EffectDef.CloneAll(effects);
             c.stats = stats == null ? new StatModifier[0] : Array.ConvertAll(stats, s => s?.Clone());
+            c.onKill = onKill == null ? new KillRewardDef[0] : Array.ConvertAll(onKill, k => k?.Clone());
             return c;
         }
+    }
+
+    /// <summary>
+    /// A reward for a killing blow by the hero who has the ability (or passive) it sits on: notches on
+    /// that ability and effects on the killer (a heal, a status). Which kills count is
+    /// <see cref="victims"/> and <see cref="scope"/>.
+    /// </summary>
+    [Serializable]
+    public class KillRewardDef
+    {
+        /// <summary>A name for talents to change it by ("kill.NAME.notches"). Optional.</summary>
+        public string name = "";
+        /// <summary>
+        /// Who counts, one or more of <see cref="KillVictims"/> joined by commas: "hero", "minion" (a team's
+        /// lane unit, not a Bastion) or "camp" (a neutral camp creature).
+        /// </summary>
+        public string victims = "";
+        /// <summary>Which kills count, one of <see cref="KillScopes"/>: by this ability, by anything else the hero deals, or either.</summary>
+        public string scope = KillScopes.Any;
+        /// <summary>Notches added to this ability (up to its maxNotches).</summary>
+        public int notches;
+        /// <summary>Effects on the killer (always on themselves, whatever their affects says).</summary>
+        public EffectDef[] effects = new EffectDef[0];
+        /// <summary>When set, the reward is off until a talent enables this tag (AbilityParamChange param "enable").</summary>
+        public string tag = "";
+
+        public bool Counts(string victim)
+        {
+            if (string.IsNullOrEmpty(victims) || string.IsNullOrEmpty(victim)) return false;
+            foreach (var v in victims.Split(',')) if (v.Trim() == victim) return true;
+            return false;
+        }
+
+        public KillRewardDef Clone()
+        {
+            var c = (KillRewardDef)MemberwiseClone();
+            c.effects = EffectDef.CloneAll(effects);
+            return c;
+        }
+    }
+
+    /// <summary>Who a <see cref="KillRewardDef"/> can count.</summary>
+    public static class KillVictims
+    {
+        public const string Hero = "hero";
+        /// <summary>A team's lane unit that moves (a minion or Juggernaut), not a Bastion.</summary>
+        public const string Minion = "minion";
+        /// <summary>A neutral camp creature.</summary>
+        public const string Camp = "camp";
+        public static bool IsKnown(string s) => s == Hero || s == Minion || s == Camp;
+    }
+
+    /// <summary>Which killing blows a <see cref="KillRewardDef"/> counts.</summary>
+    public static class KillScopes
+    {
+        /// <summary>Anything the hero deals: weapons, abilities, objects.</summary>
+        public const string Any = "any";
+        /// <summary>Only the ability the reward sits on.</summary>
+        public const string Ability = "ability";
+        /// <summary>Anything but the ability the reward sits on.</summary>
+        public const string Other = "other";
+        public static bool IsKnown(string s) => s == Any || s == Ability || s == Other;
     }
 
     /// <summary>Where an ability looks for targets.</summary>
     [Serializable]
     public class TargetingDef
     {
-        /// <summary>One of <see cref="Shapes"/>: "self", "ray" or "sphere".</summary>
+        /// <summary>One of <see cref="Shapes"/>: "self", "ray", "sphere" or "arc".</summary>
         public string shape = Shapes.Self;
         /// <summary>For spheres, one of <see cref="Origins"/>: around the caster or where the aim lands.</summary>
         public string origin = Origins.Caster;
-        /// <summary>Ray length, or how far away an aimed sphere can land (metres).</summary>
+        /// <summary>Ray length, how far away an aimed sphere can land, or an arc's reach (metres).</summary>
         public float range;
         /// <summary>Sphere radius (metres), scaled by the caster's abilityRadius stat.</summary>
         public float radius;
@@ -92,7 +172,7 @@ namespace DuckAndCover.Core
         /// around the first). A target caught by several takes the effects several times.
         /// </summary>
         public int count = 1;
-        /// <summary>Width of a ray fan in degrees (left to right).</summary>
+        /// <summary>Width of a ray fan, or of an arc, in degrees (left to right).</summary>
         public float spreadDegrees;
         /// <summary>Who counts as a target, one of <see cref="Affects"/>.</summary>
         public string affects = Affects.Enemies;
@@ -103,6 +183,11 @@ namespace DuckAndCover.Core
         /// so aiming at a wall or into the air still lands on the ground.
         /// </summary>
         public bool ground;
+        /// <summary>
+        /// The ability is refused (nothing spent) unless it would catch someone right now: a buff cast on a
+        /// teammate doesn't go to waste on an empty spot. Only checked for abilities without a wind-up.
+        /// </summary>
+        public bool needsTarget;
 
         public TargetingDef Clone() => (TargetingDef)MemberwiseClone();
     }
@@ -113,7 +198,8 @@ namespace DuckAndCover.Core
     /// duration), slow (amount = share of speed taken, duration), stun (duration), cleanse,
     /// push (amount = metres, or the most metres for a leap; duration = seconds; direction; lift = metres
     /// up at the top of the arc, so a push with only a lift is a knock-up), spawn (objectId), reload,
-    /// healRounds (amount = health each round gives, radius = splash around the teammate hit).
+    /// healRounds (amount = health each round gives, radius = splash around the teammate hit),
+    /// execute (amount = share of max health at or below which an enemy hero is finished off).
     /// </summary>
     [Serializable]
     public class EffectDef
@@ -136,9 +222,18 @@ namespace DuckAndCover.Core
         public float radius;
         /// <summary>Push: metres the target rises at the top of the arc (a leap, a knock-up). 0 = level with the ground.</summary>
         public float lift;
+        /// <summary>Damage: share of the damage dealt that heals whoever is credited (the caster or the object's owner). 0 = none.</summary>
+        public float lifeSteal;
+        /// <summary>
+        /// Above 0: the effect only happens when the ability caught at least this many targets (a sweep that
+        /// pays off when it hits a crowd). Abilities only; objects and statuses ignore it.
+        /// </summary>
+        public int minTargets;
         /// <summary>
         /// Overrides who this effect reaches: empty = the ability's targets; "self" = the caster once,
-        /// whatever was hit; otherwise filters the ability's targets (<see cref="Affects"/>).
+        /// whatever was hit (on an object's pulse: the owner, only when the pulse reached them);
+        /// "selfPerHero" = the caster once for each hero (not minion) the ability's targets hold, so a
+        /// stacking status grows with every hero hit; otherwise filters the ability's targets (<see cref="Affects"/>).
         /// </summary>
         public string affects = "";
         /// <summary>When set, the effect is off until a talent enables this tag (AbilityParamChange param "enable").</summary>
@@ -189,6 +284,11 @@ namespace DuckAndCover.Core
         /// (StatConditions.Ambush). A reveal status on the bearer wins over it.
         /// </summary>
         public bool stealth;
+        /// <summary>
+        /// Untouchable: the bearer takes no damage and enemies can't put harmful statuses on them (a dash
+        /// as a cloud of bats). Pushes still move them.
+        /// </summary>
+        public bool invulnerable;
         /// <summary>What a second application does, one of <see cref="Stacking"/>.</summary>
         public string stacking = Stacking.Refresh;
         public int maxStacks = 1;
@@ -321,8 +421,13 @@ namespace DuckAndCover.Core
         /// magazine is spent or reloaded, a round that hits a teammate heals them by the amount.
         /// </summary>
         public const string HealRounds = "healRounds";
+        /// <summary>
+        /// Finishes off an enemy hero whose health is at or below the amount (a share of their max health, 0.2 =
+        /// 20%), shields and all. Units (minions, Bastions, camp guards) are never executed.
+        /// </summary>
+        public const string Execute = "execute";
 
-        public static readonly string[] All = { Damage, Heal, Shield, Status, Slow, Stun, Cleanse, Push, Spawn, Reload, HealRounds };
+        public static readonly string[] All = { Damage, Heal, Shield, Status, Slow, Stun, Cleanse, Push, Spawn, Reload, HealRounds, Execute };
         public static bool IsKnown(string kind) => Array.IndexOf(All, kind) >= 0;
     }
 
@@ -331,7 +436,12 @@ namespace DuckAndCover.Core
         public const string Self = "self";
         public const string Ray = "ray";
         public const string Sphere = "sphere";
-        public static bool IsKnown(string s) => s == Self || s == Ray || s == Sphere;
+        /// <summary>
+        /// A melee sweep: everyone in front of the caster within range (plus their body's width) and inside
+        /// spreadDegrees of the aim, seen level, in sight. Each target is caught once, nearest first.
+        /// </summary>
+        public const string Arc = "arc";
+        public static bool IsKnown(string s) => s == Self || s == Ray || s == Sphere || s == Arc;
     }
 
     public static class Origins
@@ -352,6 +462,14 @@ namespace DuckAndCover.Core
         public const string Self = "self";
         public const string All = "all";
         public static bool IsKnown(string s) => s == Enemies || s == Allies || s == AlliesAndSelf || s == Self || s == All;
+
+        /// <summary>
+        /// Effects only: the caster once per hero among the targets (see <see cref="EffectDef.affects"/>).
+        /// Not a targeting rule.
+        /// </summary>
+        public const string SelfPerHero = "selfPerHero";
+        /// <summary>What an effect's own affects may say: any rule above, or <see cref="SelfPerHero"/>.</summary>
+        public static bool IsKnownForEffect(string s) => IsKnown(s) || s == SelfPerHero;
     }
 
     public static class Triggers
@@ -388,7 +506,12 @@ namespace DuckAndCover.Core
         /// effect's amount. Give it a lift so it arcs.
         /// </summary>
         public const string Leap = "leap";
-        public static bool IsKnown(string s) => s == Aim || s == Away || s == Toward || s == Leap;
+        /// <summary>
+        /// Toward the caster (a grab that pulls): up to the amount, stopping <see cref="Ruleset.pullStopMetres"/>
+        /// short of them.
+        /// </summary>
+        public const string Caster = "caster";
+        public static bool IsKnown(string s) => s == Aim || s == Away || s == Toward || s == Leap || s == Caster;
     }
 
     /// <summary>

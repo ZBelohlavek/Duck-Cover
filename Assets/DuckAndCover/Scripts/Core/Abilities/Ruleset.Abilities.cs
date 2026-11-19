@@ -28,26 +28,18 @@ namespace DuckAndCover.Core
         public bool friendlyFire = false;
 
         // ---- Abilities ----
-        /// <summary>Cooldowns and charges refill on respawn. Ultimate charge always carries over.</summary>
+        /// <summary>Cooldowns and charges refill on respawn.</summary>
         public bool resetCooldownsOnRespawn = true;
         /// <summary>No talent can take a cooldown below this.</summary>
         public float minCooldownSeconds = 0.5f;
-        /// <summary>Share of an ultimate's cost given back when a stun or death interrupts its wind-up.</summary>
-        public float ultimateInterruptRefund = 0.5f;
-        /// <summary>Ultimate charge gained per second while alive, from level 1 (100 = full for a cost-100 ultimate).</summary>
-        public float ultimateChargePerSecond = 0.8f;
-        /// <summary>Ultimate charge per point of damage dealt to enemies.</summary>
-        public float ultimateChargePerDamage = 0.05f;
-        /// <summary>Ultimate charge per point of healing or shield given to teammates.</summary>
-        public float ultimateChargePerHealing = 0.05f;
         /// <summary>
-        /// Share of the damage and healing charge above that counts when the other side is a unit (a
-        /// minion, Bastion or camp guard) rather than a hero, so clearing waves doesn't bring ultimates
-        /// round far faster than fighting heroes does (WP20).
+        /// Shortest cooldown an ability recharges in (so abilities aren't spammed): cooldown-rate stats
+        /// can't take an ability below it. Abilities whose own cooldown is shorter (they give a
+        /// <see cref="AbilityDef.shortCooldownReason"/>) are exempt.
         /// </summary>
-        public float ultimateChargeUnitShare = 0.5f;
-        /// <summary>Most charge a hero can bank.</summary>
-        public float ultimateChargeMax = 100f;
+        public float abilityCooldownFloor = 13f;
+        /// <summary>Longest cooldown an ability should have; the ability rules test holds every hero to it.</summary>
+        public float abilityCooldownCeiling = 20f;
 
         // ---- Status effects ----
         /// <summary>Slows can't take a hero below this share of their move speed.</summary>
@@ -56,6 +48,8 @@ namespace DuckAndCover.Core
         public float groundProbeMetres = 30f;
         /// <summary>...after stepping this far back toward the caster, so a wall the aim hit doesn't stand in the way.</summary>
         public float groundProbeBack = 0.5f;
+        /// <summary>A pull toward the caster (PushDirections.Caster) stops this far short of them (metres).</summary>
+        public float pullStopMetres = 1.2f;
         /// <summary>Stuns longer than this are cut short.</summary>
         public float maxStunSeconds = 2f;
         /// <summary>Seconds of the ambush window that attacking out of stealth opens (StatConditions.Ambush), before the ambushSeconds stat.</summary>
@@ -65,6 +59,12 @@ namespace DuckAndCover.Core
         /// reads it), so a cloak can't stand on top of someone unseen.
         /// </summary>
         public float stealthShimmerRange = 5f;
+
+        // ---- The jungle (StatConditions.Jungle, JungleArea) ----
+        /// <summary>A jungle trail counts this many metres past its own edge (half its width), so its verges count too.</summary>
+        public float jungleTrailMargin = 1f;
+        /// <summary>Everywhere within this many metres of a camp's pad is its clearing, and jungle.</summary>
+        public float jungleClearingRadius = 9f;
 
         // ---- Spawned objects ----
         /// <summary>First id given to spawned objects (turrets, mines, barriers), clear of map device ids.</summary>
@@ -79,13 +79,12 @@ namespace DuckAndCover.Core
             if (defaultShieldSeconds <= 0f) e.Add("defaultShieldSeconds must be positive");
             if (regenDelaySeconds < 0f) e.Add("regenDelaySeconds can't be negative");
             if (lowHealthShare < 0f || lowHealthShare > 1f) e.Add("lowHealthShare must be between 0 and 1");
+            if (jungleTrailMargin < 0f || jungleClearingRadius < 0f) e.Add("jungle margins can't be negative");
             if (minCooldownSeconds < 0f) e.Add("minCooldownSeconds can't be negative");
-            if (ultimateInterruptRefund < 0f || ultimateInterruptRefund > 1f) e.Add("ultimateInterruptRefund must be between 0 and 1");
-            if (ultimateChargePerSecond < 0f || ultimateChargePerDamage < 0f || ultimateChargePerHealing < 0f) e.Add("ultimate charge rates can't be negative");
-            if (ultimateChargeUnitShare < 0f) e.Add("ultimateChargeUnitShare can't be negative");
+            if (abilityCooldownFloor < 0f || abilityCooldownCeiling < abilityCooldownFloor) e.Add("abilityCooldownFloor must be between 0 and abilityCooldownCeiling");
             if (escortRadius < 0f) e.Add("escortRadius can't be negative");
-            if (ultimateChargeMax <= 0f) e.Add("ultimateChargeMax must be positive");
             if (minMoveSpeed < 0f || minMoveSpeed > 1f) e.Add("minMoveSpeed must be between 0 and 1");
+            if (pullStopMetres < 0f) e.Add("pullStopMetres can't be negative");
             if (maxStunSeconds <= 0f) e.Add("maxStunSeconds must be positive");
             if (ambushSeconds < 0f) e.Add("ambushSeconds can't be negative");
             if (stealthShimmerRange < 0f) e.Add("stealthShimmerRange can't be negative");
