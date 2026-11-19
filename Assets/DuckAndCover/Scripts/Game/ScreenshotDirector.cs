@@ -52,7 +52,7 @@ namespace DuckAndCover.Game
             new Shot("11-hush", DummyThrowsHush, 1.0f),
             new Shot("11b-war-leap", DummyWarLeaps, 1.4f),
             new Shot("11c-bolete", DummyPlaysBolete, 1.4f),
-            new Shot("11d-vampire", DummyVampireGrabs, 0.9f),
+            new Shot("11d-vampire", DummyVampireGrabs, 1.0f),
             new Shot("12-hero-hud", LevelUpAndLook, 1.2f),
             // Environment kit: the lane mock-up, built far off to one side of the real map.
             new Shot("13-lane", () => LaneShot(new Vector3(0f, 1.8f, -50f), new Vector3(0f, 1.2f, -38f)), 1.0f),
@@ -499,14 +499,15 @@ namespace DuckAndCover.Game
         }
 
         /// <summary>
-        /// The Mender dummy becomes the vampire 5 m in front of the player: Grasping Claw seizes them (stealing max
+        /// The Mender dummy becomes the vampire 4 m in front of the player, on the clear line the war chief came in
+        /// along (the war chief steps aside): seen through the player's eyes, Grasping Claw seizes them (stealing max
         /// health, so the health bar shortens) and he keeps throwing red Blood Darts until the shot is taken.
         /// </summary>
         static void DummyVampireGrabs()
         {
             var runner = SessionRunner.Instance;
             if (runner == null || runner.Heroes == null || runner.Client == null) return;
-            int vampire = CombatServer.FirstDummyId + 2;
+            int vampire = CombatServer.FirstDummyId + 2, chief = CombatServer.FirstDummyId + 1;
             int me = runner.Client.PlayerId;
             var mine = runner.Combat.Movement.Motion(me);
             if (mine == null) return;
@@ -515,14 +516,43 @@ namespace DuckAndCover.Game
             // Full health first, so the earlier shots' damage plus the grab can't take the player down.
             var unit = runner.Combat.Damage.Unit(me);
             if (unit != null) unit.health = runner.Combat.Damage.MaxHealth(me);
-            Vec3 ahead = MoveMath.Forward(mine.yaw);
-            runner.Combat.Movement.Teleport(vampire, mine.position + ahead * 5f, mine.yaw + 180f);
-            Vec3 side = MoveMath.Right(mine.yaw);
-            WatchFrom((mine.position + ahead * 2.5f + side * 7f).ToVector3() + Vector3.up * 2.5f, (mine.position + ahead * 2.5f).ToVector3() + Vector3.up * 1f);
-            if (!DummyCast(runner, vampire, 0, me, 0f)) Debug.LogError("Duck and Cover: the capture's vampire could not use Grasping Claw.");
-            CombatView.Instance.StartCoroutine(ThrowDarts(runner, vampire, me, 1.2f));
-            CombatView.Instance.StartCoroutine(Expect(() => runner.Combat.Damage.Unit(me) != null && runner.Combat.Damage.Unit(me).HasStatus("vampire_drained"), 0.5f,
+            // Toward the war chief, who stands where shot 11b's leap brought him: open ground, not a wall.
+            Vec3 toward = MoveMath.Forward(mine.yaw);
+            var chiefAt = runner.Combat.Movement.Motion(chief);
+            if (chiefAt != null)
+            {
+                Vec3 d = new Vec3(chiefAt.position.x - mine.position.x, 0f, chiefAt.position.z - mine.position.z);
+                if (d.Magnitude > 0.5f) toward = d.Normalized;
+                runner.Combat.Movement.Teleport(chief, chiefAt.position + MoveMath.Right(chiefAt.yaw) * 3f, chiefAt.yaw);
+            }
+            float yaw = (float)(Math.Atan2(toward.x, toward.z) * 180.0 / Math.PI);
+            runner.Combat.Movement.Teleport(vampire, mine.position + toward * 4f, yaw + 180f);
+            var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
+            if (local != null)
+            {
+                local.freeCamera = false;
+                local.LookAt(yaw, 6f);
+            }
+            CombatView.Instance.StartCoroutine(GrabThenThrow(runner, vampire, me));
+            CombatView.Instance.StartCoroutine(Expect(() => runner.Combat.Damage.Unit(me) != null && runner.Combat.Damage.Unit(me).HasStatus("vampire_drained"), 0.75f,
                 "the player drained by Grasping Claw"));
+        }
+
+        /// <summary>
+        /// After the lag-compensation history has a few ticks of the vampire in his new spot, he grabs the player,
+        /// then throws darts.
+        /// </summary>
+        static IEnumerator GrabThenThrow(SessionRunner runner, int vampire, int targetId)
+        {
+            yield return new WaitForSecondsRealtime(0.25f);
+            if (!DummyCast(runner, vampire, 0, targetId, 0f)) Debug.LogError("Duck and Cover: the capture's vampire could not use Grasping Claw.");
+            else
+            {
+                var u = runner.Combat.Damage.Unit(targetId);
+                Debug.Log("Duck and Cover: the capture's vampire grabbed; the player has " + (u == null ? "no unit" : u.health.ToString("0") + " of "
+                    + runner.Combat.Damage.MaxHealth(targetId).ToString("0") + " health" + (u.HasStatus("vampire_drained") ? ", drained" : ", not drained")) + ".");
+            }
+            yield return ThrowDarts(runner, vampire, targetId, 1.0f);
         }
 
         /// <summary>The vampire dummy (server side) throws a dart at the player every quarter second for a while.</summary>
