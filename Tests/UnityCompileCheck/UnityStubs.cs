@@ -102,11 +102,13 @@ namespace UnityEngine
     {
         public static T GetBuiltinResource<T>(string path) where T : Object => null;
         public static T[] LoadAll<T>(string path) where T : Object => null;
+        public static T Load<T>(string path) where T : Object => null;
     }
 
     public class TextAsset : Object
     {
         public string text => null;
+        public byte[] bytes => null;
     }
 
     public static class JsonUtility
@@ -238,6 +240,7 @@ namespace UnityEngine
         public void SetParent(Transform parent) { }
         public void SetParent(Transform parent, bool worldPositionStays) { }
         public void SetPositionAndRotation(Vector3 position, Quaternion rotation) { }
+        public Transform Find(string n) => null;
         public IEnumerator GetEnumerator() { yield break; }
     }
 
@@ -248,6 +251,7 @@ namespace UnityEngine
         public static Vector3 zero => default;
         public static Vector3 one => new Vector3(1, 1, 1);
         public static Vector3 up => new Vector3(0, 1, 0);
+        public static Vector3 right => new Vector3(1, 0, 0);
         public static Vector3 down => new Vector3(0, -1, 0);
         public static Vector3 forward => new Vector3(0, 0, 1);
         public float magnitude => 0f;
@@ -275,6 +279,14 @@ namespace UnityEngine
         public Color32(byte r, byte g, byte b, byte a) { this.r = r; this.g = g; this.b = b; this.a = a; }
         public static implicit operator Color32(Color c) => default;
         public static implicit operator Color(Color32 c) => default;
+    }
+
+    public struct Bounds
+    {
+        public Bounds(Vector3 center, Vector3 size) { this.center = center; this.size = size; }
+        public Vector3 center { get; set; }
+        public Vector3 size { get; set; }
+        public void Encapsulate(Bounds bounds) { }
     }
 
     public struct Quaternion
@@ -357,7 +369,11 @@ namespace UnityEngine
         public void SetNormals(List<Vector3> inNormals) { }
         public void SetUVs(int channel, List<Vector2> uvs) { }
         public void SetTriangles(List<int> triangles, int submesh) { }
+        public void SetTriangles(int[] triangles, int submesh) { }
+        public UnityEngine.Rendering.IndexFormat indexFormat { get; set; }
+        public Bounds bounds { get; set; }
         public void RecalculateBounds() { }
+        public void RecalculateTangents() { }
     }
 
     public sealed class MeshFilter : Component
@@ -388,6 +404,8 @@ namespace UnityEngine
         public Material material { get; set; }
         public Material sharedMaterial { get; set; }
     }
+
+    public class MeshRenderer : Renderer { }
 
     public enum TextureWrapMode { Repeat = 0, Clamp = 1, Mirror = 2, MirrorOnce = 3 }
     public enum FilterMode { Point = 0, Bilinear = 1, Trilinear = 2 }
@@ -600,6 +618,8 @@ namespace UnityEngine.Rendering
 
     public enum AmbientMode { Skybox = 0, Trilight = 1, Flat = 3, Custom = 4 }
 
+    public enum IndexFormat { UInt16 = 0, UInt32 = 1 }
+
     public sealed class GraphicsSettings : Object
     {
         public static RenderPipelineAsset currentRenderPipeline => null;
@@ -680,6 +700,24 @@ namespace UnityEditor
     public class EditorBuildSettings : UnityEngine.Object
     {
         public static EditorBuildSettingsScene[] scenes { get; set; }
+    }
+
+    public class AssetPostprocessor
+    {
+        public string assetPath { get; set; }
+        public AssetImporter assetImporter { get; }
+    }
+
+    public class AssetImporter : UnityEngine.Object { }
+
+    public enum TextureImporterType { Default = 0, NormalMap = 1, GUI = 2, Sprite = 8, Cursor = 7, Cookie = 4, Lightmap = 6, SingleChannel = 10 }
+
+    public sealed class TextureImporter : AssetImporter
+    {
+        public TextureImporterType textureType { get; set; }
+        public bool sRGBTexture { get; set; }
+        public bool mipmapEnabled { get; set; }
+        public int maxTextureSize { get; set; }
     }
 
     public sealed class AssetDatabase

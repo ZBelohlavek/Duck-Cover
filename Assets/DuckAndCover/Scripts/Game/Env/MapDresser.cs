@@ -44,12 +44,15 @@ namespace DuckAndCover.Game
             public readonly Dictionary<string, Material> materials = new Dictionary<string, Material>();
             /// <summary>The map's solid blocks, gathered on first use (for finding neighbours).</summary>
             public List<MapBlock> solids;
+            /// <summary>Lane maps wear the modelled pieces in <see cref="EnvArt"/> where they are in the build.</summary>
+            public bool art;
         }
 
         public static Context Begin(MapDef map, Transform root, EnvTheme theme)
         {
             if (theme == null) return null;
             var ctx = new Context { theme = theme, active = theme, map = map, root = root, rng = new System.Random(theme.seed * 7919 + StableHash(map.id)) };
+            ctx.art = map.IsLaneMap && EnvArt.Has(ArtHedge);
             return ctx;
         }
 
@@ -80,6 +83,7 @@ namespace DuckAndCover.Game
             c.active = t;
             bool bigCrate = b.kind == BlockKind.Crate && Math.Max(b.size.x, b.size.z) > 3.5f;
 
+            if (c.art && DressArt(c, go, b)) return;
             if (!string.IsNullOrEmpty(b.style) && b.kind != BlockKind.Ground && DressStyled(c, go, b, t)) return;
 
             Material mat;
@@ -136,7 +140,9 @@ namespace DuckAndCover.Game
             var centre = b.center.ToVector3();
             var filter = go.GetComponent<MeshFilter>();
             var renderer = go.GetComponent<Renderer>();
-            switch (b.style)
+            // Without the modelled temple pieces, the temple gate and ruin are drawn as rocks.
+            string style = b.style != null && b.style.StartsWith("temple") ? "rocks" : b.style;
+            switch (style)
             {
                 case "treeline":
                 {
@@ -173,6 +179,99 @@ namespace DuckAndCover.Game
         }
 
         static Color Shade(Color c, float k) => new Color(c.r * k, c.g * k, c.b * k, 1f);
+
+        // ---------------- modelled pieces (lane maps) ----------------
+
+        public const string ArtHedge = "EnvHedge";
+        public const string ArtLaunchPad = "EnvLaunchPad";
+        const int SideFaces = EnvMesh.PlusX | EnvMesh.MinusX | EnvMesh.PlusZ | EnvMesh.MinusZ;
+
+        /// <summary>
+        /// Draws a block with modelled pieces from <see cref="EnvArt"/>, stretched over its box (the block keeps
+        /// its collider; its own mesh is hidden). Tree-line and rock blocks walled in on all four sides keep the
+        /// cheap code-made look, since nobody sees their sides. Returns false to fall back to the code-made look.
+        /// </summary>
+        static bool DressArt(Context c, GameObject go, MapBlock b)
+        {
+            var size = b.size.ToVector3();
+            var centre = b.center.ToVector3();
+            float wide = Math.Max(size.x, size.z), thin = Math.Min(size.x, size.z);
+            string piece;
+            float module;
+            switch (b.kind)
+            {
+                case BlockKind.LowCover:
+                    if (b.style == "rocks") { piece = "EnvRockCover"; module = 2f; }
+                    else { piece = "EnvLowWall"; module = 3f; }
+                    break;
+                case BlockKind.Crate:
+                    if (wide > 3.5f && thin > 3.5f) return false; // shipping containers stay code-made
+                    if (size.y > 2f) piece = thin >= 1.9f ? "EnvCrateStackWide" : "EnvCrateStack";
+                    else piece = "EnvCrate";
+                    module = thin;
+                    break;
+                case BlockKind.Wall:
+                    switch (b.style)
+                    {
+                        case "treeline":
+                            if ((SealedFaces(c, b) & SideFaces) == SideFaces) return false;
+                            piece = ArtHedge; module = 4f;
+                            break;
+                        case "rocks":
+                            if ((SealedFaces(c, b) & SideFaces) == SideFaces) return false;
+                            piece = size.y < 2f ? "EnvRockCover" : "EnvRockWall"; module = size.y < 2f ? 2f : 4f;
+                            break;
+                        case "templeruin":
+                            piece = "EnvTempleRuin"; module = wide;
+                            break;
+                        case "templegate":
+                        {
+                            // The lintel's block carries the whole gate: two jambs 2 m wide either side of its span, from the ground up.
+                            if (!EnvArt.Has("EnvTempleGate")) return false;
+                            var gateSize = new Vector3(size.x, b.Max.y, size.z);
+                            if (size.x >= size.z) gateSize.x += 4f; else gateSize.z += 4f;
+                            EnvArt.Fit(c.root, "EnvTempleGate", new Vector3(centre.x, b.Max.y * 0.5f, centre.z), gateSize, Math.Max(gateSize.x, gateSize.z));
+                            Hide(go);
+                            return true;
+                        }
+                        case "templegate_jamb":
+                            if (!EnvArt.Has("EnvTempleGate")) return false;
+                            Hide(go); // drawn by the gate on its lintel
+                            return true;
+                        default:
+                            return false;
+                    }
+                    break;
+                case BlockKind.Decal:
+                    // A launch pad's floor mark: the modelled pad covers it (see MapScene).
+                    foreach (var pad in c.map.launchPads)
+                        if (Math.Abs(pad.center.x - b.center.x) < size.x * 0.5f && Math.Abs(pad.center.z - b.center.z) < size.z * 0.5f && EnvArt.Has(ArtLaunchPad))
+                        {
+                            Hide(go);
+                            return true;
+                        }
+                    return false;
+                default:
+                    return false;
+            }
+            if (EnvArt.Fit(c.root, piece, centre, size, module) == 0) return false;
+            Hide(go);
+            // Now and then a tree rises out of a tree line: trunk inside the block, crown above 9 m.
+            if (piece == ArtHedge && wide >= 3.9f && c.rng.NextDouble() < 0.22 && EnvArt.Has("EnvTree"))
+            {
+                var yaw = (size.x >= size.z ? 0f : 90f) + (c.rng.NextDouble() < 0.5 ? 0f : 180f);
+                EnvArt.Place(c.root, "EnvTree", new Vector3(centre.x, b.Min.y, centre.z), Quaternion.Euler(0f, yaw, 0f),
+                    new Vector3(1f, size.y / 6.5f, thin / 2f));
+            }
+            return true;
+        }
+
+        /// <summary>Keeps a block's collider but stops drawing its own mesh.</summary>
+        static void Hide(GameObject go)
+        {
+            var r = go.GetComponent<Renderer>();
+            if (r != null) r.enabled = false;
+        }
 
         /// <summary>A building wall: dark base course, a cap course and a glowing strip near the top, vines down its faces.</summary>
         static void WallTrims(Context c, MapBlock b)
