@@ -93,10 +93,10 @@ static class WaveKitTests
         h.Tick();
         h.Forget();
 
-        Check.True(h.Use(A1, 0, WaveHarness.Center(U(h), ours) - h.Eye(A1)).IsAccepted, "Mending Field on the wave");
+        Check.True(h.Use(A1, 0, WaveHarness.Center(U(h), ours) - h.Eye(A1)).IsAccepted, "Mending Canister on the wave");
         h.Run(3.1f);
         foreach (int id in ours)
-            Check.True(h.Of<HealedEvent>().Any(e => e.targetId == id && e.healerId == A1), "the field mends minion " + id);
+            Check.True(h.Of<HealedEvent>().Any(e => e.targetId == id && e.healerId == A1), "the canister mends minion " + id);
 
         h.Place(A1, 0f, 4f);
         h.Tick();
@@ -105,11 +105,11 @@ static class WaveKitTests
         h.Tick();
         foreach (int id in ours) Check.Near(4f, U(h).Speed(id), "Purge frees minion " + id + " from the slow", 0.01f);
 
-        h.LevelTo(A1, 8);
-        Check.True(h.PickForm(A1, "mender_broad_aegis").IsAccepted, "Aegis form");
-        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "Aegis Pulse");
-        h.Tick();
-        foreach (int id in ours) Check.True(h.Unit(id).Shield >= 100f - 0.01f, "Aegis shields minion " + id);
+        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "Mending Rounds");
+        h.Forget();
+        h.Run(0.2f);
+        Check.True(h.FireAt(A1, Hitboxes.Chest(h.R, new BodyPose(U(h).Unit(ours[0]).position, false))).IsAccepted, "a healing round at a minion");
+        Check.True(h.Of<HealedEvent>().Any(e => e.targetId == ours[0] && e.healerId == A1 && e.abilityId == "mender_sidearm"), "Mending Rounds mend a minion too");
     }
 
     [Test]

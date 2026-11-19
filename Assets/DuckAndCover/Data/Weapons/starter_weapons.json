@@ -137,7 +137,7 @@
       "falloffStart": 15,
       "falloffEnd": 35,
       "falloffMinShare": 0.5,
-      "allyHeal": 14,
+      "allyHeal": 0,
       "projectileSpeed": 30,
       "projectileGravity": 9,
       "splashRadius": 0,

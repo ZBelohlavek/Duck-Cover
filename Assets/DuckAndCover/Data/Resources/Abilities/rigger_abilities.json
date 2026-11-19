@@ -48,14 +48,15 @@
     {
       "id": "rigger_hush",
       "displayName": "Hush Grenade",
-      "description": "Throw a grenade where you aim: 15 damage to enemies within 3 m, and they are silenced (can't use abilities, can still shoot) for 2.5 seconds. Cooldown 16 s.",
+      "description": "Throw a grenade where you aim. The one enemy nearest where it lands, within 3 m, takes 15 damage and is silenced (can't use abilities, can still shoot) for 2.5 seconds. It never hits more than one. Cooldown 16 s.",
       "cooldown": 16,
       "targeting": {
         "shape": "sphere",
         "origin": "aimPoint",
         "range": 25,
         "radius": 3,
-        "affects": "enemies"
+        "affects": "enemies",
+        "maxTargets": 1
       },
       "effects": [
         {
