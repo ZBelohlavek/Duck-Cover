@@ -59,7 +59,7 @@ namespace DuckAndCover.Game
             new Shot("12b-bars", AllyAndEnemyBars, 0.8f),
             // The soldier (Lancer) model: his rifle in first person, then firing, then a dummy shown as a Lancer
             // from the player's eyes, then every clip on a lineup away from the map (studio floor).
-            new Shot("12b-fp-rifle", () => { HideHud = true; }, 0.5f),
+            new Shot("12b-fp-rifle", BackToFirstPerson, 0.5f),
             new Shot("12c-fp-fire", FirstPersonBurst, 0.12f),
             new Shot("12c2-fp-sight", FirstPersonSight, 0.6f),
             new Shot("12d-lancer-enemy", DummyBecomesLancer, 1.2f),
@@ -624,6 +624,14 @@ namespace DuckAndCover.Game
                 body.Model.Fired();
                 yield return new WaitForSecondsRealtime(0.1f);
             }
+        }
+
+        /// <summary>Back to the player's eyes after the bars shot (which watched from outside), HUD hidden.</summary>
+        static void BackToFirstPerson()
+        {
+            HideHud = true;
+            var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
+            if (local != null) local.freeCamera = false;
         }
 
         /// <summary>A few shots from the player's rifle, captured mid-burst (no hit check: shot 08 already counts hits).</summary>
