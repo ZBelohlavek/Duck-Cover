@@ -43,8 +43,22 @@ namespace DuckAndCover.Core
 
         /// <summary>Always on: takes no slot and is never cast. It is just <see cref="stats"/>.</summary>
         public bool passive;
-        /// <summary>A passive's stat changes (talents change them with the param "stat.NAME").</summary>
+        /// <summary>
+        /// A passive's stat changes, or a held ability's while it is up (talents change them with the
+        /// param "stat.NAME").
+        /// </summary>
         public StatModifier[] stats = new StatModifier[0];
+
+        /// <summary>
+        /// Raised and lowered rather than cast (a shield held up): using it puts its object out, and
+        /// using it again (or <see cref="UseAbilityCommand.lower"/>) takes it back. It spends no charge.
+        /// The object keeps its health between raises and regains it while down
+        /// (<see cref="ObjectDef.regen"/>); if it is destroyed, the slot waits out its cooldown before it can
+        /// go up again. Stuns and going down lower it. <see cref="stats"/> apply while it is up.
+        /// </summary>
+        public bool held;
+        /// <summary>A held ability: the hero can't fire their weapon while it is up.</summary>
+        public bool blocksWeapon;
 
         public AbilityDef Clone()
         {
@@ -211,11 +225,38 @@ namespace DuckAndCover.Core
         public float width;
         public float height;
 
+        /// <summary>
+        /// Moves with its owner every tick (a shield held up, a drone at their shoulder): it stands
+        /// <see cref="followAhead"/> metres along the way they face (negative = behind) and
+        /// <see cref="followRise"/> metres above their feet, facing where they face.
+        /// </summary>
+        public bool followOwner;
+        public float followAhead;
+        public float followRise;
+        /// <summary>
+        /// Above 0: a ball this big around its spot that shots and ability rays can hit (a drone).
+        /// Its team's own shots pass it like their barriers. Balls never block line of sight.
+        /// </summary>
+        public float hitRadius;
+        /// <summary>
+        /// A wall that opens out: it appears this share of its <see cref="width"/> wide and reaches full
+        /// width over <see cref="expandTime"/> seconds. 0 = full width at once.
+        /// </summary>
+        public float expandFrom;
+        public float expandTime;
+        /// <summary>Share of the damage it takes that goes back to whoever dealt it (0.25 = a quarter).</summary>
+        public float reflect;
+        /// <summary>Held abilities' objects: health regained per second while lowered, after <see cref="regenDelay"/> seconds down.</summary>
+        public float regen;
+        public float regenDelay;
+
         /// <summary>Thickness of every solid object (metres).</summary>
         public const float SolidDepth = 0.3f;
 
         /// <summary>Has a wall shape that blocks shots.</summary>
         public bool IsSolid => blocksShots && width > 0f && height > 0f;
+        /// <summary>A ball that shots can hit (see <see cref="hitRadius"/>).</summary>
+        public bool IsBall => hitRadius > 0f && health > 0f;
         public EffectDef[] effects = new EffectDef[0];
 
         public ObjectDef Clone()

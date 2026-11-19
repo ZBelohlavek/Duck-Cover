@@ -185,11 +185,11 @@ static class HeroKitTests
         Check.True(boost > 1f, "levels without a choice have passed");
         Check.Near(300f * boost, h.Combat.Damage.MaxHealth(A1), "each gives 2% max health by itself");
         Check.Near(boost, h.Stat(A1, StatIds.DamageDealt), "and 2% damage");
-        Check.True(h.Heroes.Progression.Apply(new ChooseUpgradeCommand { playerId = A1, level = 2, option = 0 }).IsAccepted, "Thick Hide");
+        Check.True(h.Heroes.Progression.Apply(new ChooseUpgradeCommand { playerId = A1, level = 2, option = 0 }).IsAccepted, "Thick Plating");
         Check.Near(325f * boost, h.Combat.Damage.MaxHealth(A1), "+25 max health");
         Check.Near(325f * boost, h.Health(A1), "given as health at once");
-        Check.True(h.Heroes.Progression.Apply(new ChooseUpgradeCommand { playerId = A1, level = 4, option = 1 }).IsAccepted, "Reinforced Panel");
-        Check.True(h.Unit(A1).changes.Any(c => c.ability == "bulwark_panel"), "the panel change is on");
+        Check.True(h.Heroes.Progression.Apply(new ChooseUpgradeCommand { playerId = A1, level = 4, option = 1 }).IsAccepted, "Spare Parts");
+        Check.True(h.Unit(A1).changes.Any(c => c.ability == "bulwark_drone"), "the drone change is on");
     }
 
     [Test]
@@ -202,110 +202,6 @@ static class HeroKitTests
         var before = h.Heroes.Progression.Progress(A1)?.xp ?? 0f;
         Check.True(h.FireAt(A1, h.ChestOf(A2)).IsAccepted, "heal shot");
         Check.True(h.Heroes.Progression.Progress(A1).xp > before, "healing a teammate pays experience");
-    }
-
-    // ---- Bulwark ----
-
-    [Test]
-    static void BastionPanelStopsEnemyShotsButNotTeammates()
-    {
-        var h = new HeroHarness(new Dictionary<int, string> { [A1] = "bulwark", [A2] = "lancer", [B1] = "lancer" });
-        h.Map.Wall(new Vec3(0f, -0.5f, 0f), new Vec3(200f, 1f, 200f)); // a floor
-        h.Place(A1, 0f, 0f);
-        h.Place(A2, 0.5f, -1f);
-        h.Place(B1, 0f, 15f);
-        Check.True(h.Use(A1, 0, new Vec3(0f, -0.4f, 1f)).IsAccepted, "panel");
-        var spawned = h.Last<ObjectSpawnedEvent>();
-        Check.True(spawned != null && spawned.blocksShots && spawned.width == 3f && spawned.height == 2.2f, "a 3 m solid panel");
-        Check.Near(0f, spawned.position.y, "standing on the floor", 0.01f);
-        Check.Near(1f, spawned.facing.z, "facing the aim", 0.01f);
-        h.Run(0.2f);
-
-        float before = h.Health(A1);
-        Check.True(h.FireAt(B1, h.ChestOf(A1)).IsAccepted, "enemy fires");
-        Check.Near(before, h.Health(A1), "the panel took it");
-        Check.True(h.Last<ObjectDamagedEvent>() != null, "the panel is hurt");
-        float b1 = h.Health(B1);
-        Check.True(h.FireAt(A2, h.ChestOf(B1)).IsAccepted, "teammate fires through");
-        Check.True(h.Health(B1) < b1, "teammates' shots pass through");
-        Check.True(h.UseAt(B1, 1, A1).IsAccepted, "enemy Tracer Mark");
-        Check.False(h.Unit(A1).HasStatus("lancer_marked"), "enemy ability rays stop on it too");
-        Check.True(h.UseAt(A2, 1, B1).IsAccepted, "teammate Tracer Mark");
-        Check.True(h.Unit(B1).HasStatus("lancer_marked"), "teammates' ability rays pass through");
-        Vec3 behind = h.ChestOf(A1) + new Vec3(0f, 0f, -0.5f);
-        Check.True(h.Combat.World.HasLineOfSightFor(A2, behind, B1, h.S.tick), "a teammate's sentry sees through it");
-        Check.False(h.Combat.World.HasLineOfSightFor(B1, h.ChestOf(B1) + new Vec3(0f, 0f, 0.5f), A1, h.S.tick), "an enemy's doesn't");
-
-        // Shot down, it's gone.
-        h.Abilities.DamageObject(spawned.objectId, 10000f, B1);
-        Check.Equal(0, h.Abilities.State.objects.Count, "destroyed");
-        h.Run(0.2f);
-        Check.True(h.FireAt(B1, h.ChestOf(A1)).IsAccepted, "fires again");
-        Check.True(h.Health(A1) < before, "now it hits");
-    }
-
-    [Test]
-    static void BreachRushChargesAndHitsWhereYouLand()
-    {
-        var h = With(A1, "bulwark", B1, "lancer");
-        h.Place(A1, 0f, 0f);
-        h.Place(B1, 0f, 7f);
-        Check.True(h.Use(A1, 1, Ahead).IsAccepted, "rush");
-        var dash = h.Of<PushedEvent>().FirstOrDefault(p => p.targetId == A1);
-        Check.True(dash != null && Math.Abs(dash.distance - 7f) < 1e-3f && dash.mode == PushDirections.Aim, "a 7 m charge along the aim");
-        h.Run(0.4f);
-        Check.Near(200f - 35f, h.Health(B1), "35 damage where you land");
-        Check.True(h.Of<PushedEvent>().Any(p => p.targetId == B1 && p.mode == PushDirections.Away), "and a knockback");
-    }
-
-    [Test]
-    static void TheServerLetsADashThrough()
-    {
-        var h = With(A1, "bulwark");
-        h.Place(A1, 0f, 0f);
-        h.Run(1f); // a full movement allowance
-        var m = h.M(A1);
-        Check.True(h.Use(A1, 1, Ahead).IsAccepted, "rush");
-        // The client plays the 7 m charge out over 0.35 s, one move a tick.
-        for (int i = 1; i <= 7; i++)
-        {
-            var to = new Vec3(0f, 0f, i * 1f);
-            var r = h.Combat.Apply(new MoveCommand { playerId = A1, position = to, yaw = 0f, placement = m.placement });
-            Check.True(r.IsAccepted, "dash step " + i + " accepted");
-            h.Tick();
-        }
-        Check.Near(7f, h.M(A1).position.z, "arrived");
-        h.Run(3f);
-        var jump = h.Combat.Apply(new MoveCommand { playerId = A1, position = new Vec3(0f, 0f, 7f + 9f), yaw = 0f, placement = m.placement });
-        Check.False(jump.IsAccepted, "the dash's extra metres don't last");
-    }
-
-    [Test]
-    static void HoldTheLineLocksDownTheArea()
-    {
-        var h = With(A1, "bulwark", B1, "lancer");
-        h.Place(A1, 0f, 0f);
-        h.Place(B1, 0f, 5f);
-        h.LevelTo(A1, h.Heroes.Progression.Rules.UltimateFormLevel());
-        Check.True(h.PickForm(A1, "bulwark_crushing_line").IsAccepted, "pick Crushing Line");
-        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "ultimate");
-        Check.True(h.Shield(A1) >= 100f - 1e-3f, "a 100 shield");
-        h.Run(0.6f);
-        Check.True(h.Unit(B1).HasStatus(AbilityLibrary.SlowStatus), "enemies inside are slowed");
-        Check.True(h.Health(B1) < 200f, "and worn down");
-        Check.False(h.Unit(B1).HasStatus(AbilityLibrary.RootStatus), "no root without Lockdown");
-    }
-
-    [Test]
-    static void LockdownRootsWhenTheFieldGoesUp()
-    {
-        var h = With(A1, "bulwark", B1, "lancer");
-        h.Place(A1, 0f, 0f);
-        h.Place(B1, 0f, 5f);
-        h.LevelTo(A1, h.Heroes.Progression.Rules.UltimateFormLevel());
-        Check.True(h.PickForm(A1, "bulwark_lockdown").IsAccepted, "pick Lockdown");
-        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "ultimate");
-        Check.True(h.Unit(B1).HasStatus(AbilityLibrary.RootStatus), "rooted");
     }
 
     // ---- Lancer ----
@@ -494,19 +390,6 @@ static class HeroKitTests
     [Test]
     static void ShieldingAreasCoverTeammates()
     {
-        var h = With(A1, "bulwark", B1, "lancer");
-        h.Map.Wall(new Vec3(0f, -0.5f, 0f), new Vec3(200f, 1f, 200f)); // a floor
-        h.Place(A1, 0f, 0f);
-        h.Place(A2, 1f, 2f);
-        h.NoShield(A2);
-        h.Heroes.ApplyUpgrade(A1, "bulwark", "bulwark_bastion_aura");
-        h.Heroes.ApplyUpgrade(A1, "bulwark", "bulwark_wide_panel");
-        Check.True(h.Use(A1, 0, new Vec3(0f, -0.4f, 1f)).IsAccepted, "panel");
-        var panel = h.Of<ObjectSpawnedEvent>().First(o => o.defId == "bulwark_panel");
-        Check.Near(4.5f, panel.width, "Wide Panel: 1.5 m wider");
-        h.Run(1.1f);
-        Check.True(h.Shield(A2) > 0f, "Bastion Aura shields the teammate by the panel");
-
         var m = With(A1, "mender", B1, "lancer");
         m.Place(A1, 0f, 0f);
         m.Place(A2, 0f, 3f);

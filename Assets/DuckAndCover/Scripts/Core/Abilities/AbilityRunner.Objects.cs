@@ -37,6 +37,9 @@ namespace DuckAndCover.Core
                 def = def.Clone(),
                 radius = def.radius * (owner != null ? Math.Max(0f, Combat.Stat(ownerId, StatIds.AbilityRadius)) : 1f),
             };
+            if (def.followOwner) obj.followId = ownerId;
+            Follow(obj);
+            position = obj.position;
             State.objects.Add(obj);
             Publish(new ObjectSpawnedEvent
             {
@@ -81,6 +84,7 @@ namespace DuckAndCover.Core
             obj.health -= taken;
             Publish(new ObjectDamagedEvent { objectId = obj.id, attackerId = attackerId, amount = taken, healthLeft = obj.health });
             if (obj.health <= 0f) RemoveObject(obj, "destroyed", attackerId);
+            Reflect(obj, taken, attackerId);
             return taken;
         }
 
@@ -96,6 +100,7 @@ namespace DuckAndCover.Core
         void RemoveObject(ObjectState obj, string reason, int byPlayerId)
         {
             if (!State.objects.Remove(obj)) return;
+            ObjectGone(obj, reason);
             Publish(new ObjectRemovedEvent { objectId = obj.id, defId = obj.defId, ownerId = obj.ownerId, reason = reason, byPlayerId = byPlayerId });
         }
 
@@ -112,6 +117,8 @@ namespace DuckAndCover.Core
                 var def = obj.def;
                 var owner = Match.Player(obj.ownerId);
                 if (owner != null && !owner.connected) { RemoveObject(obj, "ownerLeft", -1); continue; } // left while waiting to respawn
+                obj.age += dt;
+                Follow(obj);
                 if (def.lifetime > 0f)
                 {
                     obj.timeLeft -= dt;

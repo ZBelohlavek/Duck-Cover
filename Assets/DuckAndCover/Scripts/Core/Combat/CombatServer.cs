@@ -63,6 +63,15 @@ namespace DuckAndCover.Core
                 return team != TeamId.None && team == o.team && !Rules.friendlyFire;
             };
             Weapons.DamageObject = (objectId, amount, attackerId) => Abilities.DamageObject(objectId, amount, attackerId);
+            Weapons.FireCheck = Abilities.WeaponBlocked;
+            // Objects that move with their owner (a raised shield, a drone) follow the movement rules' copy.
+            Abilities.OwnerPose = (int id, out Vec3 feet, out Vec3 facing) =>
+            {
+                var m = Movement.Motion(id);
+                feet = m == null ? Vec3.Zero : m.position;
+                facing = m == null ? Vec3.Forward : MoveMath.Forward(m.yaw);
+                return m != null;
+            };
             Abilities.RegisterEffect(EffectKinds.Reload, new ReloadEffect(Weapons));
             Weapons.Cleanse = targetId => Abilities.Cleanse(targetId);
             // Firing gives a cloak away; the shot itself already counts as an ambush.

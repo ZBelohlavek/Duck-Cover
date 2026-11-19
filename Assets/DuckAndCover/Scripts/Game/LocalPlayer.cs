@@ -222,7 +222,7 @@ namespace DuckAndCover.Game
             Report();
             bool stunned = unit != null && unit.HasStatus(AbilityLibrary.StunStatus);
             fireRate = unit == null ? 1f : Mathf.Max(0.1f, unit.stats.Get(StatIds.FireRate));
-            Weapons(keyboard, mouse, focused, snapshot.Weapons(me.id), stunned);
+            Weapons(keyboard, mouse, focused, snapshot.Weapons(me.id), stunned || WeaponHeldBack(unit));
             Abilities(keyboard, focused, unit);
             Choices(keyboard, focused, snapshot, me);
         }
@@ -233,13 +233,61 @@ namespace DuckAndCover.Game
 
         void Abilities(Keyboard keyboard, bool focused, HeroUnit unit)
         {
-            if (!focused || scripted || keyboard == null || unit == null || Time.time < abilityBlockUntil) return;
+            if (scripted || keyboard == null || unit == null) return;
+            // Held abilities (a shield): up while the key is down, down when it is let go.
+            for (int i = 0; i < unit.slots.Count; i++)
+            {
+                var key = AbilityKey(keyboard, i, unit.slots.Count);
+                var def = key == null ? null : HeroData.Abilities.Ability(unit.slots[i].abilityId);
+                if (def == null || !def.held) continue;
+                if (focused && key.wasPressedThisFrame) UseAbility(i, def.id);
+                else if (key.wasReleasedThisFrame || !focused && heldDown[i]) LowerAbility(i, def.id);
+                heldDown[i] = focused && key.isPressed;
+            }
+            if (!focused || Time.time < abilityBlockUntil) return;
             int slot = -1;
             if (keyboard.eKey.wasPressedThisFrame) slot = 0;
             else if (keyboard.fKey.wasPressedThisFrame) slot = 1;
             else if (keyboard.xKey.wasPressedThisFrame) slot = unit.slots.Count - 1;
             if (slot < 0 || slot >= unit.slots.Count) return;
+            var chosen = HeroData.Abilities.Ability(unit.slots[slot].abilityId);
+            if (chosen != null && chosen.held) return; // handled above
             UseAbility(slot, unit.slots[slot].abilityId);
+        }
+
+        readonly bool[] heldDown = new bool[8];
+
+        /// <summary>E is the first ability, F the second, X the last (the ultimate).</summary>
+        static UnityEngine.InputSystem.Controls.KeyControl AbilityKey(Keyboard keyboard, int slot, int count)
+        {
+            if (slot == count - 1 && count > 2) return keyboard.xKey;
+            if (slot == 0) return keyboard.eKey;
+            if (slot == 1) return keyboard.fKey;
+            return null;
+        }
+
+        /// <summary>Whether one of the hero's held abilities that stops the weapon (Rampart) is up.</summary>
+        static bool WeaponHeldBack(HeroUnit unit)
+        {
+            if (unit == null) return false;
+            foreach (var s in unit.slots)
+            {
+                if (!s.raised) continue;
+                var def = HeroData.Abilities.Ability(s.abilityId);
+                if (def != null && def.blocksWeapon) return true;
+            }
+            return false;
+        }
+
+        /// <summary>Let go of a held ability (the server ignores it if it isn't up).</summary>
+        public void LowerAbility(int slot, string abilityId)
+        {
+            if (client == null) return;
+            client.Send(new UseAbilityCommand
+            {
+                slot = slot, abilityId = abilityId ?? "", lower = true, tick = view != null ? view.RenderTick : 0,
+                aimOrigin = (transform.position + Vector3.up * eyeHeight).ToVec3(), aimDirection = MoveMath.AimDirection(yaw, pitch),
+            });
         }
 
         /// <summary>Ask the server to use the ability in a slot, aimed where the camera looks.</summary>

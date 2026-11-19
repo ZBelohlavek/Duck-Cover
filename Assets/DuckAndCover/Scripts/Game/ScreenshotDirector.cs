@@ -373,14 +373,27 @@ namespace DuckAndCover.Game
             {
                 int dummy = CombatServer.FirstDummyId + i;
                 if (!runner.Heroes.GiveKit(dummy, DummyHeroes[i]).IsAccepted) continue;
-                // Bulwark: a panel toward the player. Rigger: Combat Stim (Cloak would hide him from the shot). Mender: a field near its feet.
+                // Bulwark: turns to the player, raises Rampart and sends out Patch Drone. Rigger: Combat Stim
+                // (Cloak would hide him from the shot). Mender: a field near its feet.
+                if (i == 0) FaceTarget(runner, dummy, me);
                 if (DummyCast(runner, dummy, i == 1 ? 1 : 0, me, i == 0 ? 0f : i == 1 ? 0f : -0.6f)) used++;
+                if (i == 0 && DummyCast(runner, dummy, 1, me, -0.5f)) used++;
             }
             // The player's Lancer marks the first dummy (the camera already faces it).
             var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
             if (local != null) local.UseAbility(1, "lancer_mark");
-            if (used < 3) Debug.LogError("Duck and Cover: the capture's dummies used " + used + " abilities, expected 3.");
+            if (used < 4) Debug.LogError("Duck and Cover: the capture's dummies used " + used + " abilities, expected 4.");
             WatchFrom(new Vector3(-8f, 6f, -14f), new Vector3(-1f, 0f, 2f));
+        }
+
+        /// <summary>Turn a dummy (server side) to face a player, so what it holds up faces them.</summary>
+        static void FaceTarget(SessionRunner runner, int dummy, int targetId)
+        {
+            var from = runner.Combat.Movement.Motion(dummy);
+            var to = runner.Combat.Movement.Motion(targetId);
+            if (from == null || to == null) return;
+            Vec3 d = to.position - from.position;
+            from.yaw = (float)(Math.Atan2(d.x, d.z) * 180.0 / Math.PI);
         }
 
         /// <summary>The Rigger dummy throws Hush Grenade at the player: the HUD says SILENCED for the next shots.</summary>

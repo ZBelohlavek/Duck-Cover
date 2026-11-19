@@ -50,6 +50,13 @@ namespace DuckAndCover.Core
         public Vec3 aimOrigin;
         public Vec3 aimDirection;
         public int castTick;
+        /// <summary>A held ability (<see cref="AbilityDef.held"/>) is up: its object is <see cref="heldObjectId"/>.</summary>
+        public bool raised;
+        public int heldObjectId;
+        /// <summary>A held ability's object health, as a share of full, kept while it is down.</summary>
+        public float reserve = 1f;
+        /// <summary>Seconds since a held ability went down (its regen waits for ObjectDef.regenDelay).</summary>
+        public float downFor;
 
         public AbilitySlotState Clone() => (AbilitySlotState)MemberwiseClone();
     }

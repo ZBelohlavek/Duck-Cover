@@ -133,7 +133,7 @@ namespace DuckAndCover.Core
             {
                 StepUnit(s.minion.unitId, s.to, s.yaw);
                 s.minion.progress = s.along;
-                // Stopped short (a wall, Bastion Panel, a placed gate): progress is where it actually stands,
+                // Stopped short (a wall, Bulkhead): progress is where it actually stands,
                 // so a held wave doesn't run its place along the lane on ahead of itself.
                 var moved = Units.Unit(s.minion.unitId);
                 if (moved != null && Vec3.Distance(moved.position, s.to) > 1e-3f)
@@ -289,7 +289,7 @@ namespace DuckAndCover.Core
 
         /// <summary>
         /// Move a unit one step (the server's walking; minions never move faster than <see cref="UnitRules.Speed"/>).
-        /// It stops short of walls and of Bastion Panels and placed gates (<see cref="UnitRules.Walk"/>).
+        /// It stops short of walls and of Bulkheads (<see cref="UnitRules.Walk"/>).
         /// </summary>
         public void StepUnit(int unitId, Vec3 to, float yaw)
         {

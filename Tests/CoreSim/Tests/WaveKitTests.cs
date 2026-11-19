@@ -52,39 +52,35 @@ static class WaveKitTests
     }
 
     [Test]
-    static void BulwarksPanelShieldsHeroesFromWaveFire()
+    static void BulwarksRampartShieldsHimFromWaveFire()
     {
         var h = OnGround("bulwark");
-        h.Place(A2, 3f, 0f); // a teammate off to the side, outside the panel's cover
+        h.Place(A2, 4f, 0f); // a teammate off to the side, outside Rampart's cover
         h.Tick();
-        Check.True(h.Use(A1, 0, new Vec3(0f, -0.4f, 1f)).IsAccepted, "panel planted ahead");
+        Check.True(h.Use(A1, 0, Ahead).IsAccepted, "Rampart up");
+        h.Run(0.4f);
         var wave = WaveHarness.Spawn(U(h), TeamId.B, new Vec3(0f, 0f, 10f));
         h.Tick();
-        Check.False(U(h).LineOfFire(wave[2], A1), "the Scrapper straight ahead can't hit Bulwark through the panel");
+        Check.False(U(h).LineOfFire(wave[2], A1), "the Scrapper straight ahead can't hit Bulwark through Rampart");
         Check.True(U(h).LineOfFire(wave[2], A2), "but can hit the teammate it doesn't cover");
-        int ours = U(h).Spawn(WaveHarness.Scrapper, TeamId.A, new Vec3(0f, 0f, 1.5f));
+        int ours = U(h).Spawn(WaveHarness.Scrapper, TeamId.A, new Vec3(0f, 0f, -1.5f));
         h.Tick();
-        Check.True(U(h).LineOfFire(ours, wave[2]), "Bulwark's own minions shoot through his panel, as his teammates do");
-
-        // Walking into it.
-        for (int i = 0; i < 60; i++) { WaveHarness.WalkTick(U(h), wave, -1f, Dt); h.Tick(); }
-        var panel = h.Abilities.State.objects.First(o => o.defId == "bulwark_panel");
-        Check.True(U(h).Unit(wave[2]).position.z > panel.position.z, "the minion that walks into the panel stops at it");
+        Check.True(U(h).LineOfFire(ours, wave[2]), "Bulwark's own minions shoot through Rampart, as his teammates do");
     }
 
     [Test]
-    static void BulwarksHoldTheLinePinsAWave()
+    static void BulwarksBulkheadHoldsAWave()
     {
-        var h = OnGround("bulwark", 8, 1); // Lockdown
-        var wave = WaveHarness.Spawn(U(h), TeamId.B, new Vec3(0f, 0f, 5f));
+        var h = OnGround("bulwark", 8, 1); // Wide Bulkhead
+        h.Place(A2, 3f, 0f);
+        Check.True(h.Use(A1, 2, new Vec3(0f, 0f, 6f) - h.Eye(A1)).IsAccepted, "Bulkhead across the lane 6 m ahead");
+        h.Run(0.6f);
+        var wave = WaveHarness.Spawn(U(h), TeamId.B, new Vec3(0f, 0f, 12f));
         h.Tick();
-        Check.True(h.Use(A1, 2, Ahead).IsAccepted, "Hold the Line");
-        h.Run(0.2f);
-        foreach (int id in wave) Check.Near(0f, U(h).Speed(id), "minion " + id + " rooted");
-        h.Run(1.5f);
-        foreach (int id in wave) Check.True(U(h).Speed(id) > 0f && U(h).Speed(id) < 4f * 0.75f, "then slowed: " + U(h).Speed(id).ToString("0.00"));
-        h.Run(4.5f);
-        Check.True(WaveDamage(h, wave) >= 4 * 80f, "and worn down: " + WaveDamage(h, wave).ToString("0"));
+        foreach (int id in wave) Check.False(U(h).LineOfFire(id, A1) || U(h).LineOfFire(id, A2), "minion " + id + " can't shoot through it");
+        for (int i = 0; i < 60; i++) { WaveHarness.WalkTick(U(h), wave, -1f, Dt); h.Tick(); }
+        var wall = h.Abilities.State.objects.First(o => o.defId == "bulwark_bulkhead");
+        foreach (int id in wave) Check.True(U(h).Unit(id).position.z > wall.position.z, "minion " + id + " stops at the wall");
     }
 
     [Test]
@@ -120,7 +116,7 @@ static class WaveKitTests
     static void EveryHeroCanClearAWaveAlone()
     {
         // The report's bot: stand still, shoot the first minion, use every ability when ready.
-        // Bulwark is a close-range hero (shotgun, Breach Rush), so he works from 3 m; the rest from 9 m.
+        // Bulwark is a close-range hero (shotgun), so he works from 3 m; the rest from 9 m.
         var limits = new Dictionary<string, (float at, float seconds)>
         {
             ["bulwark"] = (3f, 20f), ["lancer"] = (9f, 10f), ["mender"] = (9f, 15f), ["rigger"] = (9f, 8f),
@@ -160,8 +156,8 @@ static class WaveKitTests
     [Test]
     static void PointUpgradesWorkBesideOwnMinions()
     {
-        var h = OnGround("bulwark", 14, 1); // Anchor, Braced and Point Warden
-        float alone = h.Stat(A1, StatIds.DamageTaken), aloneDealt = h.Stat(A1, StatIds.WeaponDamage);
+        var h = OnGround("bulwark", 14, 0); // Anchor and Braced
+        float alone = h.Stat(A1, StatIds.DamageTaken);
         int enemy = U(h).Spawn(WaveHarness.Scrapper, TeamId.B, new Vec3(0f, 0f, 3f));
         h.Tick();
         Check.Near(alone, h.Stat(A1, StatIds.DamageTaken), "an enemy minion close by is not holding ground");
@@ -172,7 +168,6 @@ static class WaveKitTests
         h.Tick();
         float beside = h.Stat(A1, StatIds.DamageTaken);
         Check.Near(alone * 0.92f * 0.85f, beside, "beside his own minion: Anchor (8%) and Braced (15%) less damage taken", 1e-3f);
-        Check.Near(aloneDealt * 1.12f, h.Stat(A1, StatIds.WeaponDamage), "and Point Warden's 12% more weapon damage", 1e-3f);
         h.Combat.Damage.Damage(enemy, ours, 1000f);
         h.Tick();
         Check.Near(alone, h.Stat(A1, StatIds.DamageTaken), "gone when the minion is destroyed");

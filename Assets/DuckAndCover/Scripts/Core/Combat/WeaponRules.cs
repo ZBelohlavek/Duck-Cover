@@ -41,6 +41,8 @@ namespace DuckAndCover.Core
         /// can end and its ambush window count for that shot. Set by <see cref="CombatServer"/>.
         /// </summary>
         public Action<int> BeforeShot;
+        /// <summary>Why a player may not fire right now beyond the weapon's own rules (a shield held up), or null. Set by CombatServer.</summary>
+        public Func<int, string> FireCheck;
         Ruleset Rules => match.Rules;
         MatchState State => match.State;
 
@@ -131,7 +133,7 @@ namespace DuckAndCover.Core
 
         public CommandResult Fire(FireCommand cmd)
         {
-            string why = CanAct(cmd.playerId);
+            string why = CanAct(cmd.playerId) ?? (FireCheck == null ? null : FireCheck(cmd.playerId));
             if (why != null) return CommandResult.Reject(why);
             var s = Weapons(cmd.playerId);
             var w = Current(s);

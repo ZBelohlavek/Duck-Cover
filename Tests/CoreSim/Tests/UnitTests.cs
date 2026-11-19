@@ -258,7 +258,8 @@ static class UnitTests
                 }
         }
         Check.True(compared >= 32, "compared every weapon and slot: " + compared);
-        Check.True(landed >= 12, "and most of them reached the target: " + landed);
+        // Bulwark's kit touches only himself and walls (shield, drone, Bulkhead), so his three slots land on nobody.
+        Check.True(landed >= 10, "and most of them reached the target: " + landed);
     }
 
     [Test]
