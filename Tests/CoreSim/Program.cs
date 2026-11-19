@@ -32,6 +32,7 @@ static class Program
         { "overrun", OverrunSim.Report },
         { "wavepace", WavePaceTests.Report },
         { "breakwater", BreakwaterTests.Report },
+        { "balance", BalanceReport.Report },
     };
 
     static int Main(string[] args)
