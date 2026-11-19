@@ -239,7 +239,7 @@ namespace DuckAndCover.Game
             // Held abilities (a shield): up while the key is down, down when it is let go.
             for (int i = 0; i < unit.slots.Count; i++)
             {
-                var key = AbilityKey(keyboard, i, unit.slots.Count);
+                var key = AbilityKey(keyboard, i, unit);
                 var def = key == null ? null : HeroData.Abilities.Ability(unit.slots[i].abilityId);
                 if (def == null || !def.held) continue;
                 if (focused && key.wasPressedThisFrame) UseAbility(i, def.id);
@@ -248,9 +248,10 @@ namespace DuckAndCover.Game
             }
             if (!focused || Time.time < abilityBlockUntil) return;
             int slot = -1;
-            if (keyboard.eKey.wasPressedThisFrame) slot = 0;
-            else if (keyboard.fKey.wasPressedThisFrame) slot = 1;
-            else if (keyboard.xKey.wasPressedThisFrame) slot = unit.slots.Count - 1;
+            bool basePassive = !string.IsNullOrEmpty(unit.passiveId);
+            if (keyboard.eKey.wasPressedThisFrame) slot = AbilityKeys.SlotFor(AbilityKeys.E, unit.slots.Count, basePassive);
+            else if (keyboard.fKey.wasPressedThisFrame) slot = AbilityKeys.SlotFor(AbilityKeys.F, unit.slots.Count, basePassive);
+            else if (keyboard.xKey.wasPressedThisFrame) slot = AbilityKeys.SlotFor(AbilityKeys.X, unit.slots.Count, basePassive);
             if (slot < 0 || slot >= unit.slots.Count) return;
             var chosen = HeroData.Abilities.Ability(unit.slots[slot].abilityId);
             if (chosen != null && chosen.held) return; // handled above
@@ -259,13 +260,16 @@ namespace DuckAndCover.Game
 
         readonly bool[] heldDown = new bool[8];
 
-        /// <summary>E is the first ability, F the second, X the last (the ultimate).</summary>
-        static UnityEngine.InputSystem.Controls.KeyControl AbilityKey(Keyboard keyboard, int slot, int count)
+        /// <summary>E is the first ability, F the second, X the last (the third); a hero with a base passive has no F.</summary>
+        static UnityEngine.InputSystem.Controls.KeyControl AbilityKey(Keyboard keyboard, int slot, HeroUnit unit)
         {
-            if (slot == count - 1 && count > 2) return keyboard.xKey;
-            if (slot == 0) return keyboard.eKey;
-            if (slot == 1) return keyboard.fKey;
-            return null;
+            switch (AbilityKeys.ForSlot(slot, unit.slots.Count, !string.IsNullOrEmpty(unit.passiveId)))
+            {
+                case AbilityKeys.E: return keyboard.eKey;
+                case AbilityKeys.F: return keyboard.fKey;
+                case AbilityKeys.X: return keyboard.xKey;
+                default: return null;
+            }
         }
 
         /// <summary>Whether one of the hero's held abilities that stops the weapon (Rampart) is up.</summary>

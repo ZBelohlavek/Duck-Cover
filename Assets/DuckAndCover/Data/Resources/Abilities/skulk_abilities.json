@@ -1,0 +1,199 @@
+{
+    "abilities": [
+        {
+            "id": "skulk_shrapnel",
+            "displayName": "Shrapnel Charge",
+            "description": "Toss a charge up to 8 m ahead. After 0.6 seconds it bursts, dealing 60 damage to enemies within 3 m. Cooldown 14 s.",
+            "cooldown": 14,
+            "targeting": {
+                "shape": "sphere",
+                "origin": "aimPoint",
+                "range": 8,
+                "radius": 3,
+                "affects": "enemies"
+            },
+            "effects": [
+                {
+                    "kind": "damage",
+                    "amount": 60,
+                    "delay": 0.6
+                },
+                {
+                    "kind": "status",
+                    "status": "skulk_shredded",
+                    "duration": 4,
+                    "delay": 0.6,
+                    "tag": "shred"
+                }
+            ]
+        },
+        {
+            "id": "skulk_jungle_stalker",
+            "displayName": "Jungle Stalker",
+            "description": "Passive. Move 15% faster in the jungle. Finishing off a camp creature heals you 35 and gives you Spoils: 10% more damage for 15 seconds.",
+            "passive": true,
+            "stats": [
+                {
+                    "stat": "moveSpeed",
+                    "op": "percent",
+                    "value": 0.15,
+                    "when": "jungle"
+                }
+            ],
+            "onKill": [
+                {
+                    "name": "camps",
+                    "victims": "camp",
+                    "scope": "any",
+                    "notches": 0,
+                    "effects": [
+                        {
+                            "kind": "heal",
+                            "amount": 35
+                        },
+                        {
+                            "kind": "status",
+                            "status": "skulk_spoils",
+                            "amount": 0.1,
+                            "duration": 15
+                        }
+                    ],
+                    "tag": ""
+                },
+                {
+                    "name": "trophies",
+                    "victims": "hero",
+                    "scope": "any",
+                    "notches": 0,
+                    "effects": [
+                        {
+                            "kind": "heal",
+                            "amount": 35
+                        },
+                        {
+                            "kind": "status",
+                            "status": "skulk_spoils",
+                            "amount": 0.1,
+                            "duration": 15
+                        }
+                    ],
+                    "tag": "trophyHunter"
+                }
+            ]
+        },
+        {
+            "id": "skulk_knife",
+            "displayName": "Serrated Knife",
+            "description": "Slash everything in a wide arc right in front of you for 45 damage. Every enemy the knife kills (hero, minion or camp creature) adds a notch: 3 more knife damage, up to 10 notches, kept for the whole match. Cooldown 13 s.",
+            "cooldown": 13,
+            "targeting": {
+                "shape": "arc",
+                "origin": "caster",
+                "range": 2.5,
+                "spreadDegrees": 110,
+                "affects": "enemies"
+            },
+            "effects": [
+                {
+                    "kind": "damage",
+                    "amount": 45
+                },
+                {
+                    "kind": "status",
+                    "status": "skulk_bleed",
+                    "duration": 4,
+                    "tag": "bleed"
+                }
+            ],
+            "notchDamage": 3,
+            "maxNotches": 10,
+            "onKill": [
+                {
+                    "name": "knife",
+                    "victims": "minion,camp",
+                    "scope": "ability",
+                    "notches": 1,
+                    "effects": [],
+                    "tag": ""
+                },
+                {
+                    "name": "heroes",
+                    "victims": "hero",
+                    "scope": "ability",
+                    "notches": 1,
+                    "effects": [],
+                    "tag": ""
+                },
+                {
+                    "name": "headCount",
+                    "victims": "hero",
+                    "scope": "other",
+                    "notches": 1,
+                    "effects": [],
+                    "tag": "headCount"
+                },
+                {
+                    "name": "dressing",
+                    "victims": "hero,minion,camp",
+                    "scope": "ability",
+                    "notches": 0,
+                    "effects": [
+                        {
+                            "kind": "heal",
+                            "amount": 30
+                        }
+                    ],
+                    "tag": "dressing"
+                }
+            ]
+        }
+    ],
+    "statuses": [
+        {
+            "id": "skulk_spoils",
+            "displayName": "Spoils",
+            "negative": false,
+            "duration": 15,
+            "scaleWithStrength": true,
+            "stacking": "refresh",
+            "stats": [
+                {
+                    "stat": "damageDealt",
+                    "op": "percent",
+                    "value": 1,
+                    "when": ""
+                }
+            ]
+        },
+        {
+            "id": "skulk_bleed",
+            "displayName": "Bleeding",
+            "negative": true,
+            "duration": 4,
+            "stacking": "refresh",
+            "interval": 1,
+            "tickEffects": [
+                {
+                    "kind": "damage",
+                    "amount": 6
+                }
+            ]
+        },
+        {
+            "id": "skulk_shredded",
+            "displayName": "Shredded",
+            "negative": true,
+            "duration": 4,
+            "stacking": "refresh",
+            "stats": [
+                {
+                    "stat": "damageTaken",
+                    "op": "percent",
+                    "value": 0.15,
+                    "when": ""
+                }
+            ]
+        }
+    ],
+    "objects": []
+}

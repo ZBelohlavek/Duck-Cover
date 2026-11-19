@@ -100,8 +100,13 @@ static class HeroDataTests
         Check.True(Finds(h, "'spare' is never offered"), "an unused upgrade");
 
         h = Good();
+        h.abilities = new string[0];
+        Check.True(Finds(h, "one or two abilities"), "a hero with a base passive needs E (and may have F)");
+        h = Good();
         h.abilities = new[] { "test_dash" };
-        Check.True(Finds(h, "exactly two abilities"), "two abilities");
+        Check.True(!Finds(h, "two abilities"), "E, a base passive and X is a whole kit");
+        h.passiveId = "";
+        Check.True(Finds(h, "exactly two abilities"), "without a base passive it needs E and F");
 
         var twice = new HeroCatalog(new[] { Good(), Good() });
         Check.True(twice.Validate(new ProgressionRuleset()).Any(e => e.Contains("defined twice")), "duplicate hero ids");
