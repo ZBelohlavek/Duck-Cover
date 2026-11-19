@@ -65,6 +65,8 @@ namespace DuckAndCover.Core
             Weapons.DamageObject = (objectId, amount, attackerId) => Abilities.DamageObject(objectId, amount, attackerId);
             Abilities.RegisterEffect(EffectKinds.Reload, new ReloadEffect(Weapons));
             Weapons.Cleanse = targetId => Abilities.Cleanse(targetId);
+            // Firing gives a cloak away; the shot itself already counts as an ambush.
+            Weapons.BeforeShot = shooterId => Abilities.BreakStealth(shooterId, "fired");
             Weapons.Slow = (targetId, sourceId, share, seconds) =>
                 Abilities.ApplyStatus(targetId, AbilityLibrary.SlowStatus, sourceId, share, seconds, 0f, StatIds.WeaponSlow);
             events.Subscribe(OnEvent);

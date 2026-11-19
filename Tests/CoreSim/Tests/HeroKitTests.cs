@@ -482,21 +482,6 @@ static class HeroKitTests
     }
 
     [Test]
-    static void StickyMinesRevealWhoStepsOnThem()
-    {
-        var h = With(A1, "rigger", B1, "lancer");
-        h.Place(A1, 0f, 0f);
-        h.Place(B1, 0f, 30f);
-        h.Heroes.ApplyUpgrade(A1, "rigger", "rigger_sticky_mines");
-        Check.True(h.Use(A1, 0, new Vec3(0f, -0.3f, 1f)).IsAccepted, "mine");
-        h.Run(1.2f);
-        var mine = h.Of<ObjectSpawnedEvent>().First(o => o.defId == "rigger_mine");
-        h.Place(B1, mine.position.x, mine.position.z);
-        h.Run(0.3f);
-        Check.True(h.Abilities.IsRevealed(B1), "shown through walls");
-    }
-
-    [Test]
     static void MendingFieldHealsOverTime()
     {
         var h = With(A1, "mender");
@@ -538,59 +523,7 @@ static class HeroKitTests
         Check.False(h.Unit(A2).shields.Any(s => s.abilityId == "mender_aegis"), "the shield is gone");
     }
 
-    // ---- Rigger ----
-
-    [Test]
-    static void SnareMineCatchesTheFirstEnemy()
-    {
-        var h = With(A1, "rigger", B1, "lancer");
-        h.Place(A1, 0f, 0f);
-        Check.True(h.Use(A1, 0, new Vec3(0f, -0.1f, 1f)).IsAccepted, "mine");
-        Check.True(h.Use(A1, 0, new Vec3(1f, -0.1f, 1f)).IsAccepted, "second charge, somewhere else");
-        Check.False(h.Use(A1, 0, Ahead).IsAccepted, "two charges");
-        var mine = h.Abilities.State.objects[0];
-        h.Run(1.1f);
-        h.Place(B1, mine.position.x, mine.position.z + 1f);
-        h.Run(0.1f);
-        Check.Near(170f, h.Health(B1), "30 damage", 0.5f);
-        Check.True(h.Unit(B1).HasStatus(AbilityLibrary.SlowStatus), "and slowed");
-        Check.Equal(1, h.Abilities.State.objects.Count, "used up");
-    }
-
-    [Test]
-    static void SentryShootsWhatItSees()
-    {
-        var h = With(A1, "rigger", B1, "lancer");
-        h.Place(A1, 0f, 0f);
-        h.Place(B1, 0f, 10f);
-        Check.True(h.Use(A1, 1, new Vec3(0f, -0.2f, 1f)).IsAccepted, "sentry");
-        h.Run(2.05f);
-        Check.True(h.Health(B1) < 200f, "it fires once armed");
-        var sentry = h.Abilities.State.objects[0];
-        h.Map.Wall(new Vec3(0f, 1f, (sentry.position.z + 10f) * 0.5f), new Vec3(4f, 4f, 0.5f));
-        h.Unit(B1).health = 200f;
-        h.Run(1f);
-        Check.Near(200f, h.Health(B1), "not through a wall");
-    }
-
-    [Test]
-    static void LockoutGateClosesTheRoute()
-    {
-        var h = With(A1, "rigger", B1, "lancer");
-        h.Map.Wall(new Vec3(0f, -0.5f, 0f), new Vec3(200f, 1f, 200f));
-        h.Place(A1, 0f, 0f);
-        h.Place(B1, 2f, 20f);
-        h.LevelTo(A1, h.Heroes.Progression.Rules.UltimateFormLevel());
-        h.PickForm(A1, "rigger_snaring_gate");
-        Check.True(h.Use(A1, 2, new Vec3(0f, -0.1f, 1f)).IsAccepted, "gate");
-        var gate = h.Last<ObjectSpawnedEvent>();
-        Check.True(gate != null && gate.blocksMovement && gate.width == 8f && gate.height == 4f, "an 8 by 4 m gate");
-        float before = h.Health(A1);
-        Check.True(h.FireAt(B1, h.ChestOf(A1)).IsAccepted, "fire at the Rigger through the gate");
-        Check.Near(before, h.Health(A1), "the gate takes it");
-        h.Run(6.1f);
-        Check.Equal(0, h.Abilities.State.objects.Count, "gone after 6 seconds");
-    }
+    // ---- Rigger: RiggerKitTests ----
 
     // ---- Stats the weapons read ----
 

@@ -1,147 +1,168 @@
 {
   "abilities": [
     {
-      "id": "rigger_mine",
-      "displayName": "Snare Mine",
-      "description": "Place a mine where you aim (two charges, two out at once). It arms after a second, then the first enemy within 3 m sets it off: 30 damage and slowed by half for 3 seconds.",
-      "cooldown": 9,
-      "charges": 2,
+      "id": "rigger_cloak",
+      "displayName": "Cloak",
+      "description": "Turn invisible to enemies for 5 seconds. Enemy turrets, minions and Bastions ignore you, and enemies within 5 m see only a shimmer. Firing or using an aimed ability ends it. Cooldown 14 s.",
+      "cooldown": 14,
       "targeting": {
-        "shape": "sphere",
-        "origin": "aimPoint",
-        "range": 10,
-        "radius": 0.5,
-        "affects": "enemies"
+        "shape": "self",
+        "origin": "caster",
+        "affects": "self"
       },
       "effects": [
         {
-          "kind": "spawn",
-          "objectId": "rigger_mine"
+          "kind": "status",
+          "status": "rigger_cloaked",
+          "duration": 5,
+          "affects": "self"
         }
       ]
     },
     {
-      "id": "rigger_sentry",
-      "displayName": "Sentry",
-      "description": "Set down a small sentry gun that shoots the nearest enemy it can see within 14 m for 25 seconds.",
-      "cooldown": 18,
+      "id": "rigger_stim",
+      "displayName": "Combat Stim",
+      "description": "Fire 25% faster and move 25% faster for 5 seconds. It doesn't end Cloak. Cooldown 14 s.",
+      "cooldown": 14,
       "targeting": {
-        "shape": "sphere",
-        "origin": "aimPoint",
-        "range": 6,
-        "radius": 0.5,
-        "affects": "enemies"
+        "shape": "self",
+        "origin": "caster",
+        "affects": "self"
       },
       "effects": [
         {
-          "kind": "spawn",
-          "objectId": "rigger_sentry"
-        }
-      ]
-    },
-    {
-      "id": "rigger_gate",
-      "displayName": "Lockout Gate",
-      "description": "Ultimate. Raise an 8 m wide, 4 m high gate where you aim that closes the route for 6 seconds. Your team can shoot through it.",
-      "ultimate": true,
-      "ultimateCost": 100,
-      "targeting": {
-        "shape": "sphere",
-        "origin": "aimPoint",
-        "range": 20,
-        "radius": 4,
-        "affects": "enemies"
-      },
-      "effects": [
-        {
-          "kind": "spawn",
-          "objectId": "rigger_gate"
+          "kind": "status",
+          "status": "rigger_stimmed",
+          "duration": 5,
+          "affects": "self"
         },
         {
-          "kind": "slow",
-          "amount": 0.6,
-          "duration": 3,
-          "tag": "gateSlow"
+          "kind": "status",
+          "status": "rigger_cloaked",
+          "duration": 2,
+          "affects": "self",
+          "tag": "stimCloak"
+        }
+      ]
+    },
+    {
+      "id": "rigger_hush",
+      "displayName": "Hush Grenade",
+      "description": "Throw a grenade where you aim: 15 damage to enemies within 3 m, and they are silenced (can't use abilities, can still shoot) for 2.5 seconds. Cooldown 16 s.",
+      "cooldown": 16,
+      "targeting": {
+        "shape": "sphere",
+        "origin": "aimPoint",
+        "range": 25,
+        "radius": 3,
+        "affects": "enemies"
+      },
+      "effects": [
+        {
+          "kind": "damage",
+          "amount": 15
+        },
+        {
+          "kind": "status",
+          "status": "silence",
+          "duration": 2.5
+        },
+        {
+          "kind": "status",
+          "status": "rigger_hampered",
+          "duration": 5,
+          "tag": "hushHamper"
+        },
+        {
+          "kind": "status",
+          "status": "rigger_tracked",
+          "duration": 4,
+          "tag": "hushTrack"
+        },
+        {
+          "kind": "status",
+          "status": "rigger_exposed",
+          "duration": 2.5,
+          "tag": "blackout"
         }
       ]
     }
   ],
   "statuses": [
     {
-      "id": "rigger_tagged",
-      "displayName": "Tagged",
+      "id": "rigger_cloaked",
+      "displayName": "Cloaked",
+      "negative": false,
+      "duration": 5,
+      "stealth": true,
+      "stacking": "strongest"
+    },
+    {
+      "id": "rigger_stimmed",
+      "displayName": "Stimmed",
+      "negative": false,
+      "duration": 5,
+      "stacking": "refresh",
+      "stats": [
+        {
+          "stat": "fireRate",
+          "op": "percent",
+          "value": 0.25,
+          "when": ""
+        },
+        {
+          "stat": "moveSpeed",
+          "op": "percent",
+          "value": 0.25,
+          "when": ""
+        }
+      ]
+    },
+    {
+      "id": "rigger_hampered",
+      "displayName": "Hampered",
       "negative": true,
       "duration": 5,
+      "stacking": "strongest",
+      "scaleWithStrength": true,
+      "stats": [
+        {
+          "stat": "damageDealt",
+          "op": "percent",
+          "value": -0.2,
+          "when": ""
+        },
+        {
+          "stat": "healingDone",
+          "op": "percent",
+          "value": -0.25,
+          "when": ""
+        }
+      ]
+    },
+    {
+      "id": "rigger_tracked",
+      "displayName": "Tracked",
+      "negative": true,
+      "duration": 4,
       "reveal": true,
       "stacking": "refresh"
+    },
+    {
+      "id": "rigger_exposed",
+      "displayName": "Exposed",
+      "negative": true,
+      "duration": 2.5,
+      "stacking": "refresh",
+      "stats": [
+        {
+          "stat": "damageTaken",
+          "op": "percent",
+          "value": 0.15,
+          "when": ""
+        }
+      ]
     }
   ],
-  "objects": [
-    {
-      "id": "rigger_mine",
-      "displayName": "Snare Mine",
-      "lifetime": 45,
-      "health": 30,
-      "radius": 3,
-      "trigger": "proximity",
-      "armTime": 1,
-      "affects": "enemies",
-      "consumeOnTrigger": true,
-      "maxPerOwner": 2,
-      "effects": [
-        {
-          "kind": "damage",
-          "amount": 30
-        },
-        {
-          "kind": "slow",
-          "amount": 0.5,
-          "duration": 3
-        },
-        {
-          "kind": "stun",
-          "duration": 0.75,
-          "tag": "mineStun"
-        },
-        {
-          "kind": "status",
-          "status": "rigger_tagged",
-          "duration": 5,
-          "tag": "stickyMine"
-        }
-      ]
-    },
-    {
-      "id": "rigger_sentry",
-      "displayName": "Sentry",
-      "lifetime": 25,
-      "health": 120,
-      "radius": 14,
-      "trigger": "pulse",
-      "interval": 0.4,
-      "armTime": 1,
-      "affects": "enemies",
-      "maxTargets": 1,
-      "needsLineOfSight": true,
-      "maxPerOwner": 1,
-      "effects": [
-        {
-          "kind": "damage",
-          "amount": 9
-        }
-      ]
-    },
-    {
-      "id": "rigger_gate",
-      "displayName": "Lockout Gate",
-      "lifetime": 6,
-      "health": 1500,
-      "trigger": "none",
-      "maxPerOwner": 1,
-      "blocksMovement": true,
-      "blocksShots": true,
-      "width": 8,
-      "height": 4
-    }
-  ]
+  "objects": []
 }

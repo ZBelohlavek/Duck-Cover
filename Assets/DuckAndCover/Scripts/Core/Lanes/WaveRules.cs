@@ -211,7 +211,7 @@ namespace DuckAndCover.Core
         {
             var ids = new List<int>();
             foreach (var p in M.players)
-                if (p.team != team && p.team != TeamId.None && M.IsAlive(p.id) && combat.Movement.Motion(p.id) != null) ids.Add(p.id);
+                if (p.team != team && p.team != TeamId.None && M.IsAlive(p.id) && combat.Movement.Motion(p.id) != null && !combat.Damage.IsHidden(p.id)) ids.Add(p.id);
             foreach (var other in Units.Living())
                 if (other.team != team && other.team != TeamId.None) ids.Add(other.id);
             ids.Sort();

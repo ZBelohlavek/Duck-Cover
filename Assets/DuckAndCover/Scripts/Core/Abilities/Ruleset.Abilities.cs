@@ -56,6 +56,13 @@ namespace DuckAndCover.Core
         public float minMoveSpeed = 0.3f;
         /// <summary>Stuns longer than this are cut short.</summary>
         public float maxStunSeconds = 2f;
+        /// <summary>Seconds of the ambush window that attacking out of stealth opens (StatConditions.Ambush), before the ambushSeconds stat.</summary>
+        public float ambushSeconds = 2.5f;
+        /// <summary>
+        /// A stealthed enemy closer than this is drawn as a shimmer instead of not at all (the Game layer
+        /// reads it), so a cloak can't stand on top of someone unseen.
+        /// </summary>
+        public float stealthShimmerRange = 5f;
 
         // ---- Spawned objects ----
         /// <summary>First id given to spawned objects (turrets, mines, barriers), clear of map device ids.</summary>
@@ -79,6 +86,8 @@ namespace DuckAndCover.Core
             if (ultimateChargeMax <= 0f) e.Add("ultimateChargeMax must be positive");
             if (minMoveSpeed < 0f || minMoveSpeed > 1f) e.Add("minMoveSpeed must be between 0 and 1");
             if (maxStunSeconds <= 0f) e.Add("maxStunSeconds must be positive");
+            if (ambushSeconds < 0f) e.Add("ambushSeconds can't be negative");
+            if (stealthShimmerRange < 0f) e.Add("stealthShimmerRange can't be negative");
             if (firstObjectId < 1) e.Add("firstObjectId must be positive");
             return e;
         }

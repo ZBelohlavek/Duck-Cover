@@ -36,6 +36,11 @@ namespace DuckAndCover.Core
         /// Set by <see cref="CombatServer"/> to the ability rules; null = shots don't hurt objects.
         /// </summary>
         public Func<int, float, int, float> DamageObject;
+        /// <summary>
+        /// Told the shooter's id just before a shot is checked for hits (after it is accepted), so a cloak
+        /// can end and its ambush window count for that shot. Set by <see cref="CombatServer"/>.
+        /// </summary>
+        public Action<int> BeforeShot;
         Ruleset Rules => match.Rules;
         MatchState State => match.State;
 
@@ -149,6 +154,7 @@ namespace DuckAndCover.Core
             s.fireCredit -= 1f;
             s.ammo[s.current]--;
             s.shotsFired++;
+            if (BeforeShot != null) BeforeShot(cmd.playerId);
             if (w.kind == WeaponKind.Projectile) Launch(cmd, w, s, dir);
             else Hitscan(cmd, w, s, dir);
             if (s.CurrentAmmo <= 0) StartReload(s, w);
