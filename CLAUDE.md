@@ -149,7 +149,7 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
   by block kind and never adds colliders; see `docs/ENVIRONMENTS.md` for its fair-play rules and sources.
 - The host can add practice dummies in the lobby. Controls: WASD, mouse, Shift sprint, Ctrl or C crouch,
   Space jump or vault, left mouse fire, R reload, 1/2 or Q or the wheel switch weapon, E and F the
-  hero's abilities, X the ultimate, hold Z or V to take the left or right upgrade, Esc frees the mouse.
+  hero's abilities, X the third ability, hold Z or V to take the left or right upgrade, Esc frees the mouse.
 - Flag Rush (WP21) is `ModeDef.FlagRush()` (objective "flag"): `Core/Flag/FlagServer` runs the one flag on the
   host (seeded spot picks, pick up by touch, carrier can't sprint or dash, drop, reset, capture through
   `MatchRules.ScoreFlagCapture`). A map carries it with a "bases" zone set (one capture zone per base, its

@@ -125,7 +125,7 @@ sealed class HeroHarness
         if (fillUltimate) Unit(id).ultimateCharge = R.ultimateChargeMax;
     }
 
-    /// <summary>Pick an ultimate form through leveling (the ultimate waits for it).</summary>
+    /// <summary>Pick an ultimate upgrade through leveling.</summary>
     public CommandResult PickForm(int id, string upgradeId)
     {
         int level = Heroes.Progression.Rules.UltimateFormLevel();
