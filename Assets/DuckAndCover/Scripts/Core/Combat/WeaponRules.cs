@@ -100,6 +100,7 @@ namespace DuckAndCover.Core
             s.reloadLeft = 0f;
             s.switchLeft = 0f;
             s.fireCredit = Rules.fireBurstShots;
+            s.healRounds = 0;
         }
 
         WeaponDef Current(WeaponState s) => Library.Weapon(s.CurrentId);
@@ -151,8 +152,10 @@ namespace DuckAndCover.Core
             s.fireCredit -= 1f;
             s.ammo[s.current]--;
             s.shotsFired++;
+            bool healRound = s.healRounds > 0;
+            if (healRound) s.healRounds--;
             if (w.kind == WeaponKind.Projectile) Launch(cmd, w, s, dir);
-            else Hitscan(cmd, w, s, dir);
+            else Hitscan(cmd, w, s, dir, healRound);
             if (s.CurrentAmmo <= 0) StartReload(s, w);
             return CommandResult.Accepted;
         }
@@ -166,7 +169,7 @@ namespace DuckAndCover.Core
             return Math.Max(now - window, clientTick);
         }
 
-        void Hitscan(FireCommand cmd, WeaponDef w, WeaponState s, Vec3 dir)
+        void Hitscan(FireCommand cmd, WeaponDef w, WeaponState s, Vec3 dir, bool healRound)
         {
             int tick = RewindTick(cmd.tick);
             var shot = new ShotFiredEvent
@@ -178,8 +181,9 @@ namespace DuckAndCover.Core
             var amounts = new List<float>();
             var objects = new List<int>();
             var objectAmounts = new List<float>();
-            // A healing weapon stops on teammates (to heal them) instead of passing through.
-            var passThrough = w.allyHeal > 0f ? null : PassThrough(cmd.playerId);
+            // A healing weapon (or a healing round) stops on teammates (to heal them) instead of passing through.
+            float allyHeal = healRound ? s.healPerRound : w.allyHeal;
+            var passThrough = allyHeal > 0f ? null : PassThrough(cmd.playerId);
             float scale = WeaponDamage(cmd.playerId);
             float reach = Math.Max(0.1f, combat.Stat(cmd.playerId, StatIds.WeaponRange));
             float range = w.range * reach;
@@ -204,7 +208,7 @@ namespace DuckAndCover.Core
                 float share = w.Falloff(hit.distance / reach) * w.PartMultiplier(hit.bodyPart);
                 // Heal shots on teammates are kept as negative amounts until the end.
                 // weaponDamage makes a healing weapon heal harder too.
-                float amount = w.allyHeal > 0f && IsTeammate(cmd.playerId, hit.playerId) ? -w.allyHeal * scale * share : w.damage * scale * share;
+                float amount = allyHeal > 0f && IsTeammate(cmd.playerId, hit.playerId) ? -allyHeal * scale * share : w.damage * scale * share;
                 Add(targets, amounts, hit.playerId, amount);
             }
             Publish(shot);
@@ -213,12 +217,71 @@ namespace DuckAndCover.Core
             {
                 if (amounts[i] < 0f)
                 {
-                    combat.Heal(cmd.playerId, targets[i], -amounts[i], w.id);
-                    if (Cleanse != null && combat.Stat(cmd.playerId, StatIds.WeaponCleanse) > 0f) Cleanse(targets[i]);
+                    HealTeammate(cmd.playerId, targets[i], -amounts[i], w.id);
+                    if (healRound) SpreadHeal(cmd.playerId, targets[i], -amounts[i], s.healSplash, w.id, tick);
                 }
                 else AfterHit(cmd.playerId, targets[i], combat.Damage(cmd.playerId, targets[i], amounts[i], w.id), dir);
             }
             HurtObjects(cmd.playerId, objects, objectAmounts);
+        }
+
+        /// <summary>A weapon's heal on a teammate, with the cleansing that the weaponCleanse stat adds.</summary>
+        void HealTeammate(int shooterId, int targetId, float amount, string weaponId)
+        {
+            combat.Heal(shooterId, targetId, amount, weaponId);
+            if (Cleanse != null && combat.Stat(shooterId, StatIds.WeaponCleanse) > 0f) Cleanse(targetId);
+        }
+
+        /// <summary>
+        /// Where a healing round goes after the teammate it hit: a splash on teammates within
+        /// <paramref name="splash"/> metres of them (Ruleset.healSplashShare), then, for each point of the
+        /// shooter's healRicochet stat, a jump to the nearest hurt teammate within Ruleset.healRicochetRange
+        /// that the round can reach (Ruleset.healRicochetShare). Nobody is healed twice by one round, and
+        /// the shooter never heals themselves.
+        /// </summary>
+        void SpreadHeal(int shooterId, int hitId, float amount, float splash, string weaponId, int tick)
+        {
+            var done = new List<int> { shooterId, hitId };
+            if (!world.History.PoseAt(hitId, tick, out var hitPose)) return;
+            Vec3 center = Hitboxes.Chest(Rules, hitPose);
+            if (splash > 0f && Rules.healSplashShare > 0f)
+            {
+                foreach (int id in world.PlayersInSphere(center, splash, tick))
+                {
+                    if (done.Contains(id) || !IsTeammate(shooterId, id) || !combat.IsAlive(id)) continue;
+                    done.Add(id);
+                    HealTeammate(shooterId, id, amount * Rules.healSplashShare, weaponId);
+                }
+            }
+
+            int jumps = (int)Math.Round(Math.Max(0f, combat.Stat(shooterId, StatIds.HealRicochet)));
+            int from = hitId;
+            Vec3 at = center;
+            for (int j = 0; j < jumps && Rules.healRicochetShare > 0f; j++)
+            {
+                int next = -1;
+                float best = float.MaxValue;
+                Vec3 nextAt = Vec3.Zero;
+                foreach (int id in world.PlayersInSphere(at, Rules.healRicochetRange, tick))
+                {
+                    if (done.Contains(id) || !IsTeammate(shooterId, id) || !combat.IsAlive(id)) continue;
+                    var u = combat.Unit(id);
+                    if (u == null || u.health >= combat.MaxHealth(id) - 1e-3f) continue;
+                    if (!world.History.PoseAt(id, tick, out var pose)) continue;
+                    Vec3 chest = Hitboxes.Chest(Rules, pose);
+                    float d = Vec3.Distance(chest, at);
+                    if (d >= best || !world.HasLineOfSightFor(shooterId, at, id, tick)) continue;
+                    next = id;
+                    best = d;
+                    nextAt = chest;
+                }
+                if (next < 0) break;
+                done.Add(next);
+                Publish(new HealRoundBouncedEvent { shooterId = shooterId, fromId = from, toId = next, from = at, to = nextAt });
+                HealTeammate(shooterId, next, amount * Rules.healRicochetShare, weaponId);
+                from = next;
+                at = nextAt;
+            }
         }
 
         static void Add(List<int> ids, List<float> amounts, int id, float amount)
@@ -298,6 +361,24 @@ namespace DuckAndCover.Core
             if (w == null || s.current >= s.ammo.Length) return;
             s.reloadLeft = 0f;
             s.ammo[s.current] = Magazine(playerId, w);
+            s.healRounds = 0;
+        }
+
+        /// <summary>
+        /// Fill the magazine of the weapon in hand with healing rounds at once (an ability's "healRounds"
+        /// effect): each heals a teammate it hits by <paramref name="perRound"/> (times the weaponDamage stat),
+        /// and splashes <paramref name="splash"/> metres around them. Enemies still take the weapon's damage.
+        /// </summary>
+        public void LoadHealRounds(int playerId, float perRound, float splash)
+        {
+            var s = Weapons(playerId);
+            if (s == null || perRound <= 0f || !State.IsAlive(playerId)) return;
+            RefillCurrent(playerId);
+            if (Current(s) == null) return;
+            s.healRounds = s.CurrentAmmo;
+            s.healPerRound = perRound;
+            s.healSplash = Math.Max(0f, splash);
+            Publish(new HealRoundsLoadedEvent { playerId = playerId, weaponId = s.CurrentId, rounds = s.healRounds });
         }
 
         /// <summary>Rounds in a full magazine for this player: the weapon's, times their magazineSize stat (at least 1).</summary>
@@ -341,6 +422,7 @@ namespace DuckAndCover.Core
             if (slot == s.current) return CommandResult.Accepted;
             s.current = slot;
             s.reloadLeft = 0f; // putting a weapon away cancels its reload
+            s.healRounds = 0; // and drops its healing rounds
             s.switchLeft = Rules.weaponSwitchSeconds;
             s.fireCredit = Math.Min(s.fireCredit, 1f);
             Publish(new WeaponSwitchedEvent { playerId = playerId, slot = slot, weaponId = s.CurrentId });
@@ -379,7 +461,7 @@ namespace DuckAndCover.Core
                 if (s.reloadLeft > 0f)
                 {
                     s.reloadLeft -= dt;
-                    if (s.reloadLeft <= 0f) { s.reloadLeft = 0f; s.ammo[s.current] = Magazine(s.playerId, w); }
+                    if (s.reloadLeft <= 0f) { s.reloadLeft = 0f; s.ammo[s.current] = Magazine(s.playerId, w); s.healRounds = 0; }
                 }
                 // Keep the full sizes current (a trait can change them mid-life); rounds in hand stay until a reload.
                 for (int i = 0; i < s.weapons.Length && i < s.magazines.Length; i++)

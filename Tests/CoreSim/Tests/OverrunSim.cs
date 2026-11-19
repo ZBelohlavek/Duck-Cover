@@ -155,13 +155,30 @@ static class OverrunSim
 
         int target = PickTarget(h, b, m.position);
         if (target < 0) return;
-        Vec3 aim = h.ChestOf(target);
+        // A bot with healing rounds loaded (Mender's Mending Rounds) shoots a hurt teammate first.
+        int patient = h.Combat.Weapons.Weapons(b.id).healRounds > 0 ? PickPatient(h, b, m.position) : -1;
+        Vec3 aim = h.ChestOf(patient >= 0 ? patient : target);
         if (rng.Next() > b.accuracy) aim = aim + right * 3f + Vec3.Up * 1.5f; // a miss
         Vec3 eye = h.Eye(b.id);
         var hero = h.Combat.Damage.Unit(b.id);
         for (int slot = 0; slot < hero.slots.Count; slot++)
             h.Combat.Apply(new UseAbilityCommand { playerId = b.id, slot = slot, abilityId = "", aimOrigin = eye, aimDirection = (h.ChestOf(target) - eye).Normalized, tick = h.S.tick });
         h.FireAt(b.id, aim);
+    }
+
+    /// <summary>The nearest teammate hero under 70% health within 20 m, or -1.</summary>
+    static int PickPatient(OverrunHarness h, Bot b, Vec3 at)
+    {
+        int best = -1;
+        float bestDist = 20f;
+        foreach (var p in h.S.players)
+        {
+            if (p.team != b.team || p.id == b.id || !h.S.IsAlive(p.id)) continue;
+            if (h.Combat.Damage.Unit(p.id).health >= 0.7f * h.Combat.Damage.MaxHealth(p.id)) continue;
+            float d = Vec3.Distance(at, h.M(p.id).position);
+            if (d < bestDist) { best = p.id; bestDist = d; }
+        }
+        return best;
     }
 
     static int PickTarget(OverrunHarness h, Bot b, Vec3 at)

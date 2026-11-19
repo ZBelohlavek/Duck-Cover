@@ -114,6 +114,11 @@ namespace DuckAndCover.Core
         public const string WeaponCleanse = "weaponCleanse";
         /// <summary>How much each weapon hit slows an enemy, as a share of speed (0.15 = 15% slower; 0 = none).</summary>
         public const string WeaponSlow = "weaponSlow";
+        /// <summary>
+        /// How many times a healing round that heals a teammate jumps on to the next hurt teammate nearby
+        /// (Ruleset.healRicochetRange, Ruleset.healRicochetShare of the heal). 0 = none.
+        /// </summary>
+        public const string HealRicochet = "healRicochet";
         /// <summary>Capture speed multiplier on points, for the zone rules to read.</summary>
         public const string CaptureSpeed = "captureSpeed";
 

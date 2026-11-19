@@ -72,8 +72,20 @@ namespace DuckAndCover.Core
     {
         public int targetId;
         public string statusId;
-        /// <summary>"expired", "cleansed", "eliminated" or "respawned".</summary>
+        /// <summary>"expired", "cleansed", "eliminated", "respawned" or "used" (a ward that blocked something).</summary>
         public string reason;
+    }
+
+    /// <summary>A ward on the target stopped a harmful status (and was used up).</summary>
+    public sealed class StatusBlockedEvent : GameEvent
+    {
+        public int targetId;
+        public int sourceId;
+        /// <summary>The harmful status that was stopped.</summary>
+        public string statusId;
+        /// <summary>The ward that stopped it.</summary>
+        public string wardId;
+        public string abilityId;
     }
 
     /// <summary>

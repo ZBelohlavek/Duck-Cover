@@ -198,7 +198,7 @@ namespace DuckAndCover.Core
 
     /// <summary>
     /// The weapons and the starter heroes' loadouts (WP11): a rifle, an SMG, a shotgun, a pistol, a
-    /// grenade launcher (no hero carries it yet) and the Mender's healing sidearm. Loadouts are keyed by
+    /// grenade launcher (no hero carries it yet) and the Mender's sidearm (it heals only with the healing rounds his Mending Rounds load). Loadouts are keyed by
     /// hero id; heroId "" is the default. Data/Weapons/starter_weapons.json is the same table as data; a
     /// test keeps them equal.
     /// </summary>
@@ -220,7 +220,7 @@ namespace DuckAndCover.Core
                     damage = 45f, headMultiplier = 1f, legsMultiplier = 1f, projectileSpeed = 32f, projectileGravity = 9f,
                     splashRadius = 3.5f, splashDamage = 70f, splashMinShare = 0.3f },
                 new WeaponDef { id = "mender_sidearm", displayName = "Mending sidearm", automatic = true, fireInterval = 0.16f, magazine = 18, reloadSeconds = 1.4f,
-                    damage = 15f, headMultiplier = 1.5f, legsMultiplier = 0.85f, range = 60f, falloffStart = 15f, falloffEnd = 35f, falloffMinShare = 0.5f, allyHeal = 14f },
+                    damage = 15f, headMultiplier = 1.5f, legsMultiplier = 0.85f, range = 60f, falloffStart = 15f, falloffEnd = 35f, falloffMinShare = 0.5f },
             },
             loadouts =
             {

@@ -22,10 +22,10 @@ namespace DuckAndCover.Core
     ///
     /// Numeric params:
     ///   cooldown, charges, castTime, duration, ultimateCost, range, radius, count, spreadDegrees, maxTargets
-    ///   effect.KEY.amount | duration | delay | interval
+    ///   effect.KEY.amount | duration | delay | interval | radius
     ///   object.lifetime | health | radius | interval | armTime | maxPerOwner | maxTargets | width | height
-    ///          | reflect | regen | regenDelay | hitRadius
-    ///   object.effect.KEY.amount | duration | delay | interval
+    ///          | reflect | regen | regenDelay | hitRadius | followAlly (0 or 1)
+    ///   object.effect.KEY.amount | duration | delay | interval | radius
     ///   stat.NAME   (a passive's stat change, e.g. stat.healthRegen)
     /// where KEY is an effect's kind ("damage", "heal", "slow"...), its status id or its tag; every
     /// matching effect changes.
@@ -215,6 +215,7 @@ namespace DuckAndCover.Core
                         case "reflect": found.Add(new Slot { get = () => o.reflect, set = v => o.reflect = v }); break;
                         case "regen": found.Add(new Slot { get = () => o.regen, set = v => o.regen = v }); break;
                         case "regenDelay": found.Add(new Slot { get = () => o.regenDelay, set = v => o.regenDelay = v }); break;
+                        case "followAlly": found.Add(new Slot { get = () => o.followAlly ? 1f : 0f, set = v => o.followAlly = v >= 0.5f }); break;
                         case "hitRadius": found.Add(new Slot { get = () => o.hitRadius, set = v => o.hitRadius = v }); break;
                     }
                 }
@@ -236,6 +237,7 @@ namespace DuckAndCover.Core
                     case "duration": found.Add(new Slot { get = () => e.duration, set = v => e.duration = v }); break;
                     case "delay": found.Add(new Slot { get = () => e.delay, set = v => e.delay = v }); break;
                     case "interval": found.Add(new Slot { get = () => e.interval, set = v => e.interval = v }); break;
+                    case "radius": found.Add(new Slot { get = () => e.radius, set = v => e.radius = v }); break;
                 }
             }
         }

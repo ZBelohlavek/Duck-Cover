@@ -16,6 +16,7 @@ namespace DuckAndCover.Core
             var def = Library.Status(statusId);
             if (def == null || !Match.IsPlaying || !Combat.IsAlive(targetId)) return false;
             var unit = Combat.Unit(targetId);
+            if (def.negative && BlockedByWard(unit, statusId, sourceId, abilityId)) return false;
             if (seconds <= 0f) seconds = def.duration;
             if (Combat.IsKnown(sourceId)) seconds *= Math.Max(0f, Combat.Stat(sourceId, StatIds.StatusDuration));
             if (def.stun) seconds = Math.Min(seconds, Rules.maxStunSeconds);
@@ -57,6 +58,24 @@ namespace DuckAndCover.Core
             if (def.stun) CancelCasts(unit, "stunned");
             Publish(new StatusAppliedEvent { targetId = targetId, sourceId = sourceId, statusId = statusId, strength = s.strength, stacks = s.stacks, seconds = s.timeLeft, abilityId = abilityId ?? "" });
             return true;
+        }
+
+        /// <summary>
+        /// A ward on the target stops a harmful status from an enemy (or from the world) and is used up.
+        /// Harm from a teammate (friendly fire, a hero's own drawback) passes the ward.
+        /// </summary>
+        bool BlockedByWard(HeroUnit unit, string statusId, int sourceId, string abilityId)
+        {
+            if (sourceId >= 0 && Combat.IsKnown(sourceId) && Combat.SameTeam(sourceId, unit.playerId)) return false;
+            foreach (var w in unit.statuses)
+            {
+                var wardDef = Library.Status(w.statusId);
+                if (wardDef == null || !wardDef.ward) continue;
+                Publish(new StatusBlockedEvent { targetId = unit.playerId, sourceId = sourceId, statusId = statusId, wardId = w.statusId, abilityId = abilityId ?? "" });
+                EndStatus(unit, w, "used");
+                return true;
+            }
+            return false;
         }
 
         /// <summary>Take a status off early. False if the hero doesn't have it.</summary>
