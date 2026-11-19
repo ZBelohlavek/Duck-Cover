@@ -42,8 +42,8 @@ namespace DuckAndCover.Core
         /// <summary>The Bastion kinds, given to the unit library when the Overrun rules start. Anchored: pushes don't move them.</summary>
         public UnitDef[] units =
         {
-            new UnitDef { id = ForwardBastion, name = "Forward Bastion", maxHealth = 1700f, size = 2.2f, moveSpeed = 0f, anchored = true, attackDamage = 35f, attackSeconds = 1f, attackRange = 25f, sightRange = 25f },
-            new UnitDef { id = CoreBastion, name = "Core Bastion", maxHealth = 2550f, size = 2.5f, moveSpeed = 0f, anchored = true, attackDamage = 45f, attackSeconds = 1f, attackRange = 25f, sightRange = 25f },
+            new UnitDef { id = ForwardBastion, name = "Forward Bastion", maxHealth = 1700f, size = 2.2f, moveSpeed = 0f, anchored = true, footprint = 2.5f, attackDamage = 35f, attackSeconds = 1f, attackRange = 25f, sightRange = 25f },
+            new UnitDef { id = CoreBastion, name = "Core Bastion", maxHealth = 2550f, size = 2.5f, moveSpeed = 0f, anchored = true, footprint = 2.5f, attackDamage = 45f, attackSeconds = 1f, attackRange = 25f, sightRange = 25f },
         };
 
         // ---- Shields ----

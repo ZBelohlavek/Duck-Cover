@@ -89,10 +89,11 @@ namespace DuckAndCover.Core
         /// <summary>
         /// Seconds between waves, on a fixed timer (nobody calls a wave). Sized on Breakwater so that with no
         /// heroes in the way the next waves reach the spot where the last pair met about 5 s after the last
-        /// minion there fell: a wave walks ~28 s to the middle and two mirrored waves take ~30 s to wear each
-        /// other out (`report wavepace`, checked by WavePaceTests).
+        /// minion there fell: a wave walks ~28 s to the middle and two mirrored waves take ~20 s to wear each
+        /// other out (`report wavepace`, checked by WavePaceTests). It was 36 s while Wardens fought at range; melee
+        /// Wardens close in and fall sooner, so the clash is shorter.
         /// </summary>
-        public float waveSeconds = 36f;
+        public float waveSeconds = 26f;
         public WaveRow[] waveRows = { new WaveRow(0f, 3, 1) };
         /// <summary>No new minions for a team that has this many alive (keeps a lane match near 40 units).</summary>
         public int maxMinionsPerTeam = 20;
@@ -123,7 +124,8 @@ namespace DuckAndCover.Core
         public UnitDef[] units =
         {
             new UnitDef { id = Scrapper, name = "Scrapper", maxHealth = 150f, size = 0.7f, moveSpeed = 4f, attackDamage = 12f, attackSeconds = 1f, attackRange = 10f, sightRange = 14f },
-            new UnitDef { id = Warden, name = "Warden", maxHealth = 200f, size = 0.85f, moveSpeed = 4f, attackDamage = 6f, attackSeconds = 1f, attackRange = 10f, sightRange = 14f },
+            // The Warden fights in melee (Zach, Nov 19): shield bash at arm's length.
+            new UnitDef { id = Warden, name = "Warden", maxHealth = 200f, size = 0.85f, moveSpeed = 4f, attackDamage = 10f, attackSeconds = 1f, attackRange = 1.6f, sightRange = 14f, melee = true },
             new UnitDef { id = Juggernaut, name = "Juggernaut", maxHealth = 1200f, size = 1.15f, moveSpeed = 3.5f, attackDamage = 40f, attackSeconds = 1.5f, attackRange = 8f, sightRange = 14f },
             new UnitDef { id = CampGuard, name = "Thornback", maxHealth = 300f, size = 0.9f, moveSpeed = 0f, attackDamage = 15f, attackSeconds = 1f, attackRange = 12f, sightRange = 12f },
             new UnitDef { id = CampBrute, name = "Mossback", maxHealth = 500f, size = 1.3f, moveSpeed = 0f, attackDamage = 20f, attackSeconds = 1.2f, attackRange = 12f, sightRange = 12f },

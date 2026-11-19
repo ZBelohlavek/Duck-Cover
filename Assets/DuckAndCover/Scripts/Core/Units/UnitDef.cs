@@ -31,6 +31,13 @@ namespace DuckAndCover.Core
         public float attackRange = 10f;
         /// <summary>Enemies closer than this are noticed and chased.</summary>
         public float sightRange = 14f;
+        /// <summary>
+        /// A melee unit (the Warden): it walks up to its target, and its attackRange counts from the target's
+        /// outside (<see cref="footprint"/>, or a body's radius) rather than from its feet, so it can reach a Bastion.
+        /// </summary>
+        public bool melee;
+        /// <summary>Metres from the centre to the outside, for melee reach; 0 = a body's radius scaled by size.</summary>
+        public float footprint;
 
         public UnitDef Clone() => (UnitDef)MemberwiseClone();
     }
