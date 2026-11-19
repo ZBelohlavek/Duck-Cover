@@ -176,7 +176,7 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
   sets their import (Generic, no material import). `HeroModel` animates other players' bodies through a PlayableGraph
   evaluated by hand (no Animator Controller asset); `FirstPersonRig` moves the local arms. A hero without a folder keeps
   the stand-in body and block gun. Lancer's files come from the Blender rig in the project's `art/lancer-anim-v1`, exported
-  by the scripts in `art/lancer-unity-v2` (red dot sight, first-person hold).
+  by the scripts in `art/lancer-unity-v4` (reflex sight, first-person hold on a front grip, sight markers for aiming).
 - Stealth (Rigger's Cloak) is a status flag, `StatusDef.stealth`: `HeroUnit.stealthed` is on while a stealth status is
   up and no reveal status is. Turrets (objects with maxTargets), minions and Bastions skip a stealthed enemy
   (`DamageRules.IsHidden`); `CombatView` hides them beyond `Ruleset.stealthShimmerRange`. Firing (`WeaponRules.BeforeShot`)

@@ -289,6 +289,7 @@ namespace UnityEngine
         public static Quaternion identity => new Quaternion { w = 1 };
         public static Quaternion Euler(float x, float y, float z) => identity;
         public static Quaternion LookRotation(Vector3 forward) => identity;
+        public static Quaternion LookRotation(Vector3 forward, Vector3 upwards) => identity;
         public static Quaternion FromToRotation(Vector3 fromDirection, Vector3 toDirection) => identity;
         public static Vector3 operator *(Quaternion rotation, Vector3 point) => point;
         public static Quaternion operator *(Quaternion lhs, Quaternion rhs) => lhs;

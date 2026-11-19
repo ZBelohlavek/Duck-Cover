@@ -26,7 +26,7 @@ namespace DuckAndCover.Game
         /// <summary>How far the camera's field of view narrows when looking through the sight.</summary>
         public const float AimZoom = 0.7f;
         /// <summary>The eye's distance behind the back of the sight when aiming (metres, camera space).</summary>
-        const float EyeRelief = 0.11f;
+        const float EyeRelief = 0.17f;
 
         /// <summary>Where shots leave on screen.</summary>
         public Transform Muzzle { get; private set; }
@@ -77,7 +77,8 @@ namespace DuckAndCover.Game
                 if (marker != null) rig.dot = SightDot(marker);
                 var rear = HeroArt.Find(arms.transform, "SightRear");
                 var front = HeroArt.Find(arms.transform, "SightFront");
-                if (rear != null && front != null) rig.FindAim(rear, front);
+                var up = HeroArt.Find(arms.transform, "SightUp");
+                if (rear != null && front != null) rig.FindAim(rear, front, up);
             }
             else rig.model = BlockGun(root.transform);
             if (rig.Muzzle == null)
@@ -113,8 +114,9 @@ namespace DuckAndCover.Game
             dot.name = "Dot";
             Destroy(dot.GetComponent<Collider>());
             dot.transform.SetParent(marker, false);
-            // The marker sits in the model, which is scaled by the hero's scale: 9 mm across in the model's metres.
-            dot.transform.localScale = Vector3.one * 0.009f;
+            // The marker sits in the model, which is scaled by the hero's scale: 4 mm across in the model's metres,
+            // a pinpoint that leaves the target visible round it.
+            dot.transform.localScale = Vector3.one * 0.004f;
             var r = dot.GetComponent<Renderer>();
             r.sharedMaterial = dotDim;
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
@@ -122,12 +124,16 @@ namespace DuckAndCover.Game
         }
 
         /// <summary>The pose that puts the sight in front of the eye, from the model's two sight markers.</summary>
-        void FindAim(Transform rear, Transform front)
+        void FindAim(Transform rear, Transform front, Transform up)
         {
             Vector3 back = transform.InverseTransformPoint(rear.position);
             Vector3 line = transform.InverseTransformPoint(front.position) - back;
             if (line.sqrMagnitude < 1e-6f) return;
-            aimRotation = Quaternion.FromToRotation(line.normalized, Vector3.forward);
+            // With the sight's up marker the gun also comes level (no cant); without it, only the line is matched.
+            if (up != null)
+                aimRotation = Quaternion.Inverse(Quaternion.LookRotation(line.normalized, transform.InverseTransformPoint(up.position) - back));
+            else
+                aimRotation = Quaternion.FromToRotation(line.normalized, Vector3.forward);
             aimPosition = new Vector3(0f, 0f, EyeRelief) - aimRotation * back;
             hasSight = true;
         }
