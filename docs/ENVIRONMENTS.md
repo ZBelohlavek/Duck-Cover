@@ -95,6 +95,11 @@ and Bastion stone.
 - `MapDresser.DressArt` picks the piece for each block by kind and style (`treeline`, `rocks`,
   `templegate`, `templeruin`); interior blocks walled in on all four sides keep the code-made look so the
   map stays light. If the pieces are missing, every block falls back to the code-made look.
+- So walls don't read as one object copied over and over, tree-line and rock blocks that touch end to end
+  are drawn as one run (`MapDresser.FindRuns`; colliders stay per block). `EnvArt.FitRun` fills a run with
+  modules of uneven length picked from three variants (`EnvHedge`/`B`/`C`, `EnvRockWall`/`B`/`C`), overlapping
+  so their ends melt together, each turned or mirrored at random, set back a little from the face and a
+  little lower than the box. Trees (`EnvTree`, `EnvTreeB`) rise from about one hedge module in five.
 - The sources are in the project files under `art/env-assets-v1/`: `build.py` makes the Blender models,
   `unity_export.py` bakes and exports them, `to_dcm2.py` writes the game files. To regenerate:
   `pip install bpy`, then `python3 unity_export.py <out>` and `python3 to_dcm2.py <out>

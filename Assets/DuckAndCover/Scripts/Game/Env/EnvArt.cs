@@ -209,6 +209,54 @@ namespace DuckAndCover.Game
         }
 
         /// <summary>
+        /// Covers a box with a run of modules picked from several variants of a piece, so a long wall doesn't
+        /// read as one object copied over and over: module lengths vary, neighbours overlap by
+        /// <paramref name="overlap"/> metres so their rounded ends melt together, and each module is turned end
+        /// for end or mirrored at random, set back a little from the faces (<paramref name="depthJitter"/>) and
+        /// a little lower (<paramref name="heightJitter"/>). Nothing ever leaves the box. <paramref name="each"/>
+        /// gets every module with its index and its centre on the floor. Returns how many modules were placed.
+        /// </summary>
+        public static int FitRun(Transform parent, string[] names, Vector3 centre, Vector3 size, float module, System.Random rng,
+            float overlap = 0f, float heightJitter = 0f, float depthJitter = 0f, Action<GameObject, int, Vector3> each = null)
+        {
+            var have = new List<string>();
+            foreach (var n in names) if (Get(n) != null) have.Add(n);
+            if (have.Count == 0) return 0;
+            bool alongX = size.x >= size.z;
+            float length = alongX ? size.x : size.z, depth = alongX ? size.z : size.x;
+            int count = Math.Max(1, (int)Math.Round(length / module));
+            // Uneven module lengths that still add up to the box.
+            var share = new float[count];
+            float total = 0f;
+            for (int i = 0; i < count; i++) { share[i] = count == 1 ? 1f : 0.75f + 0.5f * (float)rng.NextDouble(); total += share[i]; }
+            var axis = alongX ? Vector3.right : Vector3.forward;
+            var side = alongX ? Vector3.forward : Vector3.right;
+            var bottom = centre - new Vector3(0f, size.y * 0.5f, 0f);
+            float start = -length * 0.5f;
+            int last = -1;
+            for (int i = 0; i < count; i++)
+            {
+                float step = length * share[i] / total;
+                float lo = start - (i > 0 ? overlap : 0f), hi = start + step + (i < count - 1 ? overlap : 0f);
+                start += step;
+                int pick = rng.Next(have.Count);
+                if (pick == last && have.Count > 1) pick = (pick + 1 + rng.Next(have.Count - 1)) % have.Count;
+                last = pick;
+                var model = Get(have[pick]).bounds.size;
+                float d = depth * (1f - depthJitter * (float)rng.NextDouble());
+                float shift = (depth - d) * 0.5f * (float)(rng.NextDouble() * 2.0 - 1.0);
+                float h = size.y * (1f - heightJitter * (float)rng.NextDouble());
+                var scale = new Vector3((hi - lo) / Math.Max(0.01f, model.x), h / Math.Max(0.01f, model.y), d / Math.Max(0.01f, model.z));
+                if (rng.NextDouble() < 0.5) scale.x = -scale.x; // mirrored end to end
+                float yaw = (alongX ? 0f : 90f) + (rng.NextDouble() < 0.5 ? 0f : 180f);
+                var at = bottom + axis * ((lo + hi) * 0.5f) + side * shift;
+                var go = Place(parent, have[pick], at, Quaternion.Euler(0f, yaw, 0f), scale);
+                if (each != null) each(go, i, at);
+            }
+            return count;
+        }
+
+        /// <summary>
         /// Covers a block's box with a piece: the piece's length runs along the box's longer side, repeated as
         /// modules of about <paramref name="module"/> metres, each stretched to fill its share of the box exactly.
         /// Returns how many modules were placed (0 if the piece is missing).

@@ -258,6 +258,8 @@ namespace UnityEngine
         public float sqrMagnitude => 0f;
         public Vector3 normalized => this;
         public static Vector3 Lerp(Vector3 a, Vector3 b, float t) => a;
+        public static Vector3 Min(Vector3 lhs, Vector3 rhs) => lhs;
+        public static Vector3 Max(Vector3 lhs, Vector3 rhs) => lhs;
         public static Vector3 operator *(float d, Vector3 a) => a;
         public static Vector3 operator -(Vector3 a) => a;
         public static Vector3 operator +(Vector3 a, Vector3 b) => new Vector3(a.x + b.x, a.y + b.y, a.z + b.z);
