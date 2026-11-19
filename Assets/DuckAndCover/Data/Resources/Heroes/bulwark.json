@@ -64,7 +64,7 @@
             "level": 16,
             "options": [
                 "bulwark_broad_rampart",
-                "bulwark_shield_drone"
+                "bulwark_fast_rotors"
             ]
         },
         {
@@ -366,18 +366,18 @@
             "scriptId": ""
         },
         {
-            "id": "bulwark_shield_drone",
-            "displayName": "Shield Drone",
-            "description": "Patch Drone also gives you 6 shield every half second.",
+            "id": "bulwark_fast_rotors",
+            "displayName": "Fast Rotors",
+            "description": "Patch Drone pulses every 0.4 seconds instead of every 0.5.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
                     "ability": "bulwark_drone",
-                    "param": "enable",
+                    "param": "object.interval",
                     "op": "set",
-                    "value": 0,
-                    "text": "droneShield"
+                    "value": 0.4,
+                    "text": ""
                 }
             ],
             "scriptId": ""

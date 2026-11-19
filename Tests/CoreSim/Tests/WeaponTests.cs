@@ -322,7 +322,10 @@ static class WeaponTests
     static void ShieldsTakeDamageFirstAndComeBack()
     {
         var rifle = Def("rifle");
-        var h = new CombatHarness();
+        // Personal shields are off in the default rules (hero shields were taken out); the rules still work when on.
+        var r = CombatHarness.QuickRules();
+        r.personalShield = 50f;
+        var h = new CombatHarness(rules: r);
         h.Place(A1, 0f, 0f);
         h.Place(B1, 0f, 10f);
         h.Arm(A1, "rifle");

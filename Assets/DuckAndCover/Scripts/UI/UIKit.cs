@@ -11,42 +11,8 @@ namespace DuckAndCover.UI
     public static class UIKit
     {
         const int UILayer = 5;
-        static Font font;
-
-        /// <summary>
-        /// The display font: a squared, instrument-style face installed with the system when there is one
-        /// (Bahnschrift ships with Windows 10 and 11; nothing is bundled), else Unity's built-in font.
-        /// </summary>
-        static readonly string[] DisplayFonts = { "Bahnschrift", "Bahnschrift SemiBold", "DIN Alternate", "Roboto Condensed", "DejaVu Sans Condensed" };
-
-        public static Font Font
-        {
-            get
-            {
-                if (font == null) font = PickFont();
-                return font;
-            }
-        }
-
-        static Font PickFont()
-        {
-            try
-            {
-                var installed = Font.GetOSInstalledFontNames();
-                if (installed != null)
-                    foreach (var want in DisplayFonts)
-                        if (System.Array.IndexOf(installed, want) >= 0)
-                        {
-                            var os = Font.CreateDynamicFontFromOSFont(want, 32);
-                            if (os != null) return os;
-                        }
-            }
-            catch (System.Exception)
-            {
-                // Some platforms can't list system fonts; the built-in font is fine.
-            }
-            return Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        }
+        /// <summary>The display font (<see cref="DuckAndCover.Game.DisplayFont"/>), shared with the bars over heads.</summary>
+        public static Font Font => DuckAndCover.Game.DisplayFont.Font;
 
         /// <summary>
         /// A canvas drawn by the main camera (so screenshots taken from that camera include it),

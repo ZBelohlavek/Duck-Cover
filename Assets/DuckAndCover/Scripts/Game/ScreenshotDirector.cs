@@ -45,7 +45,9 @@ namespace DuckAndCover.Game
             new Shot("05b-pick", HostPracticeMatch, 1.5f),
             new Shot("06-spawn", StartPracticeMatch, 5.5f),
             new Shot("07-dummies", () => Stand(new Vec3(-4f, 0f, -8.5f)), 1.2f),
-            new Shot("08-after-shots", () => Shoot(12), 1.6f),
+            // 8 rifle hits (18 each at the chest) leave the 200-health dummy standing: shot 10 needs it alive, and with no
+            // hero shields any more 12 hits killed it.
+            new Shot("08-after-shots", () => Shoot(8), 1.6f),
             new Shot("09-bodies", () => WatchFrom(new Vector3(-2.5f, 2.2f, 4f), new Vector3(1.5f, 1f, 9f)), 0.5f),
             // Hero kits (WP11): the dummies are given heroes and use their abilities toward the player.
             new Shot("10-abilities", DummiesUseAbilities, 1.6f),
@@ -54,6 +56,7 @@ namespace DuckAndCover.Game
             new Shot("11c-bolete", DummyPlaysBolete, 1.4f),
             new Shot("11d-vampire", DummyVampireGrabs, 1.0f),
             new Shot("12-hero-hud", LevelUpAndLook, 1.2f),
+            new Shot("12b-bars", AllyAndEnemyBars, 0.8f),
             // Environment kit: the lane mock-up, built far off to one side of the real map.
             new Shot("13-lane", () => LaneShot(new Vector3(0f, 1.8f, -50f), new Vector3(0f, 1.2f, -38f)), 1.0f),
             new Shot("14-lane-gap", () => LaneShot(new Vector3(1.5f, 1.8f, -41f), new Vector3(-16f, 1.2f, -50f)), 0.6f),
@@ -622,8 +625,51 @@ namespace DuckAndCover.Game
             session.Client.Welcomed += welcome =>
             {
                 for (int i = 0; i < 3; i++) session.Client.Send(new AddDummyCommand { team = TeamId.B });
+                // A teammate too (added last, so the enemies keep the first dummy ids), for shot 12b's green bar.
+                session.Client.Send(new AddDummyCommand { team = TeamId.A });
                 session.Client.Send(new PickHeroCommand { heroId = "lancer" });
             };
+        }
+
+        /// <summary>The teammate dummy, added after the three enemies.</summary>
+        const int AllyDummy = CombatServer.FirstDummyId + 3;
+
+        /// <summary>
+        /// The bars over heads: the teammate dummy stands beside the player, a little hurt and a few levels up,
+        /// facing an enemy dummy that is hurt more; the camera looks past the teammate at the enemy, so one
+        /// green bar and one red bar, each with its level, are in the shot.
+        /// </summary>
+        static void AllyAndEnemyBars()
+        {
+            var runner = SessionRunner.Instance;
+            if (runner == null || runner.Combat == null || runner.Heroes == null || runner.Client == null) { Debug.LogError("Duck and Cover: the capture has no match for the bars shot."); return; }
+            int me = runner.Client.PlayerId;
+            int enemy = -1;
+            for (int i = 0; i < 3 && enemy < 0; i++)
+                if (runner.Match.State.IsAlive(CombatServer.FirstDummyId + i)) enemy = CombatServer.FirstDummyId + i;
+            var mine = runner.Combat.Movement.Motion(me);
+            var theirs = enemy < 0 ? null : runner.Combat.Movement.Motion(enemy);
+            if (mine == null || theirs == null || !runner.Match.State.IsAlive(AllyDummy))
+            {
+                Debug.LogError("Duck and Cover: the bars shot needs the player, a living enemy dummy and the teammate dummy.");
+                return;
+            }
+            runner.Heroes.GiveKit(AllyDummy, "mender");
+            runner.Heroes.Progression.Grant(AllyDummy, 600f, ExperienceSource.Match);
+            runner.Heroes.Progression.Grant(enemy, 300f, ExperienceSource.Match);
+            Vec3 toEnemy = theirs.position - mine.position;
+            toEnemy.y = 0f;
+            Vec3 ahead = toEnemy.Normalized;
+            Vec3 side = new Vec3(ahead.z, 0f, -ahead.x);
+            Vec3 allyFeet = mine.position + ahead * 2.5f + side * 1.3f;
+            runner.Combat.Movement.Teleport(AllyDummy, allyFeet, (float)(Math.Atan2(ahead.x, ahead.z) * 180.0 / Math.PI));
+            var ally = runner.Combat.Damage.Unit(AllyDummy);
+            var foe = runner.Combat.Damage.Unit(enemy);
+            if (ally != null) ally.health = ally.stats.Get(StatIds.MaxHealth) * 0.7f;
+            if (foe != null) foe.health = foe.stats.Get(StatIds.MaxHealth) * 0.4f;
+            Vector3 eye = (mine.position - ahead * 1.5f - side * 0.6f).ToVector3() + Vector3.up * 2.4f;
+            Vector3 look = (allyFeet + (theirs.position - allyFeet) * 0.55f).ToVector3() + Vector3.up * 1.6f;
+            WatchFrom(eye, look);
         }
 
         static void StartPracticeMatch()
@@ -775,7 +821,7 @@ namespace DuckAndCover.Game
             float scale = Height / 1080f;
             foreach (var canvas in FindObjectsByType<Canvas>(FindObjectsSortMode.None))
             {
-                if (!canvas.isRootCanvas) continue;
+                if (!canvas.isRootCanvas || canvas.renderMode == RenderMode.WorldSpace) continue; // bars over heads are sized in metres
                 if (!loggedCanvasScale)
                 {
                     loggedCanvasScale = true;
