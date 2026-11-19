@@ -128,10 +128,12 @@ namespace DuckAndCover.Game
                 var b = pair.Value;
                 var p = snapshot.match.Player(pair.Key);
                 bool show = b.hasPose && p != null && p.alive && p.connected;
+                var unit = snapshot.abilities == null ? null : snapshot.abilities.Unit(pair.Key);
+                Vector3 feet = Vector3.Lerp(b.from, b.to, k);
+                if (show && unit != null && unit.stealthed && Hidden(snapshot, p.team, feet, runner.ClientRules)) show = false;
                 if (b.view.gameObject.activeSelf != show) b.view.gameObject.SetActive(show);
                 if (!show) continue;
-                b.view.Pose(Vector3.Lerp(b.from, b.to, k), Mathf.LerpAngle(b.yawFrom, b.yawTo, k), b.crouched);
-                var unit = snapshot.abilities == null ? null : snapshot.abilities.Unit(pair.Key);
+                b.view.Pose(feet, Mathf.LerpAngle(b.yawFrom, b.yawTo, k), b.crouched);
                 float max = unit == null ? 1f : Mathf.Max(1f, unit.stats.Get(StatIds.MaxHealth));
                 b.view.ShowBars(unit == null ? 1f : unit.health / max, unit == null ? 0f : unit.Shield / Mathf.Max(1f, runner.ClientRules.maxShield), cam);
             }
@@ -147,6 +149,18 @@ namespace DuckAndCover.Game
 
             // Out of the fight (waiting to respawn, or not deployed yet): watch from above.
             if (local != null && !local.Active) ResetCamera();
+        }
+
+        /// <summary>
+        /// A cloaked player is drawn for their own team, and for an enemy only within the shimmer range of
+        /// this machine's player (so a cloak can't stand on top of someone unseen).
+        /// </summary>
+        bool Hidden(MatchSnapshot snapshot, TeamId team, Vector3 feet, Ruleset rules)
+        {
+            var me = snapshot.match.Player(client.PlayerId);
+            if (me == null || me.team == team) return false;
+            if (local == null || !local.Active) return true;
+            return (feet - local.transform.position).sqrMagnitude > rules.stealthShimmerRange * rules.stealthShimmerRange;
         }
 
         void OnSnapshot()

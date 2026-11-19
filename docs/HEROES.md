@@ -18,7 +18,7 @@ Health 300. Weapons: Shotgun and pistol.
 - **F: Patch Drone.** Launch a repair drone that hovers behind your shoulder for 10 seconds and heals you 20 a second. Enemies can shoot it down (100 health); your team's shots pass it. Cooldown 14 s.
 - **X (ultimate): Bulkhead.** Drop a 9 m wide, 3.5 m high wall where you aim, up to 20 m away, for 8 seconds (2000 health). Nobody walks through it and enemy shots stop on it, but your team shoots through: cover for your team, or a cut-off route for the enemy.
 
-Left (Z) is the **Guardian** path: a stronger, wider, faster Rampart that sends damage back. Right (V) is the **Brawler** path: up close, with a better Patch Drone, bigger and more frequent Bulkheads and a shotgun that slows and knocks back.
+Left (Z) is the **Guardian** path: a stronger, wider, faster Rampart that sends damage back. Right (V) is the **Brawler** path: up close, with a better Patch Drone, bigger and more frequent Bulkheads and a shotgun that fires faster and knocks back enemies at point-blank range.
 
 | Level | Left (hold Z) | Right (hold V) |
 |---|---|---|
@@ -28,10 +28,10 @@ Left (Z) is the **Guardian** path: a stronger, wider, faster Rampart that sends 
 | 8 ultimate | **Reinforced Bulkhead**: Bulkhead holds twice as much damage and stands 4 seconds longer. | **Wide Bulkhead**: Bulkhead is 4 m wider and 1 m taller. |
 | 10 passive | **Braced**: Take 15% less damage while standing on a point, or beside your own minions. | **Second Wind**: Regain 8 health a second when you haven't been hit for a while. |
 | 12 talent | **Deflector**: Rampart sends 25% of the damage it blocks back at whoever dealt it. | **Armoured Drone**: Patch Drone has twice the health and stays 4 seconds longer. |
-| 14 trait | **Steady Guard**: Abilities recover 15% faster, so a broken Rampart comes back sooner. | **Rattling Spread**: Your shotgun slows the enemies it hits by 15% for a second. |
+| 14 trait | **Steady Guard**: Abilities recover 15% faster, so a broken Rampart comes back sooner. | **Pump Action**: Your shotgun fires 10% faster. |
 | 16 talent | **Broad Rampart**: Rampart opens 1.5 m wider and stands 0.4 m taller. | **Shield Drone**: Patch Drone also gives you 6 shield every half second. |
 | 18 talent | **Mobile Rampart**: Move at full speed while Rampart is up. | **Field Repairs**: Patch Drone also heals teammates within 5 m of it. |
-| 20 capstone | **Mirror Rampart**: Rampart sends back 35% more of the damage it blocks, and regains its strength twice as fast. | **Point Blank**: Your shotgun deals 15% more damage and knocks enemies back. |
+| 20 capstone | **Mirror Rampart**: Rampart sends back 35% more of the damage it blocks, and regains its strength twice as fast. | **Point Blank**: Your shotgun deals 15% more damage, and knocks back enemies within 4 m. |
 
 ## Lancer (striker)
 
@@ -81,26 +81,32 @@ Left (Z) is the **single-target** path: the gun and Mending Rounds, ending in he
 
 ## Rigger (controller)
 
-Health 200. Weapons: SMG and pistol.
+Health 200. Weapons: SMG and pistol. A stealth gunner: he slips in unseen, opens up on one target, and shuts the enemy's best
+player down.
 
-- **E: Snare Mine.** Place a mine where you aim (two charges, two out at once). It arms after a second, then the first enemy within 3 m sets it off: 30 damage and slowed by half for 3 seconds. Cooldown 9 s.
-- **F: Sentry.** Set down a small sentry gun that shoots the nearest enemy it can see within 14 m for 25 seconds. Cooldown 18 s.
-- **X (ultimate): Lockout Gate.** Raise an 8 m wide, 4 m high gate where you aim that closes the route for 6 seconds. Your team can shoot through it.
+- **E: Cloak.** Turn invisible to enemies for 5 seconds. Enemy turrets, minions and Bastions ignore you, and enemies within 5 m see only a shimmer. Firing or using an aimed ability ends it. Cooldown 14 s.
+- **F: Combat Stim.** Fire 25% faster and move 25% faster for 5 seconds. It doesn't end Cloak. Cooldown 14 s.
+- **X: Hush Grenade.** Throw a grenade where you aim: 15 damage to enemies within 3 m, and they are silenced (can't use abilities, can still shoot) for 2.5 seconds. Cooldown 16 s.
 
-Left (Z) is the **Engineer** path: Sentry and the SMG. Right (V) is the **Trapper** path: Snare Mines and slows.
+Attacking out of Cloak opens an **ambush** window of 2.5 seconds (`Ruleset.ambushSeconds`), and the shot or grenade
+that breaks the cloak already counts. On its own it does nothing: the Assassin path's upgrades hit harder in it.
+A reveal (Tracer Mark, Tracking Hush) beats a cloak while it lasts.
+
+Left (Z) is the **Assassin** path: a stronger cloak, and a burst on one target when he comes out of it. Right (V) is
+the **Shutdown** path: longer, wider silences that weaken, expose and track the enemy carry.
 
 | Level | Left (hold Z) | Right (hold V) |
 |---|---|---|
-| 2 trait | **Steady Spray**: Your weapons deal 5% more damage. | **Long Fuse**: Your slows and stuns last 15% longer. |
-| 4 talent | **Long Service**: Sentries last 10 seconds longer. | **Hair Trigger**: Snare Mines arm half a second sooner. |
+| 2 trait | **Hollow Points**: Your weapons deal 5% more damage. | **Long Hush**: Everything you put on a target lasts 15% longer: silences, Hamper, and your own Cloak and Stim. |
+| 4 talent | **Ambush**: For 2.5 seconds after you fire or throw out of Cloak, your weapons deal 20% more damage. | **Wide Hush**: Hush Grenade reaches 1 m further. |
 | 6 trait | **Drum Mag**: Your magazines hold 25% more rounds. | **Handy**: Abilities recover 10% faster. |
-| 8 ultimate | **Long Lockout**: Lockout Gate stands 4 seconds longer. | **Snaring Gate**: Enemies within 4 m of the gate when it rises are slowed by 60% for 3 seconds. |
-| 10 passive | **Tinkerer**: Abilities recover 10% faster. | **Light Feet**: Move 6% faster. |
-| 12 talent | **Hardened Sentry**: Sentries have 75% more health. | **Shock Mine**: Snare Mines also stun for 0.75 seconds. |
-| 14 trait | **Padded Vest**: +25 max health. | **Wide Reach**: Your mines, sentries and areas reach 15% further. |
-| 16 talent | **Overclock**: Sentries fire 20% faster and their shots deal 2 more damage. | **Spare Mines**: Snare Mine holds three charges, and three can be out at once. |
-| 18 talent | **Twin Sentry**: Two sentries can be out at once, and Sentry holds two charges. | **Sticky Mines**: Enemies who set off a Snare Mine show through walls to your team for 5 seconds. |
-| 20 capstone | **Fortified Sentry**: Sentries reach 30% further and have 50% more health. | **Minefield**: Snare Mines go off for enemies 1.5 m further away, and their slow lasts 3 seconds longer. |
+| 8 third ability | **Sharp Hush**: Hush Grenade deals 25 more damage and recovers 4 seconds sooner, to open an ambush. | **Deep Hush**: Hush Grenade silences for 1 second longer. |
+| 10 passive | **Light Feet**: Move 6% faster, and another 10% faster while cloaked. | **Padded Vest**: +25 max health. |
+| 12 talent | **Killing Window**: Ambush lasts 1.5 seconds longer, and your weapons deal 15% more damage during it. | **Hamper**: Enemies Hush Grenade hits deal 20% less damage and heal 25% less for 5 seconds. |
+| 14 trait | **Close Work**: Your weapons deal 8% more damage. | **Wide Reach**: Your abilities reach 15% further. |
+| 16 talent | **Twin Fades**: Cloak lasts 2 seconds longer and holds two charges. | **Tracking Hush**: Enemies Hush Grenade hits show through walls to your team for 4 seconds, cloaked ones too. |
+| 18 talent | **Smoke Stim**: Combat Stim also cloaks you for 2 seconds. | **Double Hush**: Hush Grenade holds two charges. |
+| 20 capstone | **Phantom**: During Ambush your weapons deal 25% more damage and heal you for 15% of the damage they deal. | **Blackout**: Enemies Hush Grenade hits take 15% more damage while they are silenced, and the silence lasts 1 second longer. |
 
 ## Against minion waves (WP20)
 
@@ -111,10 +117,11 @@ as `Tests/CoreSim/Tests/WaveKitTests.cs` checks it:
   and feet (`UnitRules.LineOfFire`, `UnitRules.Walk`) while his team shoots through. His shotgun clears a wave from close up.
 - **Lancer** clears: Incendiary Grenade catches a whole wave; Thermite destroys Scrappers outright.
 - **Mender** protects his own wave: Mending Canister regenerates minions, Purge frees them from slows, and Mending Rounds heal the minion he shoots.
-- **Rigger** holds a lane: a Sentry left alone takes apart most of a wave, Snare Mine slows the front of a wave that
-  walks onto it, and Lockout Gate holds a wave and its fire while Rigger's own minions shoot out through it.
+- **Rigger** slips past a lane: minions and Bastions don't shoot him while he is cloaked, so he can get behind a wave
+  or reach the enemy's heroes. Against the wave itself he is the SMG, sped up by Combat Stim, with Hush Grenade for the
+  bunched front.
 
-Sentries shoot the nearest enemy they can see, so a minion in front of one comes before a hero at the edge of its reach.
+Turrets shoot the nearest enemy they can see, so a minion in front of one comes before a hero at the edge of its reach.
 Upgrades that work "on a point" (Anchor, Braced) also work within 8 m of your own minions or Bastion
 (`Ruleset.escortRadius`). Damage and healing on units give half the ultimate charge they give on heroes
 (`Ruleset.ultimateChargeUnitShare`), so clearing waves helps ultimates without replacing fights.

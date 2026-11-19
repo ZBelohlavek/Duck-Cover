@@ -187,6 +187,8 @@ namespace DuckAndCover.Core
                 ids.RemoveAll(id => !caster.HasLineOfSightFor(obj.ownerId, obj.position, id, Match.tick));
             else if (obj.def.needsLineOfSight && world is ILineOfSightQuery los)
                 ids.RemoveAll(id => !los.HasLineOfSight(obj.position, id, Match.tick));
+            // A turret picks its targets, and it can't pick one it can't see: stealthed enemies are skipped.
+            if (obj.def.maxTargets > 0) ids.RemoveAll(id => Combat.IsHidden(id) && !Combat.SameTeam(id, obj.ownerId));
             if (obj.def.maxTargets > 0 && ids.Count > obj.def.maxTargets)
             {
                 // A turret with a target limit takes the nearest ("shoots the nearest enemy it can see"),

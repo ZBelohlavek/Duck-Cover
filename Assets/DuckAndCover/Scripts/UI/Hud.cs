@@ -64,6 +64,8 @@ namespace DuckAndCover.UI
         readonly List<Text> zoneLetters = new List<Text>();
         GameObject statusRow;
         Text statusText;
+        /// <summary>The player's own state above the ability slots: cloaked, ambush, silenced.</summary>
+        Text selfStateText;
         GameObject overrunRow;
         sealed class BastionCard
         {
@@ -182,6 +184,7 @@ namespace DuckAndCover.UI
                 slot.name = UIKit.Readout(f, "AbilityName" + i, new Vector2(slot.x, SlotY - 16f), new Vector2(170f, 22f), "", 17, UITheme.TextDim, TextAnchor.MiddleCenter, true);
                 slots.Add(slot);
             }
+            selfStateText = UIKit.Readout(f, "SelfState", new Vector2(960f, SlotY + 128f), new Vector2(420f, 28f), "", 22, UITheme.Visor, TextAnchor.MiddleCenter, true);
         }
 
         void BuildChoice(Transform f)
@@ -512,6 +515,7 @@ namespace DuckAndCover.UI
             var lib = HeroData.Abilities;
             var rules = SessionRunner.Instance.ClientRules;
             Color hero = UITheme.ForHero(me.heroId);
+            ShowSelfState(unit);
             for (int i = 0; i < slots.Count; i++)
             {
                 var s = slots[i];
@@ -569,6 +573,21 @@ namespace DuckAndCover.UI
                 s.name.color = UITheme.Text;
                 DrawSlot(s, fill, ready, pips, edge, def.ultimate ? UITheme.Warning : hero);
             }
+        }
+
+        /// <summary>Cloaked (hidden from the other team), the ambush window after attacking out of it, or silenced.</summary>
+        void ShowSelfState(HeroUnit unit)
+        {
+            string text = "";
+            Color color = UITheme.Visor;
+            if (unit != null)
+            {
+                if (unit.HasStatus(AbilityLibrary.SilenceStatus)) { text = "SILENCED"; color = UITheme.Danger; }
+                else if (unit.stealthed) text = "CLOAKED  //  HIDDEN FROM ENEMIES";
+                else if (unit.ambushLeft > 0f) { text = "AMBUSH  " + unit.ambushLeft.ToString("0.0"); color = UITheme.Warning; }
+            }
+            selfStateText.text = text;
+            selfStateText.color = color;
         }
 
         /// <summary>A raised held ability's object health as a share of full.</summary>

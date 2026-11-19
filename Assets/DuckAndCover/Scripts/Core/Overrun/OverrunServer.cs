@@ -248,7 +248,7 @@ namespace DuckAndCover.Core
             float range = kind.attackRange;
             if (b.aggroId >= 0)
             {
-                if (M.elapsed < b.aggroUntil && InRange(b, b.aggroId, range) && Units.LineOfFire(b.unitId, b.aggroId)) return b.aggroId;
+                if (M.elapsed < b.aggroUntil && InRange(b, b.aggroId, range) && !Damage.IsHidden(b.aggroId) && Units.LineOfFire(b.unitId, b.aggroId)) return b.aggroId;
                 if (M.elapsed >= b.aggroUntil) b.aggroId = -1;
             }
             var enemy = b.team.Other();
@@ -262,7 +262,7 @@ namespace DuckAndCover.Core
             if (best >= 0) return best;
             foreach (var p in M.players)
             {
-                if (p.team != enemy || !M.IsAlive(p.id) || Combat.Movement.Motion(p.id) == null) continue;
+                if (p.team != enemy || !M.IsAlive(p.id) || Combat.Movement.Motion(p.id) == null || Damage.IsHidden(p.id)) continue;
                 Consider(b, p.id, range, ref best, ref bestDist);
             }
             return best;

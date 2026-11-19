@@ -68,6 +68,16 @@ namespace DuckAndCover.Core
             return t != TeamId.None && t == TeamOf(b);
         }
 
+        /// <summary>
+        /// Hidden by stealth from the other team: turrets, minions and Bastions skip it when they pick
+        /// a target (area effects and aimed shots still land).
+        /// </summary>
+        public bool IsHidden(int id)
+        {
+            var u = state.Unit(id);
+            return u != null && u.stealthed;
+        }
+
         // ---- Units and stats ----
 
         /// <summary>
@@ -121,6 +131,10 @@ namespace DuckAndCover.Core
                     return true;
                 case StatConditions.Shielded:
                     return u.Shield > 0f;
+                case StatConditions.Stealthed:
+                    return u.stealthed;
+                case StatConditions.Ambush:
+                    return u.ambushLeft > 0f;
                 case StatConditions.LowHealth:
                     // Unconditional max health here, so a low-health bonus to max health can't loop.
                     return u.health <= Rules.lowHealthShare * Math.Max(1f, u.stats.Get(StatIds.MaxHealth));

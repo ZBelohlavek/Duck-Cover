@@ -303,4 +303,25 @@ static class BulwarkKitTests
         Check.Near(13f, wide.Width, "Wide Bulkhead: 4 m wider", 0.01f);
         Check.Near(4.5f, wide.def.height, "and 1 m taller", 0.01f);
     }
+
+    // ---- Shotgun ----
+
+    [Test]
+    static void PointBlankKnocksBackOnlyUpClose()
+    {
+        foreach (float distance in new[] { 3f, 8f })
+        {
+            var h = Lineup();
+            Check.True(h.Heroes.ApplyUpgrade(A1, "bulwark", "bulwark_point_blank").IsAccepted, "Point Blank");
+            h.Place(B1, 0f, distance);
+            h.Tick();
+            h.Forget();
+            Check.True(h.FireAt(A1, h.ChestOf(B1)).IsAccepted, "shotgun at " + distance + " m");
+            Check.True(h.Of<DamagedEvent>().Any(d => d.targetId == B1), "it hits at " + distance + " m");
+            bool pushed = h.Of<PushedEvent>().Any(p => p.targetId == B1 && p.abilityId == StatIds.WeaponPush);
+            if (distance <= 4f) Check.True(pushed, "knocked back within 4 m");
+            else Check.False(pushed, "no knockback at " + distance + " m");
+            Check.False(h.Unit(B1).HasStatus(AbilityLibrary.SlowStatus), "and never slowed");
+        }
+    }
 }
