@@ -38,8 +38,20 @@ namespace DuckAndCover.Core
 
     public sealed class DamageEffect : IEffect
     {
+        public void Apply(EffectContext ctx, int targetId)
+        {
+            float dealt = ctx.Combat.Damage(ctx.sourceId, targetId, ctx.effect.amount * ctx.scale, ctx.abilityId, ctx.objectId);
+            // Life steal heals whoever is credited, by a share of what the target lost (shields included).
+            if (ctx.effect.lifeSteal > 0f && dealt > 0f && targetId != ctx.sourceId && ctx.Combat.IsAlive(ctx.sourceId))
+                ctx.Combat.Heal(ctx.sourceId, ctx.sourceId, dealt * ctx.effect.lifeSteal, ctx.abilityId, ctx.objectId);
+        }
+    }
+
+    /// <summary>Finishes off an enemy hero at or below a share of their max health (see <see cref="EffectKinds.Execute"/>).</summary>
+    public sealed class ExecuteEffect : IEffect
+    {
         public void Apply(EffectContext ctx, int targetId) =>
-            ctx.Combat.Damage(ctx.sourceId, targetId, ctx.effect.amount * ctx.scale, ctx.abilityId, ctx.objectId);
+            ctx.Combat.Execute(ctx.sourceId, targetId, ctx.effect.amount, ctx.abilityId);
     }
 
     public sealed class HealEffect : IEffect
@@ -81,6 +93,16 @@ namespace DuckAndCover.Core
             Vec3 dir = Vec3.Zero;
             float distance = e.amount * ctx.scale;
             if (e.direction == PushDirections.Aim) dir = ctx.aim.Normalized;
+            else if (e.direction == PushDirections.Caster)
+            {
+                // A pull: flat, toward the caster, stopping a step short of them.
+                if (!ctx.runner.TryGetPosition(targetId, out var at) || !ctx.runner.TryGetPosition(ctx.sourceId, out var caster)) return;
+                var flat = new Vec3(caster.x - at.x, 0f, caster.z - at.z);
+                float gap = flat.Magnitude - ctx.runner.Rules.pullStopMetres;
+                if (gap <= 1e-3f) return;
+                distance = Math.Min(distance, gap);
+                dir = flat.Normalized;
+            }
             else if (ctx.runner.TryGetPosition(targetId, out var pos))
             {
                 dir = (pos - ctx.point).Normalized;

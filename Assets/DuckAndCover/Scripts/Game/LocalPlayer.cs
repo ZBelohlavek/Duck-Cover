@@ -40,6 +40,8 @@ namespace DuckAndCover.Game
         public int Magazine { get; private set; }
         /// <summary>The weapon in hand is a melee weapon: no ammo to show, nothing to reload.</summary>
         public bool Melee { get; private set; }
+        /// <summary>The weapon in hand spends no ammo (a melee weapon, or endless thrown darts): no ammo to show, nothing to reload.</summary>
+        public bool NoAmmo { get; private set; }
         public string WeaponName { get; private set; } = "";
         public bool Reloading { get; private set; }
         /// <summary>The magazine in hand holds healing rounds (Mender's Mending Rounds).</summary>
@@ -578,7 +580,8 @@ namespace DuckAndCover.Game
             Ammo = Reloading ? 0 : Mathf.Max(0, state.CurrentAmmo - unacknowledged);
             HealRounds = !Reloading && state.healRounds > 0;
             Melee = def.kind == WeaponKind.Melee;
-            if (Melee) { Ammo = Magazine; shotsSent = 0; } // a swing spends nothing
+            NoAmmo = def.NoAmmo();
+            if (NoAmmo) { Ammo = Magazine; shotsSent = 0; } // a swing or an endless weapon spends nothing
             if (!focused || scripted || stunned) return;
 
             int slot = SlotAsked(keyboard, mouse, state);
@@ -589,7 +592,7 @@ namespace DuckAndCover.Game
                 client.Send(new SwitchWeaponCommand { slot = slot });
                 return;
             }
-            if (keyboard != null && keyboard.rKey.wasPressedThisFrame && !Reloading && Ammo < Magazine && !Melee)
+            if (keyboard != null && keyboard.rKey.wasPressedThisFrame && !Reloading && Ammo < Magazine && !NoAmmo)
             {
                 client.Send(new ReloadCommand());
                 return;
@@ -626,7 +629,7 @@ namespace DuckAndCover.Game
             var cam = Camera.main;
             if (cam == null) return false;
             nextFireAt = Time.time + def.fireInterval / fireRate;
-            if (def.kind != WeaponKind.Melee) shotsSent++;
+            if (!def.NoAmmo()) shotsSent++;
 
             Vec3 origin = (transform.position + Vector3.up * eyeHeight).ToVec3();
             Vec3 direction = MoveMath.AimDirection(yaw, pitch);

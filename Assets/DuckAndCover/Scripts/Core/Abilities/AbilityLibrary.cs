@@ -183,6 +183,9 @@ namespace DuckAndCover.Core
                 if (!EffectKinds.IsKnown(e.kind)) { errors.Add(w + "unknown effect kind '" + e.kind + "'"); continue; }
                 if (e.amount < 0f || e.duration < 0f || e.delay < 0f || e.interval < 0f || e.radius < 0f) errors.Add(x + "amount, duration, delay, interval and radius can't be negative");
                 if (!string.IsNullOrEmpty(e.affects) && !Affects.IsKnownForEffect(e.affects)) errors.Add(x + "unknown affects '" + e.affects + "'");
+                if (e.lifeSteal < 0f || e.minTargets < 0) errors.Add(x + "lifeSteal and minTargets can't be negative");
+                if (e.lifeSteal > 0f && e.kind != EffectKinds.Damage) errors.Add(x + "only damage can steal life");
+                if (e.minTargets > 0 && depth > 0) errors.Add(x + "minTargets works on abilities only");
                 switch (e.kind)
                 {
                     case EffectKinds.Damage:
@@ -204,6 +207,9 @@ namespace DuckAndCover.Core
                         if (e.amount <= 0f && e.lift <= 0f) errors.Add(x + "needs a distance (amount) or a lift");
                         if (e.lift < 0f) errors.Add(x + "lift can't be negative");
                         if (!PushDirections.IsKnown(e.direction)) errors.Add(x + "unknown direction '" + e.direction + "'");
+                        break;
+                    case EffectKinds.Execute:
+                        if (e.amount <= 0f || e.amount > 1f) errors.Add(x + "amount is the share of max health, between 0 and 1");
                         break;
                     case EffectKinds.Spawn:
                         if (depth > 0) errors.Add(x + "objects and statuses can't spawn objects");

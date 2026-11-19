@@ -502,9 +502,9 @@ namespace DuckAndCover.UI
         void ShowWeapon(LocalPlayer local)
         {
             weaponText.text = local.WeaponName.ToUpperInvariant();
-            ammoText.text = local.Melee ? "" : local.Ammo.ToString();
+            ammoText.text = local.NoAmmo ? "" : local.Ammo.ToString();
             ammoText.color = local.Reloading ? UITheme.TextDim : local.Ammo == 0 ? UITheme.Danger : local.HealRounds ? UITheme.Health : UITheme.Text;
-            magazineText.text = local.Melee ? "MELEE" : "/ " + local.Magazine;
+            magazineText.text = local.Melee ? "MELEE" : local.NoAmmo ? "NO RELOAD" : "/ " + local.Magazine;
             reloadText.text = local.Reloading ? "RELOADING" : local.Ammo == 0 ? "RELOAD (R)" : local.HealRounds ? "HEALING ROUNDS" : "";
             reloadText.color = local.Reloading ? UITheme.Warning : local.HealRounds && local.Ammo > 0 ? UITheme.Health : UITheme.Danger;
 
@@ -513,7 +513,7 @@ namespace DuckAndCover.UI
             int cells = mag <= 40 ? mag : 20;
             var g = ammoRow;
             g.Clear();
-            if (local.Melee) { g.Commit(); return; } // a swing spends nothing: no ammo bar
+            if (local.NoAmmo) { g.Commit(); return; } // a swing or endless darts spend nothing: no ammo bar
             g.SegmentedBar(1884f - 300f, 164f, 300f, 14f, 3f, cells, cells > 24 ? 2f : 3f, (float)local.Ammo / mag,
                            local.HealRounds ? UITheme.Health : local.Ammo * 4 <= mag ? UITheme.Warning : UITheme.Visor, UITheme.VisorFaint, true);
             g.Commit();

@@ -8,6 +8,7 @@
       "fireInterval": 0.11,
       "magazine": 28,
       "reloadSeconds": 1.7,
+      "endless": false,
       "damage": 18,
       "headMultiplier": 1.6,
       "legsMultiplier": 0.85,
@@ -34,6 +35,7 @@
       "fireInterval": 0.07,
       "magazine": 40,
       "reloadSeconds": 1.5,
+      "endless": false,
       "damage": 11,
       "headMultiplier": 1.5,
       "legsMultiplier": 0.85,
@@ -60,6 +62,7 @@
       "fireInterval": 0.8,
       "magazine": 6,
       "reloadSeconds": 2.2,
+      "endless": false,
       "damage": 9,
       "headMultiplier": 1.25,
       "legsMultiplier": 0.85,
@@ -86,6 +89,7 @@
       "fireInterval": 0.22,
       "magazine": 12,
       "reloadSeconds": 1.2,
+      "endless": false,
       "damage": 26,
       "headMultiplier": 1.75,
       "legsMultiplier": 0.85,
@@ -112,6 +116,7 @@
       "fireInterval": 0.75,
       "magazine": 4,
       "reloadSeconds": 2.4,
+      "endless": false,
       "damage": 45,
       "headMultiplier": 1,
       "legsMultiplier": 1,
@@ -138,6 +143,7 @@
       "fireInterval": 0.15,
       "magazine": 20,
       "reloadSeconds": 1.9,
+      "endless": false,
       "damage": 22,
       "headMultiplier": 1.6,
       "legsMultiplier": 0.85,
@@ -164,6 +170,7 @@
       "fireInterval": 0.75,
       "magazine": 1,
       "reloadSeconds": 0,
+      "endless": false,
       "damage": 60,
       "headMultiplier": 1,
       "legsMultiplier": 1,
@@ -190,6 +197,7 @@
       "fireInterval": 0.16,
       "magazine": 18,
       "reloadSeconds": 1.4,
+      "endless": false,
       "damage": 15,
       "headMultiplier": 1.5,
       "legsMultiplier": 0.85,
@@ -216,6 +224,7 @@
       "fireInterval": 0.7,
       "magazine": 6,
       "reloadSeconds": 2.0,
+      "endless": false,
       "damage": 10,
       "headMultiplier": 1,
       "legsMultiplier": 1,
@@ -233,6 +242,33 @@
       "splashRadius": 2.5,
       "splashDamage": 25,
       "splashMinShare": 0.4
+    },
+    {
+      "id": "blood_darts",
+      "displayName": "Blood Darts",
+      "kind": 1,
+      "automatic": true,
+      "fireInterval": 0.25,
+      "magazine": 1,
+      "reloadSeconds": 0,
+      "endless": true,
+      "damage": 28,
+      "headMultiplier": 1.75,
+      "legsMultiplier": 0.85,
+      "pellets": 1,
+      "spreadDegrees": 0,
+      "range": 120,
+      "falloffStart": 25,
+      "falloffEnd": 50,
+      "falloffMinShare": 0.6,
+      "allyHeal": 0,
+      "arcDegrees": 0,
+      "maxTargets": 0,
+      "projectileSpeed": 75,
+      "projectileGravity": 0,
+      "splashRadius": 0,
+      "splashDamage": 0,
+      "splashMinShare": 0.3
     }
   ],
   "loadouts": [
@@ -286,6 +322,12 @@
       "heroId": "bolete",
       "weapons": [
         "spore_bombs"
+      ]
+    },
+    {
+      "heroId": "vampire",
+      "weapons": [
+        "blood_darts"
       ]
     }
   ]
