@@ -45,7 +45,7 @@
     {
       "id": "mender_rounds",
       "displayName": "Mending Rounds",
-      "description": "Reload at once with a magazine of healing rounds: each one that hits a teammate heals them 16. Enemies still take normal damage. A normal reload swaps back.",
+      "description": "Reload at once with a magazine of healing rounds: each one that hits a teammate heals them 16. Healing rounds do no harm to enemies. A normal reload swaps back.",
       "cooldown": 6,
       "targeting": {
         "shape": "self",

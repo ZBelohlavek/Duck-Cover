@@ -211,16 +211,19 @@ namespace DuckAndCover.Core
                 shot.ends[i] = hit.point;
                 if (hit.kind == HitKind.Device)
                 {
-                    Add(objects, objectAmounts, hit.deviceId, w.damage * scale * w.Falloff(hit.distance / reach));
+                    // Healing rounds only heal: they don't hurt enemies or their objects.
+                    if (!healRound) Add(objects, objectAmounts, hit.deviceId, w.damage * scale * w.Falloff(hit.distance / reach));
                     continue;
                 }
                 if (hit.kind != HitKind.Player) continue;
                 shot.hitPlayers[i] = hit.playerId;
                 shot.hitParts[i] = hit.bodyPart;
+                bool teammate = IsTeammate(cmd.playerId, hit.playerId);
+                if (healRound && !teammate) continue; // a healing round stops on an enemy and does nothing
                 float share = w.Falloff(hit.distance / reach) * w.PartMultiplier(hit.bodyPart);
                 // Heal shots on teammates are kept as negative amounts until the end.
                 // weaponDamage makes a healing weapon heal harder too.
-                float amount = allyHeal > 0f && IsTeammate(cmd.playerId, hit.playerId) ? -allyHeal * scale * share : w.damage * scale * share;
+                float amount = allyHeal > 0f && teammate ? -allyHeal * scale * share : w.damage * scale * share;
                 Add(targets, amounts, hit.playerId, amount);
             }
             Publish(shot);
@@ -444,7 +447,7 @@ namespace DuckAndCover.Core
         /// <summary>
         /// Fill the magazine of the weapon in hand with healing rounds at once (an ability's "healRounds"
         /// effect): each heals a teammate it hits by <paramref name="perRound"/> (times the weaponDamage stat),
-        /// and splashes <paramref name="splash"/> metres around them. Enemies still take the weapon's damage.
+        /// and splashes <paramref name="splash"/> metres around them. They don't hurt enemies.
         /// </summary>
         public void LoadHealRounds(int playerId, float perRound, float splash)
         {
