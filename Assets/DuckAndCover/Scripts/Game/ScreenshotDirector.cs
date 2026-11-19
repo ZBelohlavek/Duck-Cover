@@ -390,6 +390,15 @@ namespace DuckAndCover.Game
             if (runner == null || runner.Heroes == null || runner.Client == null) return;
             int rigger = CombatServer.FirstDummyId + 1;
             int me = runner.Client.PlayerId;
+            var mine = runner.Combat.Movement.Motion(me);
+            if (mine == null) return;
+            // Step the Rigger to 7 m in front of the player (the grenade reaches 25 m and the dummies stand
+            // further off), facing back at them, and watch both from the side.
+            Vec3 ahead = MoveMath.Forward(mine.yaw);
+            Vec3 at = mine.position + ahead * 7f;
+            runner.Combat.Movement.Teleport(rigger, at, mine.yaw + 180f);
+            Vec3 side = MoveMath.Right(mine.yaw);
+            WatchFrom((mine.position + ahead * 3.5f + side * 7f).ToVector3() + Vector3.up * 3f, (mine.position + ahead * 3.5f).ToVector3() + Vector3.up * 1f);
             if (!DummyCast(runner, rigger, 2, me, 0f)) Debug.LogError("Duck and Cover: the capture's Rigger could not throw Hush Grenade.");
             CombatView.Instance.StartCoroutine(Expect(() => runner.Combat.Abilities.IsSilenced(me), 0.5f, "the player silenced by Hush Grenade"));
         }
