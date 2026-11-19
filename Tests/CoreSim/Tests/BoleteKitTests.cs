@@ -39,7 +39,8 @@ static class BoleteKitTests
         Check.Equal("bolete_bloom,bolete_rot,bolete_frenzy", string.Join(",", slots), "E, F and X");
         Check.Equal("spore_bombs", h.Combat.Weapons.Weapons(A1).weapons[0], "spore bombs in hand");
         Check.Equal(1, h.Combat.Weapons.Weapons(A1).weapons.Length, "and nothing else");
-        Check.True(h.Abilities.AbilityIn(A1, Frenzy).ultimate, "Frenzy Cap runs on ultimate charge");
+        Check.False(h.Abilities.AbilityIn(A1, Frenzy).ultimate, "Frenzy Cap runs on a cooldown, not ultimate charge");
+        Check.Equal("14,15,20", string.Join(",", Enumerable.Range(0, 3).Select(i => h.Abilities.AbilityIn(A1, i).cooldown)), "cooldowns 14, 15 and 20 s");
         Check.Near(200f, h.Combat.Damage.MaxHealth(A1), "200 health");
         Check.Equal("support", ProgressionHarness.DataCatalog().Get("bolete").role, "the healer pick");
     }
@@ -51,6 +52,11 @@ static class BoleteKitTests
         var w = h.Combat.Weapons.Library.Weapon("spore_bombs");
         Check.Equal(WeaponKind.Projectile, w.kind, "a thrown projectile");
         Check.True(w.projectileGravity > 0f, "that falls");
+        // Area damage stays below single-target damage: a bomb's best (direct hit plus burst) is less a second than Mender's sidearm.
+        var sidearm = h.Combat.Weapons.Library.Weapon("mender_sidearm");
+        float Sustained(WeaponDef x, float perShot) => perShot * x.magazine / (x.magazine * x.fireInterval + x.reloadSeconds);
+        Check.True((w.damage + w.splashDamage) / w.fireInterval < sidearm.damage / sidearm.fireInterval, "bombs hit less hard a second than Mender's sidearm");
+        Check.True(Sustained(w, w.damage + w.splashDamage) < Sustained(sidearm, sidearm.damage), "with reloads too");
         var aim = w.AimAt(h.Eye(A1), h.ChestOf(B1));
         Check.True(aim.y > (h.ChestOf(B1) - h.Eye(A1)).Normalized.y + 0.01f, "so it is thrown above the line to the target");
 
@@ -128,7 +134,7 @@ static class BoleteKitTests
         var h = Field();
         h.Unit(A1).ultimateCharge = 100f;
         Check.Equal("no target in reach", h.Use(A1, Frenzy, Vec3.Up).reason, "aimed at nobody, it waits");
-        Check.Near(100f, h.Unit(A1).ultimateCharge, "and keeps its charge");
+        Check.Equal(1, h.Unit(A1).slots[Frenzy].charges, "and spends nothing");
         Check.Equal("no target in reach", h.UseAt(A1, Frenzy, B1).reason, "an enemy is no target either");
         Check.True(h.UseAt(A1, Frenzy, A2).IsAccepted, "grow it on the teammate");
         Check.Near(1.25f, h.Stat(A2, StatIds.FireRate), "they fire 25% faster");

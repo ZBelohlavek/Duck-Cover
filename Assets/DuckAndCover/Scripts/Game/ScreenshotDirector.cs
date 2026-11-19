@@ -50,7 +50,8 @@ namespace DuckAndCover.Game
             // Hero kits (WP11): the dummies are given heroes and use their abilities toward the player.
             new Shot("10-abilities", DummiesUseAbilities, 1.6f),
             new Shot("11-hush", DummyThrowsHush, 1.0f),
-            new Shot("11b-bolete", DummyPlaysBolete, 1.4f),
+            new Shot("11b-war-leap", DummyWarLeaps, 1.4f),
+            new Shot("11c-bolete", DummyPlaysBolete, 1.4f),
             new Shot("12-hero-hud", LevelUpAndLook, 1.2f),
             // Environment kit: the lane mock-up, built far off to one side of the real map.
             new Shot("13-lane", () => LaneShot(new Vector3(0f, 1.8f, -50f), new Vector3(0f, 1.2f, -38f)), 1.0f),
@@ -415,6 +416,54 @@ namespace DuckAndCover.Game
             WatchFrom((mine.position + ahead * 3.5f + side * 7f).ToVector3() + Vector3.up * 3f, (mine.position + ahead * 3.5f).ToVector3() + Vector3.up * 1f);
             if (!DummyCast(runner, rigger, 2, me, 0f)) Debug.LogError("Duck and Cover: the capture's Rigger could not throw Hush Grenade.");
             CombatView.Instance.StartCoroutine(Expect(() => runner.Combat.Abilities.IsSilenced(me), 0.5f, "the player silenced by Hush Grenade"));
+        }
+
+        /// <summary>
+        /// The Rigger dummy becomes the war chief and War Leaps at the player from 10 m: he lands in front of
+        /// them and knocks them up (the HUD says STUNNED), then swings his greataxe.
+        /// </summary>
+        static void DummyWarLeaps()
+        {
+            var runner = SessionRunner.Instance;
+            if (runner == null || runner.Heroes == null || runner.Client == null) return;
+            int chief = CombatServer.FirstDummyId + 1;
+            int me = runner.Client.PlayerId;
+            var mine = runner.Combat.Movement.Motion(me);
+            if (mine == null) return;
+            if (!runner.Heroes.GiveKit(chief, "warchief").IsAccepted) { Debug.LogError("Duck and Cover: the capture could not give a dummy the war chief's kit."); return; }
+            runner.Combat.Weapons.SetLoadout(chief, runner.Combat.Weapons.Library.LoadoutFor("warchief"));
+            Vec3 ahead = MoveMath.Forward(mine.yaw);
+            runner.Combat.Movement.Teleport(chief, mine.position + ahead * 10f, mine.yaw + 180f);
+            Vec3 side = MoveMath.Right(mine.yaw);
+            WatchFrom((mine.position + ahead * 5f + side * 9f).ToVector3() + Vector3.up * 3f, (mine.position + ahead * 4f).ToVector3() + Vector3.up * 1f);
+            if (!DummyCast(runner, chief, 0, me, 0f)) Debug.LogError("Duck and Cover: the capture's war chief could not War Leap.");
+            CombatView.Instance.StartCoroutine(SwingAfter(runner, chief, me, 0.8f));
+            CombatView.Instance.StartCoroutine(Expect(() => runner.Combat.Abilities.IsStunned(me), 1.0f, "the player knocked up by War Leap"));
+        }
+
+        /// <summary>After the leap lands, the dummy (server side) swings its greataxe at the player.</summary>
+        static IEnumerator SwingAfter(SessionRunner runner, int dummy, int targetId, float seconds)
+        {
+            yield return new WaitForSecondsRealtime(seconds);
+            var rules = runner.Match.Rules;
+            var from = runner.Combat.Movement.Motion(dummy);
+            var to = runner.Combat.Movement.Motion(targetId);
+            if (from == null || to == null) yield break;
+            // A dummy has no machine of its own to fly the leap's arc, so put it where the leap lands.
+            Vec3 back = from.position - to.position;
+            back = new Vec3(back.x, 0f, back.z);
+            if (back.Magnitude > 1e-3f) runner.Combat.Movement.Teleport(dummy, to.position + back.Normalized * 1.8f, from.yaw);
+            // Give the lag-compensation history a few ticks of the dummy in its new spot, and every view time to draw it there.
+            yield return new WaitForSecondsRealtime(0.25f);
+            if (!runner.Match.State.IsAlive(dummy) || !runner.Match.State.IsAlive(targetId)) yield break;
+            Vec3 eye = from.position + Vec3.Up * rules.eyeHeight;
+            var result = runner.Combat.Apply(new FireCommand
+            {
+                playerId = dummy, weaponId = "greataxe", origin = eye, tick = runner.Match.State.tick,
+                direction = (Hitboxes.Chest(rules, to.Pose(true)) - eye).Normalized,
+            });
+            if (!result.IsAccepted) Debug.LogWarning("Duck and Cover: the capture's war chief could not swing: " + result.reason);
+            else Debug.Log("Duck and Cover: the capture's war chief swung from " + Vec3.Distance(from.position, to.position).ToString("0.0") + " m; the player has " + runner.Combat.Damage.Unit(targetId).health.ToString("0") + " health.");
         }
 
         /// <summary>

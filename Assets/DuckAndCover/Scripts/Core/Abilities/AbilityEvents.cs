@@ -112,12 +112,14 @@ namespace DuckAndCover.Core
     {
         public int targetId;
         public int sourceId;
-        /// <summary>One of PushDirections: "aim", "away" or "toward".</summary>
+        /// <summary>One of PushDirections: "aim", "away", "toward" or "leap".</summary>
         public string mode;
         public Vec3 origin;
         public Vec3 direction;
         public float distance;
         public float seconds;
+        /// <summary>Metres the target rises at the top of the arc (a leap or a knock-up); 0 = level.</summary>
+        public float lift;
         public string abilityId;
     }
 

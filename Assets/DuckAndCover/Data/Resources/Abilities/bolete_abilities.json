@@ -4,7 +4,7 @@
       "id": "bolete_bloom",
       "displayName": "Bloom Cap",
       "description": "Plant a healing mushroom where you aim. For 6 seconds, you and teammates within 3.5 m of it heal 18 health a second, and keep healing for a second after stepping out.",
-      "cooldown": 12,
+      "cooldown": 14,
       "targeting": {
         "shape": "sphere",
         "origin": "aimPoint",
@@ -23,7 +23,7 @@
       "id": "bolete_rot",
       "displayName": "Rot Spore",
       "description": "Throw a rotten spore pod where you aim. It bursts a second later: enemies within 3.5 m are poisoned for 10 damage a second and Wilt (deal 20% less damage) for 5 seconds.",
-      "cooldown": 12,
+      "cooldown": 15,
       "targeting": {
         "shape": "sphere",
         "origin": "aimPoint",
@@ -57,9 +57,8 @@
     {
       "id": "bolete_frenzy",
       "displayName": "Frenzy Cap",
-      "description": "Ultimate. Grow a frenzy mushroom on the teammate you aim at: for 6 seconds they fire 25% faster and deal 15% more damage. With no teammate there, nothing is spent.",
-      "ultimate": true,
-      "ultimateCost": 100,
+      "description": "Grow a frenzy mushroom on the teammate you aim at: for 6 seconds they fire 25% faster and deal 15% more damage. With no teammate there, nothing is spent. Cooldown 20 s.",
+      "ultimate": false,
       "targeting": {
         "shape": "sphere",
         "origin": "aimPoint",
@@ -88,7 +87,8 @@
           "affects": "self",
           "tag": "kindred"
         }
-      ]
+      ],
+      "cooldown": 20
     }
   ],
   "statuses": [

@@ -108,22 +108,60 @@ the **Shutdown** path: longer silences on one enemy at a time that weaken, expos
 | 18 talent | **Smoke Stim**: Combat Stim also cloaks you for 2 seconds. | **Double Hush**: Hush Grenade holds two charges. |
 | 20 capstone | **Phantom**: During Ambush your weapons deal 25% more damage and heal you for 15% of the damage they deal. | **Blackout**: The enemy Hush Grenade hits takes 15% more damage while silenced, and the silence lasts 1 second longer. |
 
+## Gashrak, the war chief (striker)
+
+Health 275. Weapon: Greataxe, melee only (no gun). A bruiser who closes the gap with War Leap and holds enemies in place
+while his axe works. Gashrak is a working name.
+
+- **Left mouse: Greataxe.** A swing hits every enemy (heroes and minions) within 3.2 m in a 100 degree arc in front of
+  him for 60, once every 0.75 s. No ammo and no reload. Walls and enemy shields stop it; a shield or drone straight ahead
+  takes the hit instead.
+- **E: War Leap.** Leap up to 12 m to where you aim (onto the floor below it, so aiming at a wall or the sky still lands).
+  Where he lands, 0.8 s later, enemies within 3.5 m take 30 damage and are knocked up: thrown into the air and stunned for
+  0.75 seconds. Cooldown 10 s.
+- **F: Axe Throw.** Throw a hand axe up to 25 m: the first enemy hit takes 40 damage and is stunned for 1.25 seconds.
+  Cooldown 12 s.
+- **X: Rage.** For 6 seconds, regenerate 15 health a second and deal 20% more damage. Cooldown 20 s (not ultimate charge).
+
+Stuns and knock-ups use the built-in stun: Purge clears them, a ward blocks them, and `Ruleset.maxStunSeconds` caps them.
+A silence (Hush Grenade) stops his abilities but not the axe, unless he has Unbroken.
+
+Left (Z) is the **Bruiser** path: in and hitting, with a harder, longer Rage that heals him through the axe and a War
+Leap that lands harder and wider. Right (V) is the **Warlord** path: longer stuns from Axe Throw and War Leap, two axes,
+a sturdier body and Rage regeneration, and Unbroken, which lets Rage shake off a stun or silence and clears every
+harmful effect.
+
+| Level | Left (hold Z) | Right (hold V) |
+|---|---|---|
+| 2 trait | **Heavy Hands**: Your axe deals 6% more damage. | **Thick Hide**: +25 max health. |
+| 4 talent | **Blood Up**: Rage gives 30% more damage instead of 20%. | **Heavy Haft**: Axe Throw stuns for 0.4 seconds longer. |
+| 6 trait | **Long Reach**: Your swings reach 15% further (about half a metre). | **Warlord's Pace**: Abilities recover 10% faster. |
+| 8 third ability | **Long Rage**: Rage lasts 2 seconds longer. | **Second Skin**: Rage regenerates 50% more health. |
+| 10 passive | **Battle Hunger**: Heal for 8% of the damage your axe deals. | **Hard to Kill**: Take 10% less damage while at half health or less. |
+| 12 talent | **Crushing Landing**: War Leap's landing deals 40 more damage. | **Ground Shaker**: War Leap's knock-up stuns for 0.4 seconds longer. |
+| 14 trait | **Quick Swings**: You swing 10% faster. | **Iron Grip**: Your stuns, knock-ups and Rage last 15% longer. |
+| 16 talent | **Blood Rage**: While Rage is up, your axe also heals you for 15% of the damage it deals. | **Unbroken**: Rage can be used while stunned or silenced, and clears every harmful effect on you when it starts. |
+| 18 talent | **Wide Landing**: War Leap's landing reaches 1.5 m further. | **Twin Axes**: Axe Throw holds two charges. |
+| 20 capstone | **Berserker**: Rage gives 20% more damage on top, and you swing 20% faster while it is up. | **Warlord**: Your stuns, knock-ups and Rage last 25% longer, and Rage lasts 2 seconds longer. |
+
 ## Bolete (support)
 
 Health 200. Weapon: Spore bombs. A fungal healer: he lobs spore bombs, grows mushrooms that heal his team, rots the
 enemy and grows a frenzy mushroom out of a teammate.
 
 - **Primary: Spore bombs.** Lob a spotted spore bomb in an arc (it falls, so aim above far targets). It bursts where it
-  lands: 15 damage on a direct hit plus a 30 damage burst that reaches 2.5 m (down to 40% at the edge). Six bombs a
-  load, one every 0.7 s. Bombs never hurt or heal teammates.
+  lands: 10 damage on a direct hit plus a 25 damage burst that reaches 2.5 m (down to 40% at the edge). Six bombs a
+  load, one every 0.7 s, 2 s to reload. Bombs never hurt or heal teammates. Because a burst can catch several enemies,
+  one bomb does less damage a second than Mender's sidearm does to one target: at most 50 a second on direct hits
+  (34 counting reloads) against the sidearm's 94 (63).
 - **E: Bloom Cap.** Plant a healing mushroom where you aim. For 6 seconds, you and teammates within 3.5 m of it heal 18
-  health a second, and keep healing for a second after stepping out. Cooldown 12 s.
+  health a second, and keep healing for a second after stepping out. Cooldown 14 s.
 - **F: Rot Spore.** Throw a rotten spore pod where you aim. It bursts a second later: enemies within 3.5 m are poisoned
   for 10 damage a second and Wilt (deal 20% less damage) for 5 seconds. Both are harmful effects, so a cleanse (Purge)
-  clears them. Cooldown 12 s.
-- **X (ultimate): Frenzy Cap.** Grow a frenzy mushroom on the teammate you aim at (within 1.5 m of where your aim
+  clears them (50 damage in all, so it never kills a healthy hero alone). Cooldown 15 s.
+- **X: Frenzy Cap.** Grow a frenzy mushroom on the teammate you aim at (within 1.5 m of where your aim
   lands, up to 30 m): for 6 seconds they fire 25% faster and deal 15% more damage. With no teammate there it is
-  refused and spends nothing (`TargetingDef.needsTarget`).
+  refused and spends nothing (`TargetingDef.needsTarget`). Cooldown 20 s (no ultimate charge).
 
 Left (Z) is the **Overgrowth** path: everything grows bigger, lasts longer and spreads. Right (V) is the **Symbiosis**
 path: Bolete gains from his own fungus, healed when he heals, feeding on his poison and sharing his Frenzy.
@@ -158,6 +196,8 @@ as `Tests/CoreSim/Tests/WaveKitTests.cs` checks it:
 - **Mender** protects his own wave: Mending Canister regenerates minions, Purge frees them from slows, and Mending Rounds heal the minion he shoots.
 - **Bolete** clears with his bombs' bursts, which catch a clump of minions, while Rot Spore wilts a wave's fire and
   Bloom Cap heals his own minions.
+- **Gashrak** cleaves: every swing hits every minion in front of him, so he clears a wave fastest of all from up
+  close, but has to walk into it to do so.
 - **Rigger** slips past a lane: minions and Bastions don't shoot him while he is cloaked, so he can get behind a wave
   or reach the enemy's heroes. Against the wave itself he is the SMG, sped up by Combat Stim.
 
