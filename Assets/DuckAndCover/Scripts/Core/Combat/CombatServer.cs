@@ -73,6 +73,7 @@ namespace DuckAndCover.Core
                 return m != null;
             };
             Abilities.RegisterEffect(EffectKinds.Reload, new ReloadEffect(Weapons));
+            Abilities.RegisterEffect(EffectKinds.HealRounds, new HealRoundsEffect(Weapons));
             Weapons.Cleanse = targetId => Abilities.Cleanse(targetId);
             // Firing gives a cloak away; the shot itself already counts as an ambush.
             Weapons.BeforeShot = shooterId => Abilities.BreakStealth(shooterId, "fired");
@@ -212,5 +213,13 @@ namespace DuckAndCover.Core
         readonly WeaponRules weapons;
         public ReloadEffect(WeaponRules weapons) { this.weapons = weapons; }
         public void Apply(EffectContext ctx, int targetId) => weapons.RefillCurrent(targetId);
+    }
+
+    /// <summary>The "healRounds" effect: loads the target's magazine with healing rounds (amount = heal per round, radius = splash).</summary>
+    public sealed class HealRoundsEffect : IEffect
+    {
+        readonly WeaponRules weapons;
+        public HealRoundsEffect(WeaponRules weapons) { this.weapons = weapons; }
+        public void Apply(EffectContext ctx, int targetId) => weapons.LoadHealRounds(targetId, ctx.effect.amount * ctx.scale, ctx.effect.radius);
     }
 }

@@ -58,26 +58,26 @@ Left (Z) is the **gun path**, built around dominating whoever Tracer Mark hits: 
 
 ## Mender (support)
 
-Health 200. Weapons: Mending sidearm (heals teammates it hits, 14 a shot).
+Health 200. Weapon: Mending sidearm (15 damage a shot). It heals only while loaded with Mending Rounds.
 
-- **E: Mending Field.** Throw down a field where you aim. For 6 seconds it heals you and teammates within 4 m by 20 every second. Cooldown 12 s.
-- **F: Purge.** Clear slows, stuns and marks from you and teammates within 6 m, and heal them 30. Cooldown 10 s.
-- **X (ultimate): Aegis Pulse.** Shield yourself and every teammate within 12 m for 100 for 5 seconds.
+- **E: Mending Canister.** Throw a canister where you aim. For 6 seconds, you and teammates within 3.5 m of it regenerate 16 health a second, and keep regenerating for a second after stepping out. Cooldown 12 s.
+- **F: Purge.** Clear every harmful effect (slows, stuns, silences, marks, damage and healing cuts) from you and teammates within 6 m. Cooldown 12 s.
+- **X: Mending Rounds.** Reload at once with a magazine of healing rounds: each one that hits a teammate heals them 16 (shots stop on teammates instead of passing through). Enemies still take normal damage. A normal reload or emptying the magazine swaps back. Cooldown 6 s.
 
-Left (Z) is the **Combat Medic** path: the healing sidearm and keeping herself alive. Right (V) is the **Field Healer** path: Mending Field and Purge for the whole team.
+Left (Z) is the **single-target** path: the gun and Mending Rounds, ending in healing rounds that ricochet from the teammate hit to the nearest hurt teammate within 6 m (`Ruleset.healRicochetRange`, 60% of the heal: `healRicochetShare`). Right (V) is the **area** path: the canister and Purge, with a canister that latches onto a teammate and follows them, and a Purge that wards everyone it reaches so the next enemy debuff on them is blocked.
 
 | Level | Left (hold Z) | Right (hold V) |
 |---|---|---|
-| 2 trait | **Steady Dose**: Your sidearm hits 10% harder: more healing and more damage. | **Wide Reach**: Mending Field and Purge reach 10% further. |
-| 4 talent | **Spare Vials**: Your magazine holds 20% more rounds. | **Lasting Field**: Mending Field lasts 2 seconds longer. |
-| 6 trait | **Fast Reload**: Reload 20% faster. | **Efficient**: Abilities recover 10% faster. |
-| 8 ultimate | **Long Aegis**: Aegis Pulse shields last 4 seconds longer. | **Broad Aegis**: Aegis Pulse reaches 6 m further. |
-| 10 passive | **Field Kit**: Regain 6 health a second when you haven't been hit for a while. | **Charged**: Your ultimate charges 20% faster. |
-| 12 talent | **Triage**: Healing teammates at half health or less is 30% stronger. | **Quickening Purge**: Purge also speeds everyone it reaches up by 25% for 3 seconds. |
-| 14 trait | **Battle Medic**: Your sidearm hits 15% harder: more healing and more damage. | **Healing Hands**: Your healing is 10% stronger. |
-| 16 talent | **Second Opinion**: Your sidearm's heals also clear slows, stuns and marks. | **Rich Field**: Mending Field heals 10 more each second. |
-| 18 talent | **Steady Hands**: Heal yourself for 10% of the damage your sidearm deals. | **Twin Fields**: Mending Field holds two charges. |
-| 20 capstone | **Lifeline**: Your healing and shields are 20% stronger. | **Sanctuary**: Mending Field also gives everyone inside it 15 shield a second. |
+| 2 trait | **Steady Aim**: Your gun hits 8% harder, and Mending Rounds heal 8% more. | **Wide Reach**: Mending Canister and Purge reach 10% further. |
+| 4 talent | **Quick Load**: Mending Rounds recover 1.5 seconds sooner. | **Lasting Canister**: Mending Canister lasts 2 seconds longer. |
+| 6 trait | **Spare Vials**: Your magazine holds 20% more rounds, healing rounds too. | **Healing Hands**: Your healing is 10% stronger. |
+| 8 ultimate | **Potent Rounds**: Mending Rounds heal 25% more. | **Splash Rounds**: A Mending Round also heals teammates within 2.5 m of the one it hits, for half. |
+| 10 passive | **Field Kit**: Regain 6 health a second when you haven't been hit for a while. | **Steady Supply**: Abilities recover 10% faster. |
+| 12 talent | **Triage**: Healing teammates at half health or less is 30% stronger. | **Tethered Canister**: Mending Canister latches onto the teammate nearest where it lands (or you) and follows them. |
+| 14 trait | **Long Barrel**: Your shots keep full strength (damage and healing) 30% further out. | **Lingering Care**: Your regen and wards last 25% longer. |
+| 16 talent | **Second Opinion**: Your healing rounds also clear harmful effects from the teammates they heal. | **Warding Purge**: Purge also wards everyone it reaches for 8 seconds: the next harmful effect an enemy puts on them is blocked. |
+| 18 talent | **Ricochet**: A healing round that heals a teammate jumps to the nearest hurt teammate within 6 m and heals them 60% as much. | **Twin Canisters**: Mending Canister holds two charges. |
+| 20 capstone | **Lifeline**: Ricochets jump twice, and your healing is 15% stronger. | **Overflow**: Mending Canister reaches 1.5 m further and its regen is 50% stronger. |
 
 ## Rigger (controller)
 
@@ -116,7 +116,7 @@ as `Tests/CoreSim/Tests/WaveKitTests.cs` checks it:
 - **Bulwark** protects: Rampart stops minion fire at him and the teammates behind it, and Bulkhead stops a wave's fire
   and feet (`UnitRules.LineOfFire`, `UnitRules.Walk`) while his team shoots through. His shotgun clears a wave from close up.
 - **Lancer** clears: Incendiary Grenade catches a whole wave; Thermite destroys Scrappers outright.
-- **Mender** protects her own wave: Mending Field heals minions, Purge frees them from slows, Aegis Pulse shields them.
+- **Mender** protects his own wave: Mending Canister regenerates minions, Purge frees them from slows, and Mending Rounds heal the minion he shoots.
 - **Rigger** slips past a lane: minions and Bastions don't shoot him while he is cloaked, so he can get behind a wave
   or reach the enemy's heroes. Against the wave itself he is the SMG, sped up by Combat Stim, with Hush Grenade for the
   bunched front.

@@ -40,6 +40,8 @@ namespace DuckAndCover.Game
         public int Magazine { get; private set; }
         public string WeaponName { get; private set; } = "";
         public bool Reloading { get; private set; }
+        /// <summary>The magazine in hand holds healing rounds (Mender's Mending Rounds).</summary>
+        public bool HealRounds { get; private set; }
         /// <summary>Time.time of the last hit the server confirmed on an enemy, and whether it took them down.</summary>
         public float LastHitAt { get; private set; } = -10f;
         public bool LastHitWasHead { get; private set; }
@@ -558,6 +560,7 @@ namespace DuckAndCover.Game
             Magazine = state.CurrentMagazine > 0 ? state.CurrentMagazine : def.magazine;
             Reloading = state.Reloading;
             Ammo = Reloading ? 0 : Mathf.Max(0, state.CurrentAmmo - unacknowledged);
+            HealRounds = !Reloading && state.healRounds > 0;
             if (!focused || scripted || stunned) return;
 
             int slot = SlotAsked(keyboard, mouse, state);

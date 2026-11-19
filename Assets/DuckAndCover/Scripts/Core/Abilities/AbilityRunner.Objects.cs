@@ -38,6 +38,7 @@ namespace DuckAndCover.Core
                 radius = def.radius * (owner != null ? Math.Max(0f, Combat.Stat(ownerId, StatIds.AbilityRadius)) : 1f),
             };
             if (def.followOwner) obj.followId = ownerId;
+            else if (def.followAlly) obj.followId = NearestHeroAlly(obj);
             Follow(obj);
             position = obj.position;
             State.objects.Add(obj);
@@ -48,6 +49,24 @@ namespace DuckAndCover.Core
                 blocksMovement = def.blocksMovement, blocksShots = def.blocksShots, width = def.width, height = def.height,
             });
             return obj;
+        }
+
+        /// <summary>
+        /// The owner's teammate (or the owner) nearest an object, within its radius: heroes only, not
+        /// minions. Ties go to the lower id. -1 when nobody is in reach.
+        /// </summary>
+        int NearestHeroAlly(ObjectState obj)
+        {
+            var area = Query(obj.position, obj.radius, Affects.AlliesAndSelf, obj.ownerId, obj.team, 0, Match.tick);
+            int best = -1;
+            float bestDist = float.MaxValue;
+            foreach (int id in area.targets)
+            {
+                if (UnitIds.IsUnit(id)) continue;
+                float d = TryGetPosition(id, out var at) ? Vec3.Distance(at, obj.position) : float.MaxValue - 1f;
+                if (d < bestDist) { best = id; bestDist = d; }
+            }
+            return best;
         }
 
         /// <summary>

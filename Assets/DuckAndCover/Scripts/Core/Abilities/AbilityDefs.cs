@@ -101,7 +101,8 @@ namespace DuckAndCover.Core
     /// One standard effect. Which fields matter depends on <see cref="kind"/>:
     /// damage (amount), heal (amount), shield (amount, duration), status (status, amount = strength,
     /// duration), slow (amount = share of speed taken, duration), stun (duration), cleanse,
-    /// push (amount = metres, duration = seconds, direction), spawn (objectId).
+    /// push (amount = metres, duration = seconds, direction), spawn (objectId), reload,
+    /// healRounds (amount = health each round gives, radius = splash around the teammate hit).
     /// </summary>
     [Serializable]
     public class EffectDef
@@ -120,6 +121,8 @@ namespace DuckAndCover.Core
         public string objectId = "";
         /// <summary>Push: one of <see cref="PushDirections"/>.</summary>
         public string direction = PushDirections.Aim;
+        /// <summary>An area around each target, for kinds that reach past it (healRounds: the splash). 0 = none.</summary>
+        public float radius;
         /// <summary>
         /// Overrides who this effect reaches: empty = the ability's targets; "self" = the caster once,
         /// whatever was hit; otherwise filters the ability's targets (<see cref="Affects"/>).
@@ -159,6 +162,11 @@ namespace DuckAndCover.Core
         public bool silence;
         /// <summary>Can't move.</summary>
         public bool root;
+        /// <summary>
+        /// A ward: the next harmful status an enemy puts on the bearer is blocked, and the ward is used up
+        /// (<see cref="StatusBlockedEvent"/>).
+        /// </summary>
+        public bool ward;
         /// <summary>Visible to the other team through walls (the Game layer draws it).</summary>
         public bool reveal;
         /// <summary>
@@ -234,6 +242,12 @@ namespace DuckAndCover.Core
         public float followAhead;
         public float followRise;
         /// <summary>
+        /// Latch onto the owner's teammate (or the owner) nearest where it lands, within its radius, and
+        /// follow them like <see cref="followOwner"/> follows the owner. Nobody in reach: it stays put.
+        /// A talent turns it on with the param "object.followAlly" (op set, value 1).
+        /// </summary>
+        public bool followAlly;
+        /// <summary>
         /// Above 0: a ball this big around its spot that shots and ability rays can hit (a drone).
         /// Its team's own shots pass it like their barriers. Balls never block line of sight.
         /// </summary>
@@ -289,8 +303,13 @@ namespace DuckAndCover.Core
         public const string Spawn = "spawn";
         /// <summary>Refills the magazine of the weapon in the target's hand (the combat server provides it).</summary>
         public const string Reload = "reload";
+        /// <summary>
+        /// Refills the target's magazine with healing rounds (the combat server provides it): until that
+        /// magazine is spent or reloaded, a round that hits a teammate heals them by the amount.
+        /// </summary>
+        public const string HealRounds = "healRounds";
 
-        public static readonly string[] All = { Damage, Heal, Shield, Status, Slow, Stun, Cleanse, Push, Spawn, Reload };
+        public static readonly string[] All = { Damage, Heal, Shield, Status, Slow, Stun, Cleanse, Push, Spawn, Reload, HealRounds };
         public static bool IsKnown(string kind) => Array.IndexOf(All, kind) >= 0;
     }
 
