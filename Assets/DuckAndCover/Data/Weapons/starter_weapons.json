@@ -131,6 +131,32 @@
       "splashMinShare": 0.3
     },
     {
+      "id": "scrap_rifle",
+      "displayName": "Scrap Rifle",
+      "kind": 0,
+      "automatic": true,
+      "fireInterval": 0.15,
+      "magazine": 20,
+      "reloadSeconds": 1.9,
+      "damage": 22,
+      "headMultiplier": 1.6,
+      "legsMultiplier": 0.85,
+      "pellets": 1,
+      "spreadDegrees": 0,
+      "range": 130,
+      "falloffStart": 25,
+      "falloffEnd": 55,
+      "falloffMinShare": 0.55,
+      "allyHeal": 0,
+      "arcDegrees": 0,
+      "maxTargets": 0,
+      "projectileSpeed": 30,
+      "projectileGravity": 9,
+      "splashRadius": 0,
+      "splashDamage": 0,
+      "splashMinShare": 0.3
+    },
+    {
       "id": "greataxe",
       "displayName": "Greataxe",
       "kind": 2,
@@ -242,6 +268,12 @@
       "weapons": [
         "smg",
         "pistol"
+      ]
+    },
+    {
+      "heroId": "skulk",
+      "weapons": [
+        "scrap_rifle"
       ]
     },
     {

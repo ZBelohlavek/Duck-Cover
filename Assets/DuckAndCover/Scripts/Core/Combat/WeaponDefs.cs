@@ -240,7 +240,7 @@ namespace DuckAndCover.Core
 
     /// <summary>
     /// The weapons and the starter heroes' loadouts (WP11): a rifle, an SMG, a shotgun, a pistol, a
-    /// grenade launcher (no hero carries it yet), the Mender's sidearm and the war chief's greataxe (a melee weapon) (it heals only with the healing rounds his Mending Rounds load). Loadouts are keyed by
+    /// grenade launcher (no hero carries it yet), Skulk's scrap rifle (his only gun), the war chief's greataxe (a melee weapon) and the Mender's sidearm (it heals only with the healing rounds his Mending Rounds load). Loadouts are keyed by
     /// hero id; heroId "" is the default. Data/Weapons/starter_weapons.json is the same table as data; a
     /// test keeps them equal.
     /// </summary>
@@ -261,6 +261,8 @@ namespace DuckAndCover.Core
                 new WeaponDef { id = "launcher", displayName = "Grenade launcher", kind = WeaponKind.Projectile, automatic = false, fireInterval = 0.75f, magazine = 4, reloadSeconds = 2.4f,
                     damage = 45f, headMultiplier = 1f, legsMultiplier = 1f, projectileSpeed = 32f, projectileGravity = 9f,
                     splashRadius = 3.5f, splashDamage = 70f, splashMinShare = 0.3f },
+                new WeaponDef { id = "scrap_rifle", displayName = "Scrap Rifle", automatic = true, fireInterval = 0.15f, magazine = 20, reloadSeconds = 1.9f,
+                    damage = 22f, headMultiplier = 1.6f, legsMultiplier = 0.85f, range = 130f, falloffStart = 25f, falloffEnd = 55f, falloffMinShare = 0.55f },
                 new WeaponDef { id = "greataxe", displayName = "Greataxe", kind = WeaponKind.Melee, automatic = true, fireInterval = 0.75f, magazine = 1, reloadSeconds = 0f,
                     damage = 60f, headMultiplier = 1f, legsMultiplier = 1f, range = 3.2f, arcDegrees = 100f },
                 new WeaponDef { id = "mender_sidearm", displayName = "Mending sidearm", automatic = true, fireInterval = 0.16f, magazine = 18, reloadSeconds = 1.4f,
@@ -276,6 +278,7 @@ namespace DuckAndCover.Core
                 new WeaponLoadout { heroId = "lancer", weapons = new[] { "rifle", "pistol" } },
                 new WeaponLoadout { heroId = "mender", weapons = new[] { "mender_sidearm" } },
                 new WeaponLoadout { heroId = "rigger", weapons = new[] { "smg", "pistol" } },
+                new WeaponLoadout { heroId = "skulk", weapons = new[] { "scrap_rifle" } },
                 new WeaponLoadout { heroId = "warchief", weapons = new[] { "greataxe" } },
                 new WeaponLoadout { heroId = "bolete", weapons = new[] { "spore_bombs" } },
             },

@@ -65,25 +65,101 @@ namespace DuckAndCover.Core
         /// </summary>
         public bool breaksControl;
 
+        /// <summary>
+        /// Rewards when the hero lands a killing blow (<see cref="KillRewardDef"/>): effects on themselves and
+        /// notches on this ability. Read on the hero's slot abilities and their passive.
+        /// </summary>
+        public KillRewardDef[] onKill = new KillRewardDef[0];
+        /// <summary>
+        /// Damage each notch adds to this ability's damage effects (untagged ones). Notches come from
+        /// <see cref="onKill"/> rewards and stay for the whole match (<see cref="AbilitySlotState.notches"/>).
+        /// </summary>
+        public float notchDamage;
+        /// <summary>Most notches the ability holds. 0 = it takes none.</summary>
+        public int maxNotches;
+
         public AbilityDef Clone()
         {
             var c = (AbilityDef)MemberwiseClone();
             c.targeting = (targeting ?? new TargetingDef()).Clone();
             c.effects = EffectDef.CloneAll(effects);
             c.stats = stats == null ? new StatModifier[0] : Array.ConvertAll(stats, s => s?.Clone());
+            c.onKill = onKill == null ? new KillRewardDef[0] : Array.ConvertAll(onKill, k => k?.Clone());
             return c;
         }
+    }
+
+    /// <summary>
+    /// A reward for a killing blow by the hero who has the ability (or passive) it sits on: notches on
+    /// that ability and effects on the killer (a heal, a status). Which kills count is
+    /// <see cref="victims"/> and <see cref="scope"/>.
+    /// </summary>
+    [Serializable]
+    public class KillRewardDef
+    {
+        /// <summary>A name for talents to change it by ("kill.NAME.notches"). Optional.</summary>
+        public string name = "";
+        /// <summary>
+        /// Who counts, one or more of <see cref="KillVictims"/> joined by commas: "hero", "minion" (a team's
+        /// lane unit, not a Bastion) or "camp" (a neutral camp creature).
+        /// </summary>
+        public string victims = "";
+        /// <summary>Which kills count, one of <see cref="KillScopes"/>: by this ability, by anything else the hero deals, or either.</summary>
+        public string scope = KillScopes.Any;
+        /// <summary>Notches added to this ability (up to its maxNotches).</summary>
+        public int notches;
+        /// <summary>Effects on the killer (always on themselves, whatever their affects says).</summary>
+        public EffectDef[] effects = new EffectDef[0];
+        /// <summary>When set, the reward is off until a talent enables this tag (AbilityParamChange param "enable").</summary>
+        public string tag = "";
+
+        public bool Counts(string victim)
+        {
+            if (string.IsNullOrEmpty(victims) || string.IsNullOrEmpty(victim)) return false;
+            foreach (var v in victims.Split(',')) if (v.Trim() == victim) return true;
+            return false;
+        }
+
+        public KillRewardDef Clone()
+        {
+            var c = (KillRewardDef)MemberwiseClone();
+            c.effects = EffectDef.CloneAll(effects);
+            return c;
+        }
+    }
+
+    /// <summary>Who a <see cref="KillRewardDef"/> can count.</summary>
+    public static class KillVictims
+    {
+        public const string Hero = "hero";
+        /// <summary>A team's lane unit that moves (a minion or Juggernaut), not a Bastion.</summary>
+        public const string Minion = "minion";
+        /// <summary>A neutral camp creature.</summary>
+        public const string Camp = "camp";
+        public static bool IsKnown(string s) => s == Hero || s == Minion || s == Camp;
+    }
+
+    /// <summary>Which killing blows a <see cref="KillRewardDef"/> counts.</summary>
+    public static class KillScopes
+    {
+        /// <summary>Anything the hero deals: weapons, abilities, objects.</summary>
+        public const string Any = "any";
+        /// <summary>Only the ability the reward sits on.</summary>
+        public const string Ability = "ability";
+        /// <summary>Anything but the ability the reward sits on.</summary>
+        public const string Other = "other";
+        public static bool IsKnown(string s) => s == Any || s == Ability || s == Other;
     }
 
     /// <summary>Where an ability looks for targets.</summary>
     [Serializable]
     public class TargetingDef
     {
-        /// <summary>One of <see cref="Shapes"/>: "self", "ray" or "sphere".</summary>
+        /// <summary>One of <see cref="Shapes"/>: "self", "ray", "sphere" or "arc".</summary>
         public string shape = Shapes.Self;
         /// <summary>For spheres, one of <see cref="Origins"/>: around the caster or where the aim lands.</summary>
         public string origin = Origins.Caster;
-        /// <summary>Ray length, or how far away an aimed sphere can land (metres).</summary>
+        /// <summary>Ray length, how far away an aimed sphere can land, or an arc's reach (metres).</summary>
         public float range;
         /// <summary>Sphere radius (metres), scaled by the caster's abilityRadius stat.</summary>
         public float radius;
@@ -92,7 +168,7 @@ namespace DuckAndCover.Core
         /// around the first). A target caught by several takes the effects several times.
         /// </summary>
         public int count = 1;
-        /// <summary>Width of a ray fan in degrees (left to right).</summary>
+        /// <summary>Width of a ray fan, or of an arc, in degrees (left to right).</summary>
         public float spreadDegrees;
         /// <summary>Who counts as a target, one of <see cref="Affects"/>.</summary>
         public string affects = Affects.Enemies;
@@ -338,7 +414,12 @@ namespace DuckAndCover.Core
         public const string Self = "self";
         public const string Ray = "ray";
         public const string Sphere = "sphere";
-        public static bool IsKnown(string s) => s == Self || s == Ray || s == Sphere;
+        /// <summary>
+        /// A melee sweep: everyone in front of the caster within range (plus their body's width) and inside
+        /// spreadDegrees of the aim, seen level, in sight. Each target is caught once, nearest first.
+        /// </summary>
+        public const string Arc = "arc";
+        public static bool IsKnown(string s) => s == Self || s == Ray || s == Sphere || s == Arc;
     }
 
     public static class Origins

@@ -177,4 +177,17 @@ namespace DuckAndCover.Core
         public int playerId;
         public string abilityId;
     }
+
+    /// <summary>A killing blow paid a kill reward (<see cref="KillRewardDef"/>) on one of the hero's abilities or their passive.</summary>
+    public sealed class KillRewardEvent : GameEvent
+    {
+        public int playerId;
+        /// <summary>The ability or passive whose reward it was.</summary>
+        public string abilityId;
+        public int victimId;
+        /// <summary>One of <see cref="KillVictims"/>.</summary>
+        public string victim;
+        /// <summary>Notches the ability holds now (0 when the reward gives none).</summary>
+        public int notches;
+    }
 }
