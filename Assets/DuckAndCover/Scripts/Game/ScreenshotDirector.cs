@@ -56,6 +56,7 @@ namespace DuckAndCover.Game
             // from the player's eyes, then every clip on a lineup away from the map (studio floor).
             new Shot("12b-fp-rifle", () => { HideHud = true; }, 0.5f),
             new Shot("12c-fp-fire", FirstPersonBurst, 0.12f),
+            new Shot("12c2-fp-sight", FirstPersonSight, 0.6f),
             new Shot("12d-lancer-enemy", DummyBecomesLancer, 1.2f),
             new Shot("12e-lancer-moves", () => LancerLineup(0), 0.6f),
             new Shot("12f-lancer-actions", () => LancerLineup(1), 0.6f),
@@ -529,6 +530,22 @@ namespace DuckAndCover.Game
             view.StartCoroutine(Burst(view.Local, 6, () => { }));
             // The flash lasts a few hundredths of a second in play; hold it for the picture.
             view.StartCoroutine(HoldFlash(view.Local));
+        }
+
+        /// <summary>Right mouse held: the sight up at the eye, zoomed, the dot bright; let go again after the picture.</summary>
+        static void FirstPersonSight()
+        {
+            HideHud = true;
+            var view = CombatView.Instance;
+            if (view == null || view.Local == null) return;
+            view.Local.ForceAim = true;
+            view.StartCoroutine(LowerSight(view.Local));
+        }
+
+        static IEnumerator LowerSight(LocalPlayer local)
+        {
+            yield return new WaitForSecondsRealtime(0.9f);
+            local.ForceAim = false;
         }
 
         static IEnumerator HoldFlash(LocalPlayer local)

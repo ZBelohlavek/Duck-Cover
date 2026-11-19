@@ -35,6 +35,13 @@ namespace DuckAndCover.Game
         public bool CarryingFlag => client != null && client.Snapshot != null && client.Snapshot.flag != null && client.Snapshot.flag.IsCarrier(client.PlayerId);
         public bool Crouched { get; private set; }
         public bool Sprinting { get; private set; }
+        /// <summary>Right mouse held: looking through the weapon's sight, for heroes whose model has one (a zoom; it stops sprinting).</summary>
+        public bool AimHeld { get; private set; }
+        /// <summary>Captures set this to hold the sight up without a mouse.</summary>
+        public bool ForceAim;
+        /// <summary>The sight is up in front of the eye (the HUD drops its crosshair for the sight's dot).</summary>
+        public bool LookingThroughSight => viewModel != null && viewModel.HasSight && viewModel.AimBlend > 0.6f;
+        float baseFov;
         public bool Vaulting => vaultTime >= 0f;
         public int Ammo { get; private set; }
         public int Magazine { get; private set; }
@@ -233,6 +240,7 @@ namespace DuckAndCover.Game
             bool held = unit != null && (unit.HasStatus(AbilityLibrary.StunStatus) || unit.HasStatus(AbilityLibrary.RootStatus));
             float speedScale = held ? 0f : unit == null ? 1f : Mathf.Max(rules.minMoveSpeed, unit.stats.Get(StatIds.MoveSpeed));
 
+            AimHeld = ForceAim || (focused && !scripted && mouse != null && mouse.rightButton.isPressed);
             Look(mouse, focused);
             Move(keyboard, focused, speedScale);
             PlaceCamera();
@@ -254,6 +262,7 @@ namespace DuckAndCover.Game
             viewModel.sprinting = Sprinting;
             viewModel.crouched = Crouched;
             viewModel.reloading = Reloading;
+            viewModel.aiming = AimHeld;
             viewModel.yaw = yaw;
             viewModel.pitch = pitch;
         }
@@ -385,8 +394,10 @@ namespace DuckAndCover.Game
         {
             if (!focused || mouse == null || scripted) return;
             Vector2 delta = mouse.delta.ReadValue();
-            yaw = Mathf.Repeat(yaw + delta.x * mouseSensitivity, 360f);
-            pitch = Mathf.Clamp(pitch - delta.y * mouseSensitivity, -89f, 89f);
+            // Slower look while zoomed, in step with the narrower view.
+            float sensitivity = mouseSensitivity * (viewModel == null ? 1f : Mathf.Lerp(1f, FirstPersonRig.AimZoom, viewModel.AimBlend));
+            yaw = Mathf.Repeat(yaw + delta.x * sensitivity, 360f);
+            pitch = Mathf.Clamp(pitch - delta.y * sensitivity, -89f, 89f);
         }
 
         void Move(Keyboard keyboard, bool focused, float speedScale)
@@ -397,7 +408,7 @@ namespace DuckAndCover.Game
             {
                 input.forward = (keyboard.wKey.isPressed ? 1f : 0f) - (keyboard.sKey.isPressed ? 1f : 0f);
                 input.right = (keyboard.dKey.isPressed ? 1f : 0f) - (keyboard.aKey.isPressed ? 1f : 0f);
-                input.sprint = keyboard.leftShiftKey.isPressed && !CarryingFlag;
+                input.sprint = keyboard.leftShiftKey.isPressed && !CarryingFlag && !(AimHeld && viewModel != null && viewModel.HasSight);
                 input.crouch = keyboard.leftCtrlKey.isPressed || keyboard.cKey.isPressed;
                 input.jump = keyboard.spaceKey.wasPressedThisFrame;
             }
@@ -539,6 +550,8 @@ namespace DuckAndCover.Game
             if (viewModel == null) viewModel = FirstPersonRig.Create(cam.transform, heroId);
             if (viewModel.gameObject.activeSelf == freeCamera) viewModel.gameObject.SetActive(!freeCamera);
             if (freeCamera) return;
+            if (baseFov <= 0f) baseFov = cam.fieldOfView;
+            cam.fieldOfView = Mathf.Lerp(baseFov, baseFov * FirstPersonRig.AimZoom, viewModel.AimBlend);
             cam.transform.SetPositionAndRotation(transform.position + Vector3.up * eyeHeight, Quaternion.Euler(pitch, yaw, 0f));
         }
 

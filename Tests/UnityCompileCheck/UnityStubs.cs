@@ -294,6 +294,7 @@ namespace UnityEngine
         public static Quaternion operator *(Quaternion lhs, Quaternion rhs) => lhs;
         public static Quaternion Inverse(Quaternion rotation) => rotation;
         public static Quaternion AngleAxis(float angle, Vector3 axis) => identity;
+        public static Quaternion Slerp(Quaternion a, Quaternion b, float t) => a;
     }
 
     public struct Color

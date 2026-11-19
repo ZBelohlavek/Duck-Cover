@@ -18,12 +18,28 @@ namespace DuckAndCover.Game
         public bool crouched;
         public bool reloading;
         public float yaw, pitch;
+        /// <summary>Right mouse held: the sight comes up to the eye.</summary>
+        public bool aiming;
+
+        /// <summary>0 at the hip, 1 looking through the sight; the camera zooms with it.</summary>
+        public float AimBlend { get; private set; }
+        /// <summary>How far the camera's field of view narrows when looking through the sight.</summary>
+        public const float AimZoom = 0.7f;
+        /// <summary>The eye's distance behind the back of the sight when aiming (metres, camera space).</summary>
+        const float EyeRelief = 0.11f;
 
         /// <summary>Where shots leave on screen.</summary>
         public Transform Muzzle { get; private set; }
         public string HeroId { get; private set; } = "";
 
         Transform model;
+        // Where the model goes when aiming: the sight's line turned onto the camera's and its back ring just ahead of the eye.
+        bool hasSight;
+        /// <summary>The model has a sight to bring up to the eye (otherwise aiming only zooms).</summary>
+        public bool HasSight => hasSight;
+        Vector3 aimPosition;
+        Quaternion aimRotation = Quaternion.identity;
+        Renderer dot;
         Transform flash;
         float flashLeft;
         float kick;
@@ -51,14 +67,17 @@ namespace DuckAndCover.Game
                 arms.transform.localScale = Vector3.one * art.def.scale;
                 rig.model = arms.transform;
                 rig.Muzzle = HeroArt.Find(arms.transform, "Muzzle");
-                var dot = HeroArt.Find(arms.transform, "RedDot");
-                if (dot != null) SightDot(dot);
                 // Checked in the camera's space: the file's own nodes may carry Blender's axis turn.
                 if (rig.Muzzle != null && root.transform.InverseTransformPoint(rig.Muzzle.position).z < 0f)
                 {
                     Debug.LogWarning("Duck and Cover: " + heroId + "'s first-person model faced backwards after import; turned it round.");
                     arms.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
                 }
+                var marker = HeroArt.Find(arms.transform, "RedDot");
+                if (marker != null) rig.dot = SightDot(marker);
+                var rear = HeroArt.Find(arms.transform, "SightRear");
+                var front = HeroArt.Find(arms.transform, "SightFront");
+                if (rear != null && front != null) rig.FindAim(rear, front);
             }
             else rig.model = BlockGun(root.transform);
             if (rig.Muzzle == null)
@@ -72,18 +91,24 @@ namespace DuckAndCover.Game
             return rig;
         }
 
-        static Material dotMaterial;
+        static Material dotBright, dotDim;
 
-        /// <summary>A lit dot in the sight, so it reads at a glance in any light (baked paint alone shades it out).</summary>
-        static void SightDot(Transform marker)
+        static Material DotMaterial(Color c, bool glow)
         {
-            if (dotMaterial == null)
-            {
-                var red = new Texture2D(1, 1, TextureFormat.RGBA32, false) { name = "Sight dot" };
-                red.SetPixel(0, 0, new Color(1f, 0.08f, 0.05f));
-                red.Apply();
-                dotMaterial = Paint.Textured(red, true);
-            }
+            var t = new Texture2D(1, 1, TextureFormat.RGBA32, false) { name = "Sight dot" };
+            t.SetPixel(0, 0, c);
+            t.Apply();
+            return Paint.Textured(t, glow);
+        }
+
+        /// <summary>
+        /// The dot on the sight's front glass: faint from the hip (it is projected for the eye behind the sight),
+        /// bright once the sight is up (baked paint alone shades it out inside the tube).
+        /// </summary>
+        static Renderer SightDot(Transform marker)
+        {
+            if (dotBright == null) dotBright = DotMaterial(new Color(1f, 0.08f, 0.05f), true);
+            if (dotDim == null) dotDim = DotMaterial(new Color(0.32f, 0.05f, 0.04f), false);
             var dot = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             dot.name = "Dot";
             Destroy(dot.GetComponent<Collider>());
@@ -91,8 +116,20 @@ namespace DuckAndCover.Game
             // The marker sits in the model, which is scaled by the hero's scale: 9 mm across in the model's metres.
             dot.transform.localScale = Vector3.one * 0.009f;
             var r = dot.GetComponent<Renderer>();
-            r.sharedMaterial = dotMaterial;
+            r.sharedMaterial = dotDim;
             r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return r;
+        }
+
+        /// <summary>The pose that puts the sight in front of the eye, from the model's two sight markers.</summary>
+        void FindAim(Transform rear, Transform front)
+        {
+            Vector3 back = transform.InverseTransformPoint(rear.position);
+            Vector3 line = transform.InverseTransformPoint(front.position) - back;
+            if (line.sqrMagnitude < 1e-6f) return;
+            aimRotation = Quaternion.FromToRotation(line.normalized, Vector3.forward);
+            aimPosition = new Vector3(0f, 0f, EyeRelief) - aimRotation * back;
+            hasSight = true;
         }
 
         /// <summary>The stand-in until a hero has arms: a block rifle low on the right.</summary>
@@ -123,6 +160,9 @@ namespace DuckAndCover.Game
             moveBlend = Mathf.MoveTowards(moveBlend, grounded ? Mathf.Clamp01(speed / 5f) : 0f, dt * 4f);
             sprintBlend = Mathf.MoveTowards(sprintBlend, sprinting && !reloading ? 1f : 0f, dt * 5f);
             reloadBlend = Mathf.MoveTowards(reloadBlend, reloading ? 1f : 0f, dt * 6f);
+            AimBlend = Mathf.MoveTowards(AimBlend, hasSight && aiming && !sprinting && !reloading ? 1f : 0f, dt * 6f);
+            float aim = Mathf.SmoothStep(0f, 1f, AimBlend);
+            float steady = 1f - 0.8f * aim;   // a steadier hold through the sight
             bobPhase += dt * Mathf.Lerp(6f, 13f, Mathf.Clamp01(speed / 7.6f)) * (crouched ? 0.7f : 1f);
 
             // Lag a touch behind the look, then settle.
@@ -136,13 +176,23 @@ namespace DuckAndCover.Game
 
             float bobX = Mathf.Sin(bobPhase) * 0.012f * moveBlend;
             float bobY = -Mathf.Abs(Mathf.Cos(bobPhase)) * 0.014f * moveBlend;
-            Vector3 position = new Vector3(bobX + sway.x, bobY + sway.y, 0f)
+            Vector3 position = new Vector3(bobX + sway.x, bobY + sway.y, 0f) * steady
                 + new Vector3(0.02f, -0.07f, -0.04f) * sprintBlend
                 + new Vector3(0f, -0.09f, -0.02f) * reloadBlend
                 + new Vector3(0f, 0.004f, -0.045f) * kick;
             Quaternion rotation = Quaternion.Euler(-4f * kick + 18f * sprintBlend + 26f * reloadBlend, -14f * sprintBlend, 8f * sprintBlend + 18f * reloadBlend);
+            if (hasSight)
+            {
+                position += aimPosition * aim;
+                rotation = Quaternion.Slerp(Quaternion.identity, aimRotation, aim) * rotation;
+            }
             transform.localPosition = position;
             transform.localRotation = rotation;
+            if (dot != null)
+            {
+                var want = aim > 0.5f ? dotBright : dotDim;
+                if (dot.sharedMaterial != want) dot.sharedMaterial = want;
+            }
             kick = Mathf.MoveTowards(kick, 0f, dt * 12f);
 
             flashLeft -= dt;
