@@ -204,6 +204,8 @@ namespace DuckAndCover.Core
         public bool IsSilenced(int playerId) => HasFlag(playerId, s => s.stun || s.silence);
         public bool IsRooted(int playerId) => HasFlag(playerId, s => s.stun || s.root);
         public bool IsRevealed(int playerId) => HasFlag(playerId, s => s.reveal);
+        /// <summary>Hidden by a stealth status, and not revealed.</summary>
+        public bool IsStealthed(int playerId) => Combat.IsHidden(playerId);
 
         /// <summary>The speed multiplier the movement code should use: 0 while stunned or rooted.</summary>
         public float MoveSpeed(int playerId) => IsRooted(playerId) ? 0f : Combat.MoveSpeed(playerId);
@@ -296,6 +298,10 @@ namespace DuckAndCover.Core
                 if (!script.CanActivate(Context(unit, use.slot, ability, null))) return CommandResult.Reject("can't be used right now");
             }
 
+            // Anything that reaches past the caster gives a cloak away (and opens the ambush window first,
+            // so the ability that breaks it already counts as an ambush).
+            if (!SelfOnly(def)) BreakStealth(unit.playerId, "attacked");
+
             // Spend.
             if (def.ultimate) unit.ultimateCharge = Math.Max(0f, unit.ultimateCharge - def.ultimateCost);
             else
@@ -366,6 +372,22 @@ namespace DuckAndCover.Core
             }
         }
 
+        /// <summary>
+        /// An ability that only touches its caster (a stim, a cloak): it keeps stealth up. Anything aimed,
+        /// thrown, placed or shared with teammates does not.
+        /// </summary>
+        static bool SelfOnly(AbilityDef def)
+        {
+            if (def.targeting == null || def.targeting.shape != Shapes.Self || def.targeting.affects != Affects.Self) return false;
+            foreach (var e in def.effects)
+            {
+                if (e == null) continue;
+                if (e.kind == EffectKinds.Spawn) return false;
+                if (!string.IsNullOrEmpty(e.affects) && e.affects != Affects.Self) return false;
+            }
+            return true;
+        }
+
         static bool LastsForAbility(string kind) =>
             kind == EffectKinds.Status || kind == EffectKinds.Slow || kind == EffectKinds.Shield;
 
@@ -395,6 +417,7 @@ namespace DuckAndCover.Core
                 TickSlots(unit, dt);
                 if (!Combat.IsAlive(unit.playerId)) continue;
                 TickUltimate(unit, dt);
+                if (unit.ambushLeft > 0f) unit.ambushLeft = Math.Max(0f, unit.ambushLeft - dt);
                 TickStatuses(unit, dt);
             }
             TickPending(dt);
@@ -465,6 +488,7 @@ namespace DuckAndCover.Core
                     var unit = Combat.Unit(spawned.playerId);
                     if (unit == null) return;
                     ClearStatuses(unit, "respawned");
+                    unit.ambushLeft = 0f;
                     Combat.OnSpawned(spawned.playerId);
                     if (Rules.resetCooldownsOnRespawn)
                         foreach (var s in unit.slots) { s.charges = Resolved(unit, s.abilityId).def.charges; s.rechargeLeft = 0f; s.activeLeft = 0f; s.reserve = 1f; s.downFor = 0f; }
@@ -477,6 +501,7 @@ namespace DuckAndCover.Core
                     CancelCasts(unit, "eliminated");
                     for (int i = 0; i < unit.slots.Count; i++) Lower(unit, i, "lowered");
                     ClearStatuses(unit, "eliminated");
+                    unit.ambushLeft = 0f;
                     Combat.OnEliminated(down.playerId);
                     foreach (var s in unit.slots) s.activeLeft = 0f;
                     if (down.disconnected) RemoveObjectsOf(down.playerId, "ownerLeft");

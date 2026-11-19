@@ -48,6 +48,20 @@ namespace DuckAndCover.Core
         public float rechargeLeft;
     }
 
+    /// <summary>A hero went into stealth or came out of it (a stealth status began or ended, or a reveal covered it).</summary>
+    public sealed class StealthChangedEvent : GameEvent
+    {
+        public int playerId;
+        public bool stealthed;
+    }
+
+    /// <summary>A hero attacked out of stealth: for <see cref="seconds"/> their "ambush" upgrades count.</summary>
+    public sealed class AmbushEvent : GameEvent
+    {
+        public int playerId;
+        public float seconds;
+    }
+
     /// <summary>The server refused an ability request. Sent so the caster's client can undo its prediction.</summary>
     public sealed class AbilityRejectedEvent : GameEvent
     {

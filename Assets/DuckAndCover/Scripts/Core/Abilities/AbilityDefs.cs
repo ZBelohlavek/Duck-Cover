@@ -161,6 +161,13 @@ namespace DuckAndCover.Core
         public bool root;
         /// <summary>Visible to the other team through walls (the Game layer draws it).</summary>
         public bool reveal;
+        /// <summary>
+        /// Hidden from the other team (a cloak): enemy turrets, minions and Bastions don't pick the bearer,
+        /// and the Game layer doesn't draw them beyond Ruleset.stealthShimmerRange. It ends early when the
+        /// bearer fires or uses an ability that reaches past themselves, which opens their ambush window
+        /// (StatConditions.Ambush). A reveal status on the bearer wins over it.
+        /// </summary>
+        public bool stealth;
         /// <summary>What a second application does, one of <see cref="Stacking"/>.</summary>
         public string stacking = Stacking.Refresh;
         public int maxStacks = 1;
