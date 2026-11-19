@@ -51,6 +51,8 @@ namespace DuckAndCover.Game
                 arms.transform.localScale = Vector3.one * art.def.scale;
                 rig.model = arms.transform;
                 rig.Muzzle = HeroArt.Find(arms.transform, "Muzzle");
+                var dot = HeroArt.Find(arms.transform, "RedDot");
+                if (dot != null) SightDot(dot);
                 // Checked in the camera's space: the file's own nodes may carry Blender's axis turn.
                 if (rig.Muzzle != null && root.transform.InverseTransformPoint(rig.Muzzle.position).z < 0f)
                 {
@@ -68,6 +70,29 @@ namespace DuckAndCover.Game
             }
             rig.flash = MuzzleFlash.Create(rig.Muzzle, 0.12f).transform;
             return rig;
+        }
+
+        static Material dotMaterial;
+
+        /// <summary>A lit dot in the sight, so it reads at a glance in any light (baked paint alone shades it out).</summary>
+        static void SightDot(Transform marker)
+        {
+            if (dotMaterial == null)
+            {
+                var red = new Texture2D(1, 1, TextureFormat.RGBA32, false) { name = "Sight dot" };
+                red.SetPixel(0, 0, new Color(1f, 0.08f, 0.05f));
+                red.Apply();
+                dotMaterial = Paint.Textured(red, true);
+            }
+            var dot = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            dot.name = "Dot";
+            Destroy(dot.GetComponent<Collider>());
+            dot.transform.SetParent(marker, false);
+            // The marker sits in the model, which is scaled by the hero's scale: 9 mm across in the model's metres.
+            dot.transform.localScale = Vector3.one * 0.009f;
+            var r = dot.GetComponent<Renderer>();
+            r.sharedMaterial = dotMaterial;
+            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 
         /// <summary>The stand-in until a hero has arms: a block rifle low on the right.</summary>
