@@ -1,0 +1,440 @@
+{
+    "id": "warchief",
+    "displayName": "Gashrak",
+    "role": "striker",
+    "weaponId": "greataxe",
+    "maxHealth": 275,
+    "abilities": [
+        "warchief_leap",
+        "warchief_axe_throw"
+    ],
+    "ultimateId": "warchief_rage",
+    "passiveId": "",
+    "levels": [
+        {
+            "level": 2,
+            "options": [
+                "warchief_heavy_hands",
+                "warchief_thick_hide"
+            ]
+        },
+        {
+            "level": 4,
+            "options": [
+                "warchief_blood_up",
+                "warchief_heavy_haft"
+            ]
+        },
+        {
+            "level": 6,
+            "options": [
+                "warchief_long_reach",
+                "warchief_warlords_pace"
+            ]
+        },
+        {
+            "level": 8,
+            "options": [
+                "warchief_long_rage",
+                "warchief_second_skin"
+            ]
+        },
+        {
+            "level": 10,
+            "options": [
+                "warchief_battle_hunger",
+                "warchief_hard_to_kill"
+            ]
+        },
+        {
+            "level": 12,
+            "options": [
+                "warchief_crushing_landing",
+                "warchief_ground_shaker"
+            ]
+        },
+        {
+            "level": 14,
+            "options": [
+                "warchief_quick_swings",
+                "warchief_iron_grip"
+            ]
+        },
+        {
+            "level": 16,
+            "options": [
+                "warchief_blood_rage",
+                "warchief_unbroken"
+            ]
+        },
+        {
+            "level": 18,
+            "options": [
+                "warchief_wide_landing",
+                "warchief_twin_axes"
+            ]
+        },
+        {
+            "level": 20,
+            "options": [
+                "warchief_berserker",
+                "warchief_warlord"
+            ]
+        }
+    ],
+    "upgrades": [
+        {
+            "id": "warchief_heavy_hands",
+            "displayName": "Heavy Hands",
+            "description": "Your axe deals 6% more damage.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "weaponDamage",
+                    "op": "percent",
+                    "value": 0.06,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_thick_hide",
+            "displayName": "Thick Hide",
+            "description": "+25 max health.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "maxHealth",
+                    "op": "add",
+                    "value": 25,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_blood_up",
+            "displayName": "Blood Up",
+            "description": "Rage gives 30% more damage instead of 20%.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "warchief_rage",
+                    "param": "effect.warchief_rage.amount",
+                    "op": "add",
+                    "value": 0.1,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_heavy_haft",
+            "displayName": "Heavy Haft",
+            "description": "Axe Throw stuns for 0.4 seconds longer.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "warchief_axe_throw",
+                    "param": "effect.stun.duration",
+                    "op": "add",
+                    "value": 0.4,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_long_reach",
+            "displayName": "Long Reach",
+            "description": "Your swings reach 15% further (about half a metre).",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "weaponRange",
+                    "op": "percent",
+                    "value": 0.15,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_warlords_pace",
+            "displayName": "Warlord's Pace",
+            "description": "Abilities recover 10% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "cooldownRate",
+                    "op": "percent",
+                    "value": 0.1,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_long_rage",
+            "displayName": "Long Rage",
+            "description": "Rage lasts 2 seconds longer.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "warchief_rage",
+                    "param": "duration",
+                    "op": "add",
+                    "value": 2,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_second_skin",
+            "displayName": "Second Skin",
+            "description": "Rage regenerates 50% more health.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "warchief_rage",
+                    "param": "effect.warchief_rage_regen.amount",
+                    "op": "percent",
+                    "value": 0.5,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_battle_hunger",
+            "displayName": "Battle Hunger",
+            "description": "Passive. Heal for 8% of the damage your axe deals.",
+            "kind": "passive",
+            "stats": [
+                {
+                    "stat": "lifeSteal",
+                    "op": "add",
+                    "value": 0.08,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_hard_to_kill",
+            "displayName": "Hard to Kill",
+            "description": "Passive. Take 10% less damage while at half health or less.",
+            "kind": "passive",
+            "stats": [
+                {
+                    "stat": "damageTaken",
+                    "op": "percent",
+                    "value": -0.1,
+                    "when": "lowHealth"
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_crushing_landing",
+            "displayName": "Crushing Landing",
+            "description": "War Leap's landing deals 40 more damage.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "warchief_leap",
+                    "param": "effect.damage.amount",
+                    "op": "add",
+                    "value": 40,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_ground_shaker",
+            "displayName": "Ground Shaker",
+            "description": "War Leap's knock-up stuns for 0.4 seconds longer.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "warchief_leap",
+                    "param": "effect.stun.duration",
+                    "op": "add",
+                    "value": 0.4,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_quick_swings",
+            "displayName": "Quick Swings",
+            "description": "You swing 10% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "fireRate",
+                    "op": "percent",
+                    "value": 0.1,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_iron_grip",
+            "displayName": "Iron Grip",
+            "description": "Your stuns, knock-ups and Rage last 15% longer.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "statusDuration",
+                    "op": "percent",
+                    "value": 0.15,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_blood_rage",
+            "displayName": "Blood Rage",
+            "description": "While Rage is up, your axe also heals you for 15% of the damage it deals.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "warchief_rage",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "bloodRage"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_unbroken",
+            "displayName": "Unbroken",
+            "description": "Rage can be used while stunned or silenced, and clears every harmful effect on you when it starts.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "warchief_rage",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "unbroken"
+                },
+                {
+                    "ability": "warchief_rage",
+                    "param": "breaksControl",
+                    "op": "set",
+                    "value": 1,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_wide_landing",
+            "displayName": "Wide Landing",
+            "description": "War Leap's landing reaches 1.5 m further.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "warchief_leap",
+                    "param": "radius",
+                    "op": "add",
+                    "value": 1.5,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_twin_axes",
+            "displayName": "Twin Axes",
+            "description": "Axe Throw holds two charges.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "warchief_axe_throw",
+                    "param": "charges",
+                    "op": "add",
+                    "value": 1,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_berserker",
+            "displayName": "Berserker",
+            "description": "Rage gives 20% more damage on top, and you swing 20% faster while it is up.",
+            "kind": "capstone",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "warchief_rage",
+                    "param": "effect.warchief_rage.amount",
+                    "op": "add",
+                    "value": 0.2,
+                    "text": ""
+                },
+                {
+                    "ability": "warchief_rage",
+                    "param": "enable",
+                    "op": "set",
+                    "value": 0,
+                    "text": "frenzy"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "warchief_warlord",
+            "displayName": "Warlord",
+            "description": "Your stuns, knock-ups and Rage last 25% longer, and Rage lasts 2 seconds longer.",
+            "kind": "capstone",
+            "stats": [
+                {
+                    "stat": "statusDuration",
+                    "op": "percent",
+                    "value": 0.25,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [
+                {
+                    "ability": "warchief_rage",
+                    "param": "duration",
+                    "op": "add",
+                    "value": 2,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        }
+    ]
+}
