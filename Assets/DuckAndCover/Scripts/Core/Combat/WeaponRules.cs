@@ -36,6 +36,8 @@ namespace DuckAndCover.Core
         /// Set by <see cref="CombatServer"/> to the ability rules; null = shots don't hurt objects.
         /// </summary>
         public Func<int, float, int, float> DamageObject;
+        /// <summary>Why a player may not fire right now beyond the weapon's own rules (a shield held up), or null. Set by CombatServer.</summary>
+        public Func<int, string> FireCheck;
         Ruleset Rules => match.Rules;
         MatchState State => match.State;
 
@@ -126,7 +128,7 @@ namespace DuckAndCover.Core
 
         public CommandResult Fire(FireCommand cmd)
         {
-            string why = CanAct(cmd.playerId);
+            string why = CanAct(cmd.playerId) ?? (FireCheck == null ? null : FireCheck(cmd.playerId));
             if (why != null) return CommandResult.Reject(why);
             var s = Weapons(cmd.playerId);
             var w = Current(s);

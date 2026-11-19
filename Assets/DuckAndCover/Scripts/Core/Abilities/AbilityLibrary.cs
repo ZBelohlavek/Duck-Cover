@@ -91,7 +91,7 @@ namespace DuckAndCover.Core
                     ValidateStats(a.stats, w, errors);
                     continue;
                 }
-                if (a.stats != null && a.stats.Length > 0) errors.Add(w + "stats only work on a passive");
+                if (!a.held && a.stats != null && a.stats.Length > 0) errors.Add(w + "stats only work on a passive or a held ability");
                 if (a.cooldown < 0f) errors.Add(w + "cooldown can't be negative");
                 if (!a.ultimate && a.cooldown <= 0f) errors.Add(w + "needs a cooldown (or ultimate: true)");
                 if (a.charges < 1) errors.Add(w + "charges must be at least 1");
@@ -111,6 +111,15 @@ namespace DuckAndCover.Core
                 if (hasScript && knownScripts != null && !knownScripts.Contains(a.scriptId)) errors.Add(w + "no script registered as '" + a.scriptId + "'");
                 if (!hasScript && (a.effects == null || a.effects.Length == 0)) errors.Add(w + "has no effects and no script");
                 ValidateEffects(a.effects, w, errors, 0);
+                if (a.held)
+                {
+                    if (a.ultimate || a.passive) errors.Add(w + "a held ability can't be an ultimate or a passive");
+                    var held = HeldObject(a);
+                    if (held == null) errors.Add(w + "a held ability needs to spawn an object");
+                    else if (held.health <= 0f) errors.Add(w + "a held ability's object needs health");
+                    if (a.stats != null && a.stats.Length > 0) ValidateStats(a.stats, w, errors);
+                }
+                else if (a.blocksWeapon) errors.Add(w + "blocksWeapon only works on a held ability");
             }
             foreach (var s in statuses.Values)
             {
@@ -134,6 +143,9 @@ namespace DuckAndCover.Core
                 if (o.trigger != Triggers.None && (o.effects == null || o.effects.Length == 0)) errors.Add(w + "a pulse or trigger needs effects");
                 if (o.maxPerOwner < 0 || o.maxTargets < 0) errors.Add(w + "maxPerOwner and maxTargets can't be negative");
                 if (o.lifetime == 0f && o.health == 0f && o.maxPerOwner == 0) errors.Add(w + "would last forever: give it a lifetime, health or maxPerOwner");
+                if (o.hitRadius < 0f || o.expandFrom < 0f || o.expandFrom > 1f || o.expandTime < 0f || o.reflect < 0f || o.regen < 0f || o.regenDelay < 0f)
+                    errors.Add(w + "hitRadius, expandTime, reflect, regen and regenDelay can't be negative, and expandFrom is a share (0 to 1)");
+                if (o.hitRadius > 0f && o.health <= 0f) errors.Add(w + "a ball shots can hit needs health");
                 ValidateEffects(o.effects, w, errors, 1);
             }
             return errors;
@@ -201,5 +213,14 @@ namespace DuckAndCover.Core
             new StatusDef { id = RootStatus, displayName = "Rooted", negative = true, duration = 1.5f, root = true, stacking = Stacking.Strongest },
             new StatusDef { id = SilenceStatus, displayName = "Silenced", negative = true, duration = 2f, silence = true, stacking = Stacking.Strongest },
         };
+
+        /// <summary>The object a held ability puts out: the first object it spawns. Null if none.</summary>
+        public ObjectDef HeldObject(AbilityDef a)
+        {
+            if (a == null || a.effects == null) return null;
+            foreach (var e in a.effects)
+                if (e != null && e.kind == EffectKinds.Spawn) return Object(e.objectId);
+            return null;
+        }
     }
 }

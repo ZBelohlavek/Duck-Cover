@@ -25,6 +25,27 @@ namespace DuckAndCover.Core
         /// <summary>Its numbers as placed, with the owner's talents at that moment applied.</summary>
         public ObjectDef def = new ObjectDef();
         public float radius;
+        /// <summary>Seconds since it was placed.</summary>
+        public float age;
+        /// <summary>
+        /// The player or unit it moves with each tick (<see cref="ObjectDef.followAhead"/> and
+        /// <see cref="ObjectDef.followRise"/> from their feet, facing their way), or -1 to stay put.
+        /// Placing an object with <see cref="ObjectDef.followOwner"/> sets it to the owner; a rule
+        /// can point it at someone else. It stops following (stays put) if they go down.
+        /// </summary>
+        public int followId = -1;
+
+        /// <summary>Its wall width right now: walls that open out (<see cref="ObjectDef.expandTime"/>) grow to full width.</summary>
+        public float Width
+        {
+            get
+            {
+                if (def == null) return 0f;
+                if (def.expandTime <= 0f || age >= def.expandTime) return def.width;
+                float from = Math.Max(0f, Math.Min(1f, def.expandFrom));
+                return def.width * (from + (1f - from) * Math.Max(0f, age) / def.expandTime);
+            }
+        }
 
         public ObjectState Clone()
         {
