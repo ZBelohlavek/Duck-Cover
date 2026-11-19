@@ -3,8 +3,8 @@
     {
       "id": "lancer_slip",
       "displayName": "Slip",
-      "description": "Dash 6 m along your aim.",
-      "cooldown": 6,
+      "description": "Dash 6 m along your aim. Cooldown 13 s.",
+      "cooldown": 13,
       "targeting": {
         "shape": "sphere",
         "origin": "caster",
@@ -42,8 +42,8 @@
     {
       "id": "lancer_mark",
       "displayName": "Tracer Mark",
-      "description": "Fire a tracer round at the enemy you aim at: 25 damage, and for 5 seconds they take 15% more damage and show through walls to your team.",
-      "cooldown": 10,
+      "description": "Fire a tracer round at the enemy you aim at: 35 damage, and for 5 seconds they take 15% more damage and show through walls to your team. Cooldown 14 s.",
+      "cooldown": 14,
       "targeting": {
         "shape": "ray",
         "range": 60,
@@ -52,7 +52,7 @@
       "effects": [
         {
           "kind": "damage",
-          "amount": 25
+          "amount": 35
         },
         {
           "kind": "status",
@@ -82,9 +82,8 @@
     {
       "id": "lancer_firebomb",
       "displayName": "Incendiary Grenade",
-      "description": "Ultimate. Throw a grenade where you aim: 40 damage to enemies within 3 m, and it leaves a 4 m fire for 5 seconds that burns enemies standing in it for 20 damage a second.",
-      "ultimate": true,
-      "ultimateCost": 100,
+      "description": "Throw a grenade where you aim: 25 damage to enemies within 3 m, and it leaves a 4 m fire for 5 seconds that burns enemies standing in it for 12 damage a second. Cooldown 18 s.",
+      "cooldown": 18,
       "targeting": {
         "shape": "sphere",
         "origin": "aimPoint",
@@ -95,7 +94,7 @@
       "effects": [
         {
           "kind": "damage",
-          "amount": 40
+          "amount": 25
         },
         {
           "kind": "spawn",
@@ -132,7 +131,7 @@
       "tickEffects": [
         {
           "kind": "damage",
-          "amount": 5
+          "amount": 2
         }
       ]
     },
@@ -164,7 +163,7 @@
       "effects": [
         {
           "kind": "damage",
-          "amount": 10
+          "amount": 6
         },
         {
           "kind": "status",

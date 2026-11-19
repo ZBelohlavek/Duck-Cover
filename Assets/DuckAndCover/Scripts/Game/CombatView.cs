@@ -32,6 +32,8 @@ namespace DuckAndCover.Game
 
         static readonly Color TracerColor = new Color(1f, 0.92f, 0.55f);
         static readonly Color BlastColor = new Color(1f, 0.55f, 0.15f);
+        /// <summary>Projectiles with no splash (the vampire's Blood Darts): small and blood red.</summary>
+        static readonly Color DartColor = new Color(0.95f, 0.08f, 0.16f);
 
         readonly Dictionary<int, Body> bodies = new Dictionary<int, Body>();
         readonly Dictionary<int, Flying> projectiles = new Dictionary<int, Flying>();
@@ -123,6 +125,9 @@ namespace DuckAndCover.Game
             var snapshot = client.Snapshot;
             var cam = Camera.main;
             float k = Blend;
+            // Bars are green for this player's team and red for the other; with no team yet, team A's view.
+            var meNow = snapshot.match.Player(client.PlayerId);
+            TeamId myTeam = meNow == null || meNow.team == TeamId.None ? TeamId.A : meNow.team;
             foreach (var pair in bodies)
             {
                 var b = pair.Value;
@@ -135,7 +140,8 @@ namespace DuckAndCover.Game
                 if (!show) continue;
                 b.view.Pose(feet, Mathf.LerpAngle(b.yawFrom, b.yawTo, k), b.crouched);
                 float max = unit == null ? 1f : Mathf.Max(1f, unit.stats.Get(StatIds.MaxHealth));
-                b.view.ShowBars(unit == null ? 1f : unit.health / max, unit == null ? 0f : unit.Shield / Mathf.Max(1f, runner.ClientRules.maxShield), cam);
+                var progress = snapshot.progression == null ? null : snapshot.progression.Player(pair.Key);
+                b.view.ShowBar(unit == null ? 1f : unit.health / max, myTeam == p.team, progress == null ? 1 : progress.level, cam);
             }
 
             float dt = Time.deltaTime;
@@ -223,7 +229,11 @@ namespace DuckAndCover.Game
                     break;
                 case ProjectileLaunchedEvent launched:
                 {
-                    var go = Paint.Shape(PrimitiveType.Sphere, effects, "Projectile " + launched.projectileId, launched.origin.ToVector3(), Vector3.one * 0.22f, BlastColor, false);
+                    var runner = SessionRunner.Instance;
+                    var weapon = runner != null && runner.Weapons != null ? runner.Weapons.Weapon(launched.weaponId) : null;
+                    bool dart = weapon != null && weapon.splashRadius <= 0f;
+                    var go = Paint.Shape(PrimitiveType.Sphere, effects, "Projectile " + launched.projectileId, launched.origin.ToVector3(),
+                        dart ? new Vector3(0.09f, 0.09f, 0.09f) : Vector3.one * 0.22f, dart ? DartColor : BlastColor, false);
                     projectiles[launched.projectileId] = new Flying { go = go, velocity = launched.velocity.ToVector3(), gravity = launched.gravity };
                     break;
                 }
@@ -235,7 +245,9 @@ namespace DuckAndCover.Game
                         projectiles.Remove(boom.projectileId);
                     }
                     float size = Mathf.Max(0.6f, boom.splashRadius * 2f);
-                    var blast = Paint.Shape(PrimitiveType.Sphere, effects, "Blast", boom.point.ToVector3(), Vector3.one * size, BlastColor, false);
+                    bool splash = boom.splashRadius > 0f;
+                    if (!splash) size = 0.3f; // a dart's small red spatter
+                    var blast = Paint.Shape(PrimitiveType.Sphere, effects, "Blast", boom.point.ToVector3(), Vector3.one * size, splash ? BlastColor : DartColor, false);
                     Destroy(blast, 0.12f);
                     break;
                 }

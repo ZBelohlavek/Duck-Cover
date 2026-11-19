@@ -168,13 +168,21 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
 - Teams are 4v4 (`Ruleset.maxPlayersPerTeam`). Recommended lineup, never a lock: tank, healer, DPS, utility or flex
   (`Core/Heroes/Roles.cs` maps them to the role ids in hero data; duplicates stay allowed).
 - Heroes (WP11): Bulwark (vanguard), Lancer (striker), Mender (support), Rigger (controller), Gashrak the war chief
-  (striker, melee only: `WeaponKind.Melee`), Skulk the goblin lookout (striker) and Bolete (support, the fungal healer with lobbed spore bombs), as data in
+  (striker, melee only: `WeaponKind.Melee`), Skulk the goblin lookout (striker), Bolete (support, the fungal healer with
+  lobbed spore bombs) and Nocturne the vampire (striker, endless thrown darts: `WeaponDef.endless`), as data in
   Data/Resources. `HeroServer` (Core/Heroes) gives a pick its kit, runs leveling beside the match and
   applies upgrades; `HeroKitTests` checks every ability and every upgrade. Levels run 1 to 20 (picks on even levels); each hero has two upgrade paths, left and right (`docs/HEROES.md`).
 - Skulk (striker, the goblin jungler) has a base passive, Jungle Stalker, in F's place: a hero with a base passive may
   have one ability before X (`AbilityKeys` maps slots to keys). Jungle upgrades use `StatConditions.Jungle`
   (`Core/Maps/JungleArea`, set by the lane rules and `SessionRunner`; off a point on maps without a jungle). Kill rewards
   and notches are ability data (`AbilityDef.onKill`, `notchDamage`, `maxNotches`); the knife uses the `arc` targeting shape.
+- The vampire's kit added: `StatusDef.invulnerable` (no damage, no enemy debuffs), `EffectDef.lifeSteal` and
+  `minTargets`, the `execute` effect (heroes only, never units), `PushDirections.Caster` (a pull), the `headDamage` stat,
+  and projectile direct hits that count head and legs like bullets.
+- Ability rules (Zach, Nov 19): no ultimates (every ability, X included, is a plain cooldown), 13 to 20 s cooldowns
+  (`Ruleset.abilityCooldownFloor`/`Ceiling`; cooldown-rate stats can't beat the floor; anything shorter needs
+  `AbilityDef.shortCooldownReason`), no single ability kills a full-health hero, and area damage stays below
+  single-target damage. `AbilityRulesTests` checks every hero in the data; `report abilities` prints the table.
 - Stealth (Rigger's Cloak) is a status flag, `StatusDef.stealth`: `HeroUnit.stealthed` is on while a stealth status is
   up and no reveal status is. Turrets (objects with maxTargets), minions and Bastions skip a stealthed enemy
   (`DamageRules.IsHidden`); `CombatView` hides them beyond `Ruleset.stealthShimmerRange`. Firing (`WeaponRules.BeforeShot`)

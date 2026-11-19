@@ -22,15 +22,15 @@
       "targeting": { "shape": "sphere", "origin": "aimPoint", "range": 20, "radius": 4, "affects": "enemies" },
       "effects": [
         { "kind": "damage", "amount": 60, "delay": 1 },
-        { "kind": "slow", "amount": 0.3, "duration": 2, "delay": 1 }
+        { "kind": "slow", "amount": 0.3, "duration": 2, "delay": 1 },
+        { "kind": "execute", "amount": 0.1, "tag": "testExecute" }
       ]
     },
     {
       "id": "test_overdrive",
       "displayName": "Test Overdrive",
-      "description": "Ultimate. You and nearby teammates move and recover abilities faster for a while.",
-      "ultimate": true,
-      "ultimateCost": 100,
+      "description": "You and nearby teammates move and recover abilities faster for a while.",
+      "cooldown": 20,
       "duration": 6,
       "targeting": { "shape": "sphere", "origin": "caster", "radius": 6, "affects": "alliesAndSelf" },
       "effects": [

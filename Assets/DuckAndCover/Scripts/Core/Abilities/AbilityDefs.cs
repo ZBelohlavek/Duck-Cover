@@ -9,7 +9,7 @@ namespace DuckAndCover.Core
     // ones), so the rules treat an empty kind or id as "not set".
 
     /// <summary>
-    /// One ability: a resource (cooldown with charges, or ultimate charge), an optional wind-up,
+    /// One ability: a cooldown with charges, an optional wind-up,
     /// a targeting shape, and a list of standard effects. A test ability needs nothing but this.
     /// </summary>
     [Serializable]
@@ -19,12 +19,16 @@ namespace DuckAndCover.Core
         public string displayName = "";
         public string description = "";
 
-        /// <summary>Uses ultimate charge instead of a cooldown. Like every ability, usable from level 1.</summary>
-        public bool ultimate;
-        /// <summary>Charge an ultimate costs.</summary>
-        public float ultimateCost = 100f;
-        /// <summary>Seconds to recover one charge.</summary>
+        /// <summary>
+        /// Seconds to recover one charge. Every ability runs on a cooldown (there is no ultimate charge),
+        /// and most sit between <see cref="Ruleset.abilityCooldownFloor"/> and <see cref="Ruleset.abilityCooldownCeiling"/>.
+        /// </summary>
         public float cooldown;
+        /// <summary>
+        /// Why this ability may recharge faster than <see cref="Ruleset.abilityCooldownFloor"/> (a held shield,
+        /// a reload). Empty for every other ability; the ability rules test lists the exceptions.
+        /// </summary>
+        public string shortCooldownReason = "";
         /// <summary>Uses banked before the cooldown blocks it.</summary>
         public int charges = 1;
         /// <summary>Wind-up: the effects land this many seconds after the cast starts. A stun cancels it.</summary>
@@ -194,7 +198,8 @@ namespace DuckAndCover.Core
     /// duration), slow (amount = share of speed taken, duration), stun (duration), cleanse,
     /// push (amount = metres, or the most metres for a leap; duration = seconds; direction; lift = metres
     /// up at the top of the arc, so a push with only a lift is a knock-up), spawn (objectId), reload,
-    /// healRounds (amount = health each round gives, radius = splash around the teammate hit).
+    /// healRounds (amount = health each round gives, radius = splash around the teammate hit),
+    /// execute (amount = share of max health at or below which an enemy hero is finished off).
     /// </summary>
     [Serializable]
     public class EffectDef
@@ -217,6 +222,13 @@ namespace DuckAndCover.Core
         public float radius;
         /// <summary>Push: metres the target rises at the top of the arc (a leap, a knock-up). 0 = level with the ground.</summary>
         public float lift;
+        /// <summary>Damage: share of the damage dealt that heals whoever is credited (the caster or the object's owner). 0 = none.</summary>
+        public float lifeSteal;
+        /// <summary>
+        /// Above 0: the effect only happens when the ability caught at least this many targets (a sweep that
+        /// pays off when it hits a crowd). Abilities only; objects and statuses ignore it.
+        /// </summary>
+        public int minTargets;
         /// <summary>
         /// Overrides who this effect reaches: empty = the ability's targets; "self" = the caster once,
         /// whatever was hit (on an object's pulse: the owner, only when the pulse reached them);
@@ -272,6 +284,11 @@ namespace DuckAndCover.Core
         /// (StatConditions.Ambush). A reveal status on the bearer wins over it.
         /// </summary>
         public bool stealth;
+        /// <summary>
+        /// Untouchable: the bearer takes no damage and enemies can't put harmful statuses on them (a dash
+        /// as a cloud of bats). Pushes still move them.
+        /// </summary>
+        public bool invulnerable;
         /// <summary>What a second application does, one of <see cref="Stacking"/>.</summary>
         public string stacking = Stacking.Refresh;
         public int maxStacks = 1;
@@ -404,8 +421,13 @@ namespace DuckAndCover.Core
         /// magazine is spent or reloaded, a round that hits a teammate heals them by the amount.
         /// </summary>
         public const string HealRounds = "healRounds";
+        /// <summary>
+        /// Finishes off an enemy hero whose health is at or below the amount (a share of their max health, 0.2 =
+        /// 20%), shields and all. Units (minions, Bastions, camp guards) are never executed.
+        /// </summary>
+        public const string Execute = "execute";
 
-        public static readonly string[] All = { Damage, Heal, Shield, Status, Slow, Stun, Cleanse, Push, Spawn, Reload, HealRounds };
+        public static readonly string[] All = { Damage, Heal, Shield, Status, Slow, Stun, Cleanse, Push, Spawn, Reload, HealRounds, Execute };
         public static bool IsKnown(string kind) => Array.IndexOf(All, kind) >= 0;
     }
 
@@ -484,7 +506,12 @@ namespace DuckAndCover.Core
         /// effect's amount. Give it a lift so it arcs.
         /// </summary>
         public const string Leap = "leap";
-        public static bool IsKnown(string s) => s == Aim || s == Away || s == Toward || s == Leap;
+        /// <summary>
+        /// Toward the caster (a grab that pulls): up to the amount, stopping <see cref="Ruleset.pullStopMetres"/>
+        /// short of them.
+        /// </summary>
+        public const string Caster = "caster";
+        public static bool IsKnown(string s) => s == Aim || s == Away || s == Toward || s == Leap || s == Caster;
     }
 
     /// <summary>

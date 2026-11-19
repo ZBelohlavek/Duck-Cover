@@ -46,7 +46,7 @@ static class WarchiefKitTests
         var weapons = h.Combat.Weapons.Weapons(A1).weapons;
         Check.Equal("greataxe", string.Join(",", weapons), "the greataxe and nothing else: no gun");
         Check.Equal(WeaponKind.Melee, h.Combat.Weapons.Library.Weapon("greataxe").kind, "a melee weapon");
-        Check.False(h.Abilities.AbilityIn(A1, Rage).ultimate, "Rage runs on a cooldown");
+        Check.True(h.Abilities.AbilityIn(A1, Rage).cooldown > 0f, "Rage runs on a cooldown");
         Check.Near(275f, h.Health(A1), "275 health");
         Check.True(h.Use(A1, Rage, Ahead).IsAccepted, "and works at level 1");
     }
@@ -147,7 +147,7 @@ static class WarchiefKitTests
         var h = Duel(15f);
         float before = h.Health(B1);
         Check.True(h.UseAt(A1, Throw, B1).IsAccepted, "Axe Throw");
-        Check.Near(before - 40f, h.Health(B1), "40 damage", 0.01f);
+        Check.Near(before - 50f, h.Health(B1), "50 damage", 0.01f);
         Check.True(h.Abilities.IsStunned(B1), "stunned");
         Check.False(h.Combat.Apply(new MoveCommand { playerId = B1, position = h.M(B1).position + new Vec3(1f, 0f, 0f), placement = h.M(B1).placement }).IsAccepted, "can't move");
         h.Run(1.3f);
@@ -214,7 +214,7 @@ static class WarchiefKitTests
         float before = b.Health(B1);
         Check.True(b.Use(A1, Leap, Ahead).IsAccepted, "War Leap");
         b.Run(0.85f);
-        Check.Near(before - 70f, b.Health(B1), "Crushing Landing: 70 damage, reaching 5 m", 0.01f);
+        Check.Near(before - 60f, b.Health(B1), "Crushing Landing: 60 damage, reaching 5 m", 0.01f);
     }
 
     [Test]

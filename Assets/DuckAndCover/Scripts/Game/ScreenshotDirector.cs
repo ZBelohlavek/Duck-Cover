@@ -45,14 +45,18 @@ namespace DuckAndCover.Game
             new Shot("05b-pick", HostPracticeMatch, 1.5f),
             new Shot("06-spawn", StartPracticeMatch, 5.5f),
             new Shot("07-dummies", () => Stand(new Vec3(-4f, 0f, -8.5f)), 1.2f),
-            new Shot("08-after-shots", () => Shoot(12), 1.6f),
+            // 8 rifle hits (18 each at the chest) leave the 200-health dummy standing: shot 10 needs it alive, and with no
+            // hero shields any more 12 hits killed it.
+            new Shot("08-after-shots", () => Shoot(8), 1.6f),
             new Shot("09-bodies", () => WatchFrom(new Vector3(-2.5f, 2.2f, 4f), new Vector3(1.5f, 1f, 9f)), 0.5f),
             // Hero kits (WP11): the dummies are given heroes and use their abilities toward the player.
             new Shot("10-abilities", DummiesUseAbilities, 1.6f),
             new Shot("11-hush", DummyThrowsHush, 1.0f),
             new Shot("11b-war-leap", DummyWarLeaps, 1.4f),
             new Shot("11c-bolete", DummyPlaysBolete, 1.4f),
+            new Shot("11d-vampire", DummyVampireGrabs, 1.0f),
             new Shot("12-hero-hud", LevelUpAndLook, 1.2f),
+            new Shot("12b-bars", AllyAndEnemyBars, 0.8f),
             // Environment kit: the lane mock-up, built far off to one side of the real map.
             new Shot("13-lane", () => LaneShot(new Vector3(0f, 1.8f, -50f), new Vector3(0f, 1.2f, -38f)), 1.0f),
             new Shot("14-lane-gap", () => LaneShot(new Vector3(1.5f, 1.8f, -41f), new Vector3(-16f, 1.2f, -50f)), 0.6f),
@@ -497,6 +501,82 @@ namespace DuckAndCover.Game
                 1.3f, "the player poisoned by Rot Spore"));
         }
 
+        /// <summary>
+        /// The Mender dummy becomes the vampire 4 m in front of the player, on the clear line the war chief came in
+        /// along (the war chief steps aside): seen through the player's eyes, Grasping Claw seizes them (stealing max
+        /// health, so the health bar shortens) and he keeps throwing red Blood Darts until the shot is taken.
+        /// </summary>
+        static void DummyVampireGrabs()
+        {
+            var runner = SessionRunner.Instance;
+            if (runner == null || runner.Heroes == null || runner.Client == null) return;
+            int vampire = CombatServer.FirstDummyId + 2, chief = CombatServer.FirstDummyId + 1;
+            int me = runner.Client.PlayerId;
+            var mine = runner.Combat.Movement.Motion(me);
+            if (mine == null) return;
+            if (!runner.Heroes.GiveKit(vampire, "vampire").IsAccepted) { Debug.LogError("Duck and Cover: the capture could not give a dummy the vampire's kit."); return; }
+            runner.Combat.Weapons.SetLoadout(vampire, runner.Combat.Weapons.Library.LoadoutFor("vampire"));
+            // Full health first, so the earlier shots' damage plus the grab can't take the player down.
+            var unit = runner.Combat.Damage.Unit(me);
+            if (unit != null) unit.health = runner.Combat.Damage.MaxHealth(me);
+            // Toward the war chief, who stands where shot 11b's leap brought him: open ground, not a wall.
+            Vec3 toward = MoveMath.Forward(mine.yaw);
+            var chiefAt = runner.Combat.Movement.Motion(chief);
+            if (chiefAt != null)
+            {
+                Vec3 d = new Vec3(chiefAt.position.x - mine.position.x, 0f, chiefAt.position.z - mine.position.z);
+                if (d.Magnitude > 0.5f) toward = d.Normalized;
+                runner.Combat.Movement.Teleport(chief, chiefAt.position + MoveMath.Right(chiefAt.yaw) * 3f, chiefAt.yaw);
+            }
+            float yaw = (float)(Math.Atan2(toward.x, toward.z) * 180.0 / Math.PI);
+            runner.Combat.Movement.Teleport(vampire, mine.position + toward * 4f, yaw + 180f);
+            var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
+            if (local != null)
+            {
+                local.freeCamera = false;
+                local.LookAt(yaw, 6f);
+            }
+            CombatView.Instance.StartCoroutine(GrabThenThrow(runner, vampire, me));
+            CombatView.Instance.StartCoroutine(Expect(() => runner.Combat.Damage.Unit(me) != null && runner.Combat.Damage.Unit(me).HasStatus("vampire_drained"), 0.75f,
+                "the player drained by Grasping Claw"));
+        }
+
+        /// <summary>
+        /// After the lag-compensation history has a few ticks of the vampire in his new spot, he grabs the player,
+        /// then throws darts.
+        /// </summary>
+        static IEnumerator GrabThenThrow(SessionRunner runner, int vampire, int targetId)
+        {
+            yield return new WaitForSecondsRealtime(0.25f);
+            if (!DummyCast(runner, vampire, 0, targetId, 0f)) Debug.LogError("Duck and Cover: the capture's vampire could not use Grasping Claw.");
+            else
+            {
+                var u = runner.Combat.Damage.Unit(targetId);
+                Debug.Log("Duck and Cover: the capture's vampire grabbed; the player has " + (u == null ? "no unit" : u.health.ToString("0") + " of "
+                    + runner.Combat.Damage.MaxHealth(targetId).ToString("0") + " health" + (u.HasStatus("vampire_drained") ? ", drained" : ", not drained")) + ".");
+            }
+            yield return ThrowDarts(runner, vampire, targetId, 1.0f);
+        }
+
+        /// <summary>The vampire dummy (server side) throws a dart at the player every quarter second for a while.</summary>
+        static IEnumerator ThrowDarts(SessionRunner runner, int dummy, int targetId, float seconds)
+        {
+            var rules = runner.Match.Rules;
+            for (float t = 0f; t < seconds; t += 0.26f)
+            {
+                var from = runner.Combat.Movement.Motion(dummy);
+                var to = runner.Combat.Movement.Motion(targetId);
+                if (from == null || to == null) yield break;
+                Vec3 eye = from.position + Vec3.Up * rules.eyeHeight;
+                runner.Combat.Apply(new FireCommand
+                {
+                    playerId = dummy, weaponId = "blood_darts", origin = eye, tick = runner.Match.State.tick,
+                    direction = (Hitboxes.Chest(rules, to.Pose(true)) - eye).Normalized,
+                });
+                yield return new WaitForSecondsRealtime(0.26f);
+            }
+        }
+
         /// <summary>Back to the player's eyes, a few levels up, so the ability bar and the upgrade on offer show.</summary>
         static void LevelUpAndLook()
         {
@@ -545,8 +625,51 @@ namespace DuckAndCover.Game
             session.Client.Welcomed += welcome =>
             {
                 for (int i = 0; i < 3; i++) session.Client.Send(new AddDummyCommand { team = TeamId.B });
+                // A teammate too (added last, so the enemies keep the first dummy ids), for shot 12b's green bar.
+                session.Client.Send(new AddDummyCommand { team = TeamId.A });
                 session.Client.Send(new PickHeroCommand { heroId = "lancer" });
             };
+        }
+
+        /// <summary>The teammate dummy, added after the three enemies.</summary>
+        const int AllyDummy = CombatServer.FirstDummyId + 3;
+
+        /// <summary>
+        /// The bars over heads: the teammate dummy stands beside the player, a little hurt and a few levels up,
+        /// facing an enemy dummy that is hurt more; the camera looks past the teammate at the enemy, so one
+        /// green bar and one red bar, each with its level, are in the shot.
+        /// </summary>
+        static void AllyAndEnemyBars()
+        {
+            var runner = SessionRunner.Instance;
+            if (runner == null || runner.Combat == null || runner.Heroes == null || runner.Client == null) { Debug.LogError("Duck and Cover: the capture has no match for the bars shot."); return; }
+            int me = runner.Client.PlayerId;
+            int enemy = -1;
+            for (int i = 0; i < 3 && enemy < 0; i++)
+                if (runner.Match.State.IsAlive(CombatServer.FirstDummyId + i)) enemy = CombatServer.FirstDummyId + i;
+            var mine = runner.Combat.Movement.Motion(me);
+            var theirs = enemy < 0 ? null : runner.Combat.Movement.Motion(enemy);
+            if (mine == null || theirs == null || !runner.Match.State.IsAlive(AllyDummy))
+            {
+                Debug.LogError("Duck and Cover: the bars shot needs the player, a living enemy dummy and the teammate dummy.");
+                return;
+            }
+            runner.Heroes.GiveKit(AllyDummy, "mender");
+            runner.Heroes.Progression.Grant(AllyDummy, 600f, ExperienceSource.Match);
+            runner.Heroes.Progression.Grant(enemy, 300f, ExperienceSource.Match);
+            Vec3 toEnemy = theirs.position - mine.position;
+            toEnemy.y = 0f;
+            Vec3 ahead = toEnemy.Normalized;
+            Vec3 side = new Vec3(ahead.z, 0f, -ahead.x);
+            Vec3 allyFeet = mine.position + ahead * 2.5f + side * 1.3f;
+            runner.Combat.Movement.Teleport(AllyDummy, allyFeet, (float)(Math.Atan2(ahead.x, ahead.z) * 180.0 / Math.PI));
+            var ally = runner.Combat.Damage.Unit(AllyDummy);
+            var foe = runner.Combat.Damage.Unit(enemy);
+            if (ally != null) ally.health = ally.stats.Get(StatIds.MaxHealth) * 0.7f;
+            if (foe != null) foe.health = foe.stats.Get(StatIds.MaxHealth) * 0.4f;
+            Vector3 eye = (mine.position - ahead * 1.5f - side * 0.6f).ToVector3() + Vector3.up * 2.4f;
+            Vector3 look = (allyFeet + (theirs.position - allyFeet) * 0.55f).ToVector3() + Vector3.up * 1.6f;
+            WatchFrom(eye, look);
         }
 
         static void StartPracticeMatch()
@@ -698,7 +821,7 @@ namespace DuckAndCover.Game
             float scale = Height / 1080f;
             foreach (var canvas in FindObjectsByType<Canvas>(FindObjectsSortMode.None))
             {
-                if (!canvas.isRootCanvas) continue;
+                if (!canvas.isRootCanvas || canvas.renderMode == RenderMode.WorldSpace) continue; // bars over heads are sized in metres
                 if (!loggedCanvasScale)
                 {
                     loggedCanvasScale = true;

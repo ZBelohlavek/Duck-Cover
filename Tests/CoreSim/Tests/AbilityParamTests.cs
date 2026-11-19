@@ -71,7 +71,7 @@ static class AbilityParamTests
         Check.Equal(null, AbilityParams.Check(C("test_grenade", "cooldown", ModOp.Multiply, 0.8f), lib), "a good change");
         Check.Equal(null, AbilityParams.Check(C("test_dash", "enable", ModOp.Set, 0f, "healTrail"), lib), "a tag that exists");
         Check.Equal(null, AbilityParams.Check(C("test_regen", "stat.healthRegen", ModOp.Add, 2f), lib), "a passive's stat");
-        Check.Equal(null, AbilityParams.Check(C("test_overdrive", "ultimateCost", ModOp.Add, -20f), lib), "ultimate cost on an ultimate");
+        Check.Equal(null, AbilityParams.Check(C("test_overdrive", "cooldown", ModOp.Add, -2f), lib), "cooldown on the third ability");
         Check.Equal(null, AbilityParams.Check(C("test_overdrive", "duration", ModOp.Add, 3f), lib), "duration");
         foreach (var bad in new[]
         {

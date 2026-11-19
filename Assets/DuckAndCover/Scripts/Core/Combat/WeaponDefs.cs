@@ -41,6 +41,11 @@ namespace DuckAndCover.Core
         public float fireInterval = 0.1f;
         public int magazine = 30;
         public float reloadSeconds = 1.6f;
+        /// <summary>
+        /// Spends no ammo and never reloads (a hero who throws from their own hands): the fire rate is the only
+        /// limit. Melee weapons are always like this.
+        /// </summary>
+        public bool endless;
 
         // ---- Hitscan ----
         public float damage = 10f;
@@ -77,6 +82,9 @@ namespace DuckAndCover.Core
         public float splashMinShare = 0.3f;
 
         public WeaponDef Clone() => (WeaponDef)MemberwiseClone();
+
+        /// <summary>Spends no ammo and has nothing to reload: <see cref="endless"/>, or a melee weapon.</summary>
+        public bool NoAmmo() => endless || kind == WeaponKind.Melee;
 
         /// <summary>Damage share left after travelling <paramref name="distance"/> metres.</summary>
         public float Falloff(float distance)
@@ -240,7 +248,9 @@ namespace DuckAndCover.Core
 
     /// <summary>
     /// The weapons and the starter heroes' loadouts (WP11): a rifle, an SMG, a shotgun, a pistol, a
-    /// grenade launcher (no hero carries it yet), Skulk's scrap rifle (his only gun), the war chief's greataxe (a melee weapon) and the Mender's sidearm (it heals only with the healing rounds his Mending Rounds load). Loadouts are keyed by
+    /// grenade launcher (no hero carries it yet), Skulk's scrap rifle (his only gun), the war chief's greataxe (a melee
+    /// weapon), the Mender's sidearm (it heals only with the healing rounds his Mending Rounds load), Bolete's spore bombs
+    /// and the vampire's Blood Darts (endless thrown darts: no ammo, no reload). Loadouts are keyed by
     /// hero id; heroId "" is the default. Data/Weapons/starter_weapons.json is the same table as data; a
     /// test keeps them equal.
     /// </summary>
@@ -270,6 +280,8 @@ namespace DuckAndCover.Core
                 new WeaponDef { id = "spore_bombs", displayName = "Spore bombs", kind = WeaponKind.Projectile, automatic = false, fireInterval = 0.7f, magazine = 6, reloadSeconds = 2f,
                     damage = 10f, headMultiplier = 1f, legsMultiplier = 1f, projectileSpeed = 24f, projectileGravity = 12f,
                     splashRadius = 2.5f, splashDamage = 25f, splashMinShare = 0.4f },
+                new WeaponDef { id = "blood_darts", displayName = "Blood Darts", kind = WeaponKind.Projectile, automatic = true, fireInterval = 0.25f, magazine = 1, reloadSeconds = 0f, endless = true,
+                    damage = 28f, headMultiplier = 1.75f, legsMultiplier = 0.85f, projectileSpeed = 75f, projectileGravity = 0f },
             },
             loadouts =
             {
@@ -281,6 +293,7 @@ namespace DuckAndCover.Core
                 new WeaponLoadout { heroId = "skulk", weapons = new[] { "scrap_rifle" } },
                 new WeaponLoadout { heroId = "warchief", weapons = new[] { "greataxe" } },
                 new WeaponLoadout { heroId = "bolete", weapons = new[] { "spore_bombs" } },
+                new WeaponLoadout { heroId = "vampire", weapons = new[] { "blood_darts" } },
             },
         };
 

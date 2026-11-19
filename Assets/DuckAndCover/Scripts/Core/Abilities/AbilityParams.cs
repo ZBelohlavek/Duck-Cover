@@ -22,9 +22,9 @@ namespace DuckAndCover.Core
     /// one taken). The rules never special-case a named talent; they only read the result.
     ///
     /// Numeric params:
-    ///   cooldown, charges, castTime, duration, ultimateCost, range, radius, count, spreadDegrees, maxTargets,
+    ///   cooldown, charges, castTime, duration, range, radius, count, spreadDegrees, maxTargets,
     ///   breaksControl (0 or 1)
-    ///   effect.KEY.amount | duration | delay | interval | radius | lift
+    ///   effect.KEY.amount | duration | delay | interval | radius | lift | lifeSteal | minTargets
     ///   object.lifetime | health | radius | interval | armTime | maxPerOwner | maxTargets | width | height
     ///          | reflect | regen | regenDelay | hitRadius | followAlly (0 or 1)
     ///   object.effect.KEY.amount | duration | delay | interval | radius
@@ -177,7 +177,6 @@ namespace DuckAndCover.Core
                 case "charges": found.Add(new Slot { get = () => d.charges, set = v => d.charges = (int)v, whole = true, min = 1f }); return found;
                 case "castTime": found.Add(new Slot { get = () => d.castTime, set = v => d.castTime = v }); return found;
                 case "duration": found.Add(new Slot { get = () => d.duration, set = v => d.duration = v }); return found;
-                case "ultimateCost": if (d.ultimate) found.Add(new Slot { get = () => d.ultimateCost, set = v => d.ultimateCost = v, min = 1f }); return found;
                 case "range": found.Add(new Slot { get = () => t.range, set = v => t.range = v }); return found;
                 case "radius": found.Add(new Slot { get = () => t.radius, set = v => t.radius = v }); return found;
                 case "count": found.Add(new Slot { get = () => t.count, set = v => t.count = (int)v, whole = true, min = 1f }); return found;
@@ -260,6 +259,8 @@ namespace DuckAndCover.Core
                     case "interval": found.Add(new Slot { get = () => e.interval, set = v => e.interval = v }); break;
                     case "radius": found.Add(new Slot { get = () => e.radius, set = v => e.radius = v }); break;
                     case "lift": found.Add(new Slot { get = () => e.lift, set = v => e.lift = v }); break;
+                    case "lifeSteal": found.Add(new Slot { get = () => e.lifeSteal, set = v => e.lifeSteal = v }); break;
+                    case "minTargets": found.Add(new Slot { get = () => e.minTargets, set = v => e.minTargets = (int)v, whole = true }); break;
                 }
             }
         }

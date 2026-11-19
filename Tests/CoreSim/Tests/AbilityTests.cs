@@ -34,7 +34,6 @@ static class AbilityTests
         Check.Equal("no ability in slot 5", h.Use(A1, 5).reason, "bad slot");
         Check.Equal("unknown player", h.Use(999).reason, "unknown player");
         Check.Equal(1, h.S.Player(A1).level, "level 1");
-        Check.Equal("ultimate not charged", h.Use(A1, 1).reason, "the ultimate is unlocked at level 1, only uncharged");
         var wrong = h.Abilities.Apply(new UseAbilityCommand { playerId = A1, slot = 0, abilityId = "test_dash", aimDirection = Vec3.Right });
         Check.Equal("slot 0 holds test_guard", wrong.reason, "the command's ability id must match the slot");
         Check.Equal(CommandStatus.NotHandled, h.Abilities.Apply(new PingCommand { playerId = A1 }).status, "other commands are passed on");
@@ -119,64 +118,46 @@ static class AbilityTests
         Check.False(h.Use(A1).IsAccepted, "and the cooldown is spent");
     }
 
-    // ---- Ultimates ----
+    // ---- Cooldowns ----
 
     [Test]
-    static void UltimateChargesUnlocksAndSpends()
+    static void EveryAbilityRunsOnACooldownFromLevelOne()
     {
         var h = new AbilityHarness();
         h.Give(A1, "test_guard", "test_overdrive");
         Check.Equal(1, h.S.Player(A1).level, "level 1");
-        Check.Equal("ultimate not charged", h.Use(A1, 1).reason, "unlocked but empty");
-        h.Run(10f);
-        Check.Near(8f, h.Unit(A1).ultimateCharge, "0.8 a second over time", 0.05f);
-        h.Combat.Damage(A1, B1, 100f);
-        Check.Near(13f, h.Unit(A1).ultimateCharge, "plus 0.05 per damage dealt", 0.05f);
-        h.Combat.Damage(B1, A2, 100f);
-        h.Combat.Heal(A1, A2, 100f);
-        Check.Near(18f, h.Unit(A1).ultimateCharge, "and per healing given", 0.05f);
-        h.Combat.Damage(-1, A1, 50f);
-        h.Combat.Heal(A1, A1, 50f);
-        Check.Near(18f, h.Unit(A1).ultimateCharge, "healing yourself gives none", 0.05f);
-
-        h.Forget();
-        h.Abilities.AddUltimateCharge(A1, 500f);
-        Check.Near(100f, h.Unit(A1).ultimateCharge, "capped at the maximum");
-        Check.Equal(1, h.Of<UltimateReadyEvent>().Count, "ready event, once");
-        Check.True(h.Abilities.UltimateReady(A1, 1), "ready");
         h.Place(A1, 0); h.Place(A2, 3); h.Place(A3, 30); h.Place(B1, 2);
-        Check.True(h.Use(A1, 1).IsAccepted, "used");
-        Check.Near(0f, h.Unit(A1).ultimateCharge, "charge spent");
+        Check.True(h.Use(A1, 1).IsAccepted, "the third ability works straight away");
         Check.True(h.Unit(A1).HasStatus("test_haste"), "caster hasted");
         Check.True(h.Unit(A2).HasStatus("test_haste"), "teammate in range hasted");
         Check.False(h.Unit(A3).HasStatus("test_haste"), "teammate out of range is not");
         Check.False(h.Unit(B1).HasStatus("test_haste"), "enemies are not");
         Check.Near(6f, h.Unit(A1).Status("test_haste").timeLeft, "the status lasts the ability's duration");
-
-        h.Abilities.AddUltimateCharge(A1, 30f);
-        h.Combat.Damage(-1, A1, 9999f);
-        h.Run(3f); // a level 1 respawn wait is short, so stay inside it
-        Check.Near(30f, h.Unit(A1).ultimateCharge, "no charge over time while down");
-        h.Run(8f);
-        Check.True(h.S.IsAlive(A1) && h.Unit(A1).ultimateCharge > 30f, "ultimate charge is kept through a respawn");
+        Check.Equal("on cooldown", h.Use(A1, 1).reason, "then it waits out its cooldown");
     }
 
     [Test]
-    static void InterruptedUltimateRefundsHalf()
+    static void CooldownRateCantBeatTheFloor()
     {
-        var h = new AbilityHarness(extra: lib => lib.Add(new AbilityDef
+        var h = new AbilityHarness(extra: lib =>
         {
-            id = "slow_ult", ultimate = true, ultimateCost = 80f, castTime = 1f,
-            targeting = new TargetingDef { shape = Shapes.Self },
-            effects = new[] { new EffectDef { kind = EffectKinds.Shield, amount = 100f } },
-        }));
-        h.Give(A1, "slow_ult");
-        h.Abilities.AddUltimateCharge(A1, 80f);
-        Check.True(h.Use(A1).IsAccepted, "wind-up starts");
-        Check.Near(0f, h.Unit(A1).ultimateCharge, "spent");
-        h.Combat.Damage(B1, A1, 9999f);
-        Check.Equal("eliminated", h.Last<AbilityCancelledEvent>().reason, "cancelled by going down");
-        Check.Near(40f, h.Unit(A1).ultimateCharge, "half the cost comes back");
+            lib.Add(new AbilityDef { id = "long_cd", cooldown = 16f, targeting = new TargetingDef { shape = Shapes.Self }, effects = new[] { new EffectDef { kind = EffectKinds.Shield, amount = 1f } } });
+            lib.Add(new AbilityDef { id = "short_cd", cooldown = 4f, shortCooldownReason = "test", targeting = new TargetingDef { shape = Shapes.Self }, effects = new[] { new EffectDef { kind = EffectKinds.Shield, amount = 1f } } });
+        });
+        Check.Near(13f, h.Match.Rules.abilityCooldownFloor, "the floor is 13 s");
+        h.Give(A1, "long_cd", "short_cd");
+        Check.Near(16f, h.Abilities.EffectiveCooldown(A1, 0), "no cooldown rate: the ability's own cooldown");
+        h.Abilities.AddModifiers(A1, "quick", new[] { new StatModifier(StatIds.CooldownRate, ModOp.Percent, 0.1f) });
+        Check.Near(16f / 1.1f, h.Abilities.EffectiveCooldown(A1, 0), "10% faster still clears the floor", 0.01f);
+        h.Abilities.AddModifiers(A1, "quick", new[] { new StatModifier(StatIds.CooldownRate, ModOp.Percent, 1f) });
+        Check.Near(13f, h.Abilities.EffectiveCooldown(A1, 0), "twice as fast stops at the floor", 0.01f);
+        Check.Near(4f / 2f, h.Abilities.EffectiveCooldown(A1, 1), "an ability with its own short cooldown is exempt from the floor", 0.01f);
+
+        Check.True(h.Use(A1, 0).IsAccepted, "used");
+        h.Run(12.5f);
+        Check.True(h.Abilities.CooldownLeft(A1, 0) > 0f, "not back before 13 s");
+        h.Run(0.6f);
+        Check.Near(0f, h.Abilities.CooldownLeft(A1, 0), "back at 13 s");
     }
 
     // ---- Targeting ----
@@ -385,7 +366,6 @@ static class AbilityTests
     {
         var h = new AbilityHarness();
         h.Give(A1, "test_overdrive");
-        h.Abilities.AddUltimateCharge(A1, 100f);
         h.Abilities.AddModifiers(A1, "power_surge", new[] { new StatModifier(StatIds.AbilityRadius, ModOp.Percent, 0.5f) });
         h.Place(A1, 0); h.Place(A2, 8.5f);
         h.Use(A1);
