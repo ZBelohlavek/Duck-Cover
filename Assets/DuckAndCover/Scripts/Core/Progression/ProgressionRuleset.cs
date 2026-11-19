@@ -31,7 +31,7 @@ namespace DuckAndCover.Core
         /// <summary>
         /// What each level offers, by level (entry 0 is level 1): "" for nothing, otherwise trait,
         /// talent, ultimate, passive or capstone. A pick every other level: traits at 2, 6, 14;
-        /// talents at 4, 12, 16, 18; the ultimate's form at 8; the hero's passive at 10 (heroes start
+        /// talents at 4, 12, 16, 18; an upgrade to the ultimate (usable from level 1) at 8; the hero's passive at 10 (heroes start
         /// with none); a capstone at 20. The levels between give the automatic boost below.
         /// </summary>
         public string[] levelChoices = { "", "trait", "", "talent", "", "trait", "", "ultimate", "", "passive",
@@ -71,7 +71,7 @@ namespace DuckAndCover.Core
         public float catchUpBonus = 0.25f;
 
         /// <summary>The kind offered on reaching a level, or None.</summary>
-        /// <summary>The level where the ultimate's form is chosen (8 with the default layout), or 0 if none is.</summary>
+        /// <summary>The level that offers the ultimate's upgrade (8 with the default layout), or 0 if none does.</summary>
         public int UltimateFormLevel()
         {
             for (int level = 1; levelChoices != null && level <= levelChoices.Length; level++)

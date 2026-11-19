@@ -97,7 +97,6 @@ namespace DuckAndCover.Core
                 if (a.charges < 1) errors.Add(w + "charges must be at least 1");
                 if (a.ultimate && a.ultimateCost <= 0f) errors.Add(w + "ultimateCost must be positive");
                 if (a.castTime < 0f || a.duration < 0f) errors.Add(w + "castTime and duration can't be negative");
-                if (a.unlockLevel < 1) errors.Add(w + "unlockLevel must be at least 1");
                 var t = a.targeting ?? new TargetingDef();
                 if (!Shapes.IsKnown(t.shape)) errors.Add(w + "unknown targeting shape '" + t.shape + "'");
                 if (!Origins.IsKnown(t.origin)) errors.Add(w + "unknown targeting origin '" + t.origin + "'");

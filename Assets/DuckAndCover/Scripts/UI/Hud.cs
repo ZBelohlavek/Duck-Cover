@@ -507,15 +507,6 @@ namespace DuckAndCover.UI
             g.Commit();
         }
 
-        /// <summary>Whether the player has picked their ultimate's form, if their hero offers one (the server holds the ultimate until then).</summary>
-        static bool FormPicked(MatchSnapshot snapshot, PlayerState me, Ruleset rules)
-        {
-            var progression = rules.progression == null ? new ProgressionRuleset() : rules.progression;
-            if (!HeroServer.OffersUltimateForm(HeroData.Catalog.Resolve(me.heroId), progression)) return true;
-            var mine = snapshot == null || snapshot.progression == null ? null : snapshot.progression.Player(me.id);
-            return mine != null && mine.HasPicked(progression.UltimateFormLevel());
-        }
-
         void ShowAbilities(MatchSnapshot snapshot, PlayerState me, HeroUnit unit)
         {
             var lib = HeroData.Abilities;
@@ -534,7 +525,7 @@ namespace DuckAndCover.UI
                     continue;
                 }
                 var def = AbilityParams.Resolve(baseDef, unit.changes, lib, rules.minCooldownSeconds).def;
-                s.key.text = def.ultimate ? AbilityKeys[2] : i < 2 ? AbilityKeys[i] : "";
+                s.key.text = i < AbilityKeys.Length ? AbilityKeys[i] : "";
                 s.name.text = def.displayName.ToUpperInvariant();
 
                 // How full the slot is (recharge or ultimate charge), whether it is ready, and what it says.
@@ -545,11 +536,8 @@ namespace DuckAndCover.UI
                 Color edge = UITheme.VisorFaint, text = UITheme.Text;
                 if (def.ultimate)
                 {
-                    int need = Mathf.Max(def.unlockLevel, rules.ultimateUnlockLevel);
                     fill = Mathf.Clamp01(unit.ultimateCharge / Mathf.Max(1f, def.ultimateCost));
-                    if (me.level < need) { status = "LV " + need; text = UITheme.TextDim; fill = 0f; }
-                    else if (!FormPicked(snapshot, me, rules)) { status = "Z / V"; text = UITheme.TextDim; }
-                    else if (unit.ultimateCharge >= def.ultimateCost - 0.01f) { status = "READY"; text = UITheme.Warning; edge = UITheme.Warning; ready = true; }
+                    if (unit.ultimateCharge >= def.ultimateCost - 0.01f) { status = "READY"; text = UITheme.Warning; edge = UITheme.Warning; ready = true; }
                     else status = Mathf.FloorToInt(100f * fill) + "%";
                 }
                 else if (def.held && (slot.raised || slot.charges > 0))
