@@ -384,6 +384,7 @@ namespace UnityEngine
 
     public class Renderer : Component
     {
+        public bool enabled { get; set; }
         public Material material { get; set; }
         public Material sharedMaterial { get; set; }
     }
@@ -734,6 +735,7 @@ namespace UnityEngine.InputSystem
         {
             public bool isPressed => false;
             public bool wasPressedThisFrame => false;
+            public bool wasReleasedThisFrame => false;
         }
 
         public class KeyControl : ButtonControl { }
