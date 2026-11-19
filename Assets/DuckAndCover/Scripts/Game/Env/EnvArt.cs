@@ -84,6 +84,8 @@ namespace DuckAndCover.Game
                 }
                 var albedo = Resources.Load<Texture2D>(Folder + name + "_c");
                 var normal = Resources.Load<Texture2D>(Folder + name + "_n");
+                if (albedo == null)
+                    Debug.LogError("Duck and Cover: environment piece " + name + " has no colour texture: Resources/" + Folder + name + "_c did not load as a Texture2D.");
                 var parts = new List<PartData>();
                 var bounds = new Bounds();
                 bool first = true;
