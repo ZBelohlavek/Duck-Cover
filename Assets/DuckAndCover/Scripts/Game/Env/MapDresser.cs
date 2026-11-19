@@ -44,12 +44,24 @@ namespace DuckAndCover.Game
             public readonly Dictionary<string, Material> materials = new Dictionary<string, Material>();
             /// <summary>The map's solid blocks, gathered on first use (for finding neighbours).</summary>
             public List<MapBlock> solids;
+            /// <summary>Lane maps wear the modelled pieces in <see cref="EnvArt"/> where they are in the build.</summary>
+            public bool art;
+            /// <summary>Tree-line and rock blocks joined end to end into runs, drawn as one wall (gathered on first use).</summary>
+            public Dictionary<MapBlock, WallRun> runs;
+        }
+
+        /// <summary>Wall blocks of one style lined up end to end. Only the first block draws the run; colliders stay per block.</summary>
+        public class WallRun
+        {
+            public MapBlock first;
+            public Vector3 min, max;
         }
 
         public static Context Begin(MapDef map, Transform root, EnvTheme theme)
         {
             if (theme == null) return null;
             var ctx = new Context { theme = theme, active = theme, map = map, root = root, rng = new System.Random(theme.seed * 7919 + StableHash(map.id)) };
+            ctx.art = map.IsLaneMap && EnvArt.Has(ArtHedge);
             return ctx;
         }
 
@@ -80,6 +92,7 @@ namespace DuckAndCover.Game
             c.active = t;
             bool bigCrate = b.kind == BlockKind.Crate && Math.Max(b.size.x, b.size.z) > 3.5f;
 
+            if (c.art && DressArt(c, go, b)) return;
             if (!string.IsNullOrEmpty(b.style) && b.kind != BlockKind.Ground && DressStyled(c, go, b, t)) return;
 
             Material mat;
@@ -136,7 +149,9 @@ namespace DuckAndCover.Game
             var centre = b.center.ToVector3();
             var filter = go.GetComponent<MeshFilter>();
             var renderer = go.GetComponent<Renderer>();
-            switch (b.style)
+            // Without the modelled temple pieces, the temple gate and ruin are drawn as rocks.
+            string style = b.style != null && b.style.StartsWith("temple") ? "rocks" : b.style;
+            switch (style)
             {
                 case "treeline":
                 {
@@ -173,6 +188,183 @@ namespace DuckAndCover.Game
         }
 
         static Color Shade(Color c, float k) => new Color(c.r * k, c.g * k, c.b * k, 1f);
+
+        // ---------------- modelled pieces (lane maps) ----------------
+
+        public const string ArtHedge = "EnvHedge";
+        public const string ArtLaunchPad = "EnvLaunchPad";
+        const int SideFaces = EnvMesh.PlusX | EnvMesh.MinusX | EnvMesh.PlusZ | EnvMesh.MinusZ;
+
+        /// <summary>
+        /// Draws a block with modelled pieces from <see cref="EnvArt"/>, stretched over its box (the block keeps
+        /// its collider; its own mesh is hidden). Tree-line and rock blocks walled in on all four sides keep the
+        /// cheap code-made look, since nobody sees their sides. Returns false to fall back to the code-made look.
+        /// </summary>
+        static bool DressArt(Context c, GameObject go, MapBlock b)
+        {
+            var size = b.size.ToVector3();
+            var centre = b.center.ToVector3();
+            float wide = Math.Max(size.x, size.z), thin = Math.Min(size.x, size.z);
+            string piece;
+            float module;
+            switch (b.kind)
+            {
+                case BlockKind.LowCover:
+                    if (b.style == "rocks") { piece = "EnvRockCover"; module = 2f; }
+                    else { piece = "EnvLowWall"; module = 3f; }
+                    break;
+                case BlockKind.Crate:
+                    if (wide > 3.5f && thin > 3.5f) return false; // shipping containers stay code-made
+                    if (size.y > 2f) piece = thin >= 1.9f ? "EnvCrateStackWide" : "EnvCrateStack";
+                    else piece = "EnvCrate";
+                    module = thin;
+                    break;
+                case BlockKind.Wall:
+                    switch (b.style)
+                    {
+                        case "treeline":
+                        case "rocks":
+                            return DressRun(c, go, b);
+                        case "templeruin":
+                            piece = "EnvTempleRuin"; module = wide;
+                            break;
+                        case "templegate":
+                        {
+                            // The lintel's block carries the whole gate: two jambs 2 m wide either side of its span, from the ground up.
+                            if (!EnvArt.Has("EnvTempleGate")) return false;
+                            var gateSize = new Vector3(size.x, b.Max.y, size.z);
+                            if (size.x >= size.z) gateSize.x += 4f; else gateSize.z += 4f;
+                            EnvArt.Fit(c.root, "EnvTempleGate", new Vector3(centre.x, b.Max.y * 0.5f, centre.z), gateSize, Math.Max(gateSize.x, gateSize.z));
+                            Hide(go);
+                            return true;
+                        }
+                        case "templegate_jamb":
+                            if (!EnvArt.Has("EnvTempleGate")) return false;
+                            Hide(go); // drawn by the gate on its lintel
+                            return true;
+                        default:
+                            return false;
+                    }
+                    break;
+                case BlockKind.Decal:
+                    // A launch pad's floor mark: the modelled pad covers it (see MapScene).
+                    foreach (var pad in c.map.launchPads)
+                        if (Math.Abs(pad.center.x - b.center.x) < size.x * 0.5f && Math.Abs(pad.center.z - b.center.z) < size.z * 0.5f && EnvArt.Has(ArtLaunchPad))
+                        {
+                            Hide(go);
+                            return true;
+                        }
+                    return false;
+                default:
+                    return false;
+            }
+            if (EnvArt.FitRun(c.root, new[] { piece }, centre, size, module, c.rng, 0f, 0.04f, 0.06f) == 0) return false;
+            Hide(go);
+            return true;
+        }
+
+        static readonly string[] Hedges = { "EnvHedge", "EnvHedgeB", "EnvHedgeC" };
+        static readonly string[] RockWalls = { "EnvRockWall", "EnvRockWallB", "EnvRockWallC" };
+        static readonly string[] TreeArt = { "EnvTree", "EnvTreeB" };
+
+        /// <summary>
+        /// A tree-line or rock block: the first block of its run draws the whole run as one wall of varied,
+        /// overlapping modules (see <see cref="EnvArt.FitRun"/>); the others only keep their colliders.
+        /// Blocks walled in on all four sides keep the cheap code-made look, since nobody sees their sides.
+        /// </summary>
+        static bool DressRun(Context c, GameObject go, MapBlock b)
+        {
+            if (c.runs == null) c.runs = FindRuns(c);
+            if (!c.runs.TryGetValue(b, out var run)) return false;
+            if (run.first != b) { Hide(go); return true; }
+            var size = run.max - run.min;
+            var centre = (run.max + run.min) * 0.5f;
+            bool rocks = b.style == "rocks";
+            float thin = Math.Min(size.x, size.z);
+            int placed;
+            if (rocks && size.y < 2f)
+                placed = EnvArt.FitRun(c.root, new[] { "EnvRockCover" }, centre, size, 2f, c.rng, 0.3f, 0.08f, 0.1f);
+            else if (rocks)
+                placed = EnvArt.FitRun(c.root, RockWalls, centre, size, 4f, c.rng, 0.45f, 0.05f, 0.08f);
+            else
+                placed = EnvArt.FitRun(c.root, Hedges, centre, size, 4f, c.rng, 0.6f, 0.06f, 0.1f, (m, i, at) =>
+                {
+                    // Now and then a tree rises out of the tree line: trunk inside the wall, crown above 9 m.
+                    if (c.rng.NextDouble() >= 0.2) return;
+                    var tree = TreeArt[c.rng.Next(TreeArt.Length)];
+                    if (!EnvArt.Has(tree)) tree = TreeArt[0];
+                    if (!EnvArt.Has(tree)) return;
+                    var yaw = (size.x >= size.z ? 0f : 90f) + (c.rng.NextDouble() < 0.5 ? 0f : 180f);
+                    float grow = 1f + 0.15f * (float)c.rng.NextDouble();
+                    EnvArt.Place(c.root, tree, new Vector3(at.x, run.min.y, at.z), Quaternion.Euler(0f, yaw, 0f),
+                        new Vector3(c.rng.NextDouble() < 0.5 ? 1f : -1f, size.y / 6.5f * grow, thin / 2f));
+                });
+            if (placed == 0) return false;
+            Hide(go);
+            return true;
+        }
+
+        /// <summary>
+        /// Joins tree-line and rock blocks that touch end to end (same style, same height and the same depth)
+        /// into runs, first along x, then along z for what is left. Single blocks are runs of one.
+        /// </summary>
+        static Dictionary<MapBlock, WallRun> FindRuns(Context c)
+        {
+            var runs = new Dictionary<MapBlock, WallRun>();
+            var open = new List<MapBlock>();
+            foreach (var o in c.map.blocks)
+                if (o.kind == BlockKind.Wall && (o.style == "treeline" || o.style == "rocks")
+                    && (SealedFaces(c, o) & SideFaces) != SideFaces)
+                    open.Add(o);
+            for (int pass = 0; pass < 2; pass++)
+            {
+                bool alongX = pass == 0;
+                var byStart = new Dictionary<string, MapBlock>();
+                var ends = new HashSet<string>();
+                foreach (var o in open)
+                    if (!runs.ContainsKey(o))
+                    {
+                        byStart[RunKey(o, alongX, alongX ? o.Min.x : o.Min.z)] = o;
+                        ends.Add(RunKey(o, alongX, alongX ? o.Max.x : o.Max.z));
+                    }
+                foreach (var o in open)
+                {
+                    if (runs.ContainsKey(o)) continue;
+                    // Start only where nothing joins from behind.
+                    if (ends.Contains(RunKey(o, alongX, alongX ? o.Min.x : o.Min.z))) continue;
+                    var members = new List<MapBlock> { o };
+                    var cur = o;
+                    while (byStart.TryGetValue(RunKey(cur, alongX, alongX ? cur.Max.x : cur.Max.z), out var next) && !runs.ContainsKey(next) && !members.Contains(next))
+                    {
+                        members.Add(next);
+                        cur = next;
+                    }
+                    if (members.Count < 2 && pass == 0) continue; // a lone block may still join a run along z
+                    var run = new WallRun { first = o, min = o.Min.ToVector3(), max = o.Max.ToVector3() };
+                    foreach (var m in members)
+                    {
+                        run.min = Vector3.Min(run.min, m.Min.ToVector3());
+                        run.max = Vector3.Max(run.max, m.Max.ToVector3());
+                        runs[m] = run;
+                    }
+                }
+            }
+            return runs;
+        }
+
+        /// <summary>A block's place in a run: style, height span, cross span, and where along the run it starts.</summary>
+        static string RunKey(MapBlock o, bool alongX, float at)
+        {
+            int R(float v) => Mathf.RoundToInt(v * 20f);
+            return o.style + "|" + R(o.Min.y) + "|" + R(o.Max.y) + "|" + (alongX ? R(o.Min.z) + "|" + R(o.Max.z) : R(o.Min.x) + "|" + R(o.Max.x)) + "|" + R(at);
+        }
+
+        /// <summary>Keeps a block's collider but stops drawing its own mesh.</summary>
+        static void Hide(GameObject go)
+        {
+            var r = go.GetComponent<Renderer>();
+            if (r != null) r.enabled = false;
+        }
 
         /// <summary>A building wall: dark base course, a cap course and a glowing strip near the top, vines down its faces.</summary>
         static void WallTrims(Context c, MapBlock b)

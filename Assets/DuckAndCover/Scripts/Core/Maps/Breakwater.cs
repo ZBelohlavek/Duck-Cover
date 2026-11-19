@@ -199,9 +199,9 @@ namespace DuckAndCover.Core
             m.launchPads.Add(new LaunchPad("LaunchB", TeamId.B, MapDef.Mirror(pad.center), MapDef.Mirror(pad.landing), pad.apexHeight, pad.seconds, pad.radius));
             // The side gate: shut until the shift, in the plaza's west edge where the side route arrives.
             Pair(m, "SideGate", BlockKind.Shutter, -27.5f, -84f, 1f, 4f, 6f, 0f, ShiftRole.RemovedOnShift);
-            Pair(m, "SideGateLintel", BlockKind.Wall, -27.5f, -84f, 1f, FillHeight - 4f, 6f, 4f, ShiftRole.None, 0, "rocks");
-            Pair(m, "SideGateJambSouth", BlockKind.Wall, -27.5f, -88f, 1f, FillHeight, 2f, 0f, ShiftRole.None, 0, "rocks");
-            Pair(m, "SideGateJambNorth", BlockKind.Wall, -27.5f, -80f, 1f, FillHeight, 2f, 0f, ShiftRole.None, 0, "rocks");
+            Pair(m, "SideGateLintel", BlockKind.Wall, -27.5f, -84f, 1f, FillHeight - 4f, 6f, 4f, ShiftRole.None, 0, "templegate");
+            Pair(m, "SideGateJambSouth", BlockKind.Wall, -27.5f, -88f, 1f, FillHeight, 2f, 0f, ShiftRole.None, 0, "templegate_jamb");
+            Pair(m, "SideGateJambNorth", BlockKind.Wall, -27.5f, -80f, 1f, FillHeight, 2f, 0f, ShiftRole.None, 0, "templegate_jamb");
             m.entrances.Add(new MapEntrance { name = "LaneMouthA", team = TeamId.A, position = P(-12f, 0f, -73f), halfWidth = LaneWidth * 0.5f + 1.5f });
             m.entrances.Add(new MapEntrance { name = "JungleDoorA", team = TeamId.A, position = P(3f, 0f, -86f), halfWidth = JungleWidth * 0.5f });
             m.entrances.Add(new MapEntrance { name = "LaneMouthB", team = TeamId.B, position = P(-12f, 0f, 73f), halfWidth = LaneWidth * 0.5f + 1.5f });
@@ -281,7 +281,7 @@ namespace DuckAndCover.Core
             PairRaw(m, "SpeedRock", BlockKind.Wall, 15f, -54f, 2f, 2.4f, 2f, 0f, ShiftRole.None, 0, "rocks");
             Cover(m, "ExperienceLow", BlockKind.LowCover, 30f, -83f, 2.5f, CoverHeight, 1.5f, 0f, ShiftRole.None, 0, "rocks");
             // Broken temple walls at the top of each stair keep the camp out of sight from the lane below.
-            PairRaw(m, "ShelfScreen", BlockKind.Wall, -37.5f, -7.5f, 7f, 3f, 1.5f, ShelfHeight, ShiftRole.None, 0, "rocks");
+            PairRaw(m, "ShelfScreen", BlockKind.Wall, -37.5f, -7.5f, 7f, 3f, 1.5f, ShelfHeight, ShiftRole.None, 0, "templeruin");
             CoverSelf(m, "JuggernautRock", BlockKind.Wall, -34f, 0f, 2f, 2.2f, 3f, ShelfHeight, "rocks");
 
             // ---- Flag Rush: a capture zone in each base's plaza, in front of the spawn room (its startOwner is
