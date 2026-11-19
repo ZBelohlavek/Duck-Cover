@@ -597,7 +597,7 @@ namespace DuckAndCover.Game
         }
 
         /// <summary>
-        /// The first practice dummy becomes a Lancer (on the server, for looks only: its kit stays), so the player
+        /// An enemy practice dummy becomes a Lancer (on the server, for looks only: its kit stays), so the player
         /// sees the soldier model as an enemy, firing toward them, with their own rifle in view.
         /// </summary>
         static void DummyBecomesLancer()
@@ -605,10 +605,12 @@ namespace DuckAndCover.Game
             HideHud = true;
             var runner = SessionRunner.Instance;
             var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
-            // The first enemy dummy still standing (earlier shots may have knocked the first one down).
+            // An enemy dummy still standing. Not the first if it can be helped: shot 10 made it a Bulwark, and the
+            // Rampart it holds up would hide the soldier.
             int id = -1;
-            for (int i = 0; i < 3 && id < 0 && runner != null && runner.Match != null; i++)
-                if (runner.Match.State.IsAlive(CombatServer.FirstDummyId + i)) id = CombatServer.FirstDummyId + i;
+            int[] order = { 1, 2, 0 };
+            for (int i = 0; i < order.Length && id < 0 && runner != null && runner.Match != null; i++)
+                if (runner.Match.State.IsAlive(CombatServer.FirstDummyId + order[i])) id = CombatServer.FirstDummyId + order[i];
             var dummy = id < 0 ? null : runner.Match.State.Player(id);
             if (dummy == null || local == null) { Debug.LogError("Duck and Cover: the capture found no practice dummy to show as a Lancer."); return; }
             dummy.heroId = "lancer";
