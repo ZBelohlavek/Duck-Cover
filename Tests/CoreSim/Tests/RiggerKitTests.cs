@@ -191,7 +191,7 @@ static class RiggerKitTests
         float ambush = Shot(h);
         Check.Near(plain * 1.6f, ambush, "Ambush, Killing Window and Phantom: 60% more", 0.01f);
         Check.Near(100f + ambush * 0.15f, h.Health(A1), "Phantom heals 15% of it", 0.01f);
-        Check.Near(h.R.ambushSeconds + 1.5f - 0.2f, h.Unit(A1).ambushLeft, "Killing Window: 1.5 s longer", 0.06f);
+        Check.Near(h.R.ambushSeconds + 1.5f, h.Unit(A1).ambushLeft, "Killing Window: 1.5 s longer", 0.06f);
     }
 
     [Test]

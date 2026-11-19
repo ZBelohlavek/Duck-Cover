@@ -170,5 +170,10 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
 - Heroes (WP11): Bulwark (vanguard), Lancer (striker), Mender (support), Rigger (controller), as data in
   Data/Resources. `HeroServer` (Core/Heroes) gives a pick its kit, runs leveling beside the match and
   applies upgrades; `HeroKitTests` checks every ability and all 80 upgrades. Levels run 1 to 20 (picks on even levels); each hero has two upgrade paths, left and right (`docs/HEROES.md`).
+- Stealth (Rigger's Cloak) is a status flag, `StatusDef.stealth`: `HeroUnit.stealthed` is on while a stealth status is
+  up and no reveal status is. Turrets (objects with maxTargets), minions and Bastions skip a stealthed enemy
+  (`DamageRules.IsHidden`); `CombatView` hides them beyond `Ruleset.stealthShimmerRange`. Firing (`WeaponRules.BeforeShot`)
+  or any ability that isn't self-only ends it (`AbilityRunner.BreakStealth`) and opens the ambush window, which the
+  stat condition "ambush" reads.
 - F1 in the Boot scene shows a developer panel to host, join, pick a team and hero and start a match.
   Two copies on one PC: host in one, join `127.0.0.1` in the other.

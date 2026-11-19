@@ -119,6 +119,11 @@ static class HeroKitTests
             h.Run(2f);
             Check.True(h.Use(A1, 1, Ahead).IsAccepted, heroId + ": F works at level 1");
             h.Run(2f);
+            if (!h.Abilities.AbilityIn(A1, 2).ultimate)
+            {
+                Check.True(h.Use(A1, 2, Ahead).IsAccepted, heroId + ": X runs on a cooldown and works at level 1");
+                continue;
+            }
             var empty = h.Use(A1, 2, Ahead);
             Check.Equal("ultimate not charged", empty.reason, heroId + ": X is only waiting for charge");
             h.Run(5f);
@@ -531,7 +536,7 @@ static class HeroKitTests
         h.Place(A1, 0f, 0f);
         h.Place(A2, 0f, 3f);
         h.Unit(A2).health = 100f;
-        h.Abilities.ApplyStatus(A2, AbilityLibrary.SlowStatus, B1, 0.5f, 3f, 0f, "rigger_mine");
+        h.Abilities.ApplyStatus(A2, AbilityLibrary.SlowStatus, B1, 0.5f, 3f, 0f, "test_slow");
         Check.True(h.Use(A1, 1, Ahead).IsAccepted, "purge");
         Check.False(h.Unit(A2).HasStatus(AbilityLibrary.SlowStatus), "slow cleared");
         Check.Near(130f, h.Health(A2), "healed 30");

@@ -136,7 +136,7 @@ static class WaveKitTests
     [Test]
     static void AGateHoldsALaneMinionAndItsFire()
     {
-        // WP15's real minion walking and shooting (WaveRules.StepUnit and CanHit) against a Lockout Gate.
+        // WP15's real minion walking and shooting (WaveRules.StepUnit and CanHit) against a placed gate.
         var h = new LaneHarness(waves: false);
         var gateDef = new ObjectDef { id = "test_gate", lifetime = 6f, health = 1500f, blocksMovement = true, blocksShots = true, width = 8f, height = 4f };
         var gate = h.H.Combat.Abilities.SpawnObject(gateDef, CombatHarness.B1, new Vec3(0f, 0f, -80f), "", Vec3.Forward);

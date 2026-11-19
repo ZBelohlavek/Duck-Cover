@@ -49,7 +49,7 @@ namespace DuckAndCover.Game
             new Shot("09-bodies", () => WatchFrom(new Vector3(-2.5f, 2.2f, 4f), new Vector3(1.5f, 1f, 9f)), 0.5f),
             // Hero kits (WP11): the dummies are given heroes and use their abilities toward the player.
             new Shot("10-abilities", DummiesUseAbilities, 1.6f),
-            new Shot("11-gate", DummyRaisesGate, 1.0f),
+            new Shot("11-hush", DummyThrowsHush, 1.0f),
             new Shot("12-hero-hud", LevelUpAndLook, 1.2f),
             // Environment kit: the lane mock-up, built far off to one side of the real map.
             new Shot("13-lane", () => LaneShot(new Vector3(0f, 1.8f, -50f), new Vector3(0f, 1.2f, -38f)), 1.0f),
@@ -373,28 +373,25 @@ namespace DuckAndCover.Game
             {
                 int dummy = CombatServer.FirstDummyId + i;
                 if (!runner.Heroes.GiveKit(dummy, DummyHeroes[i]).IsAccepted) continue;
-                // Bulwark: a panel toward the player. Rigger: a mine and a sentry on the floor ahead. Mender: a field near its feet.
-                if (DummyCast(runner, dummy, 0, me, i == 0 ? 0f : i == 1 ? -0.3f : -0.6f)) used++;
-                if (i == 1 && DummyCast(runner, dummy, 1, me, -0.5f)) used++;
+                // Bulwark: a panel toward the player. Rigger: Combat Stim (Cloak would hide him from the shot). Mender: a field near its feet.
+                if (DummyCast(runner, dummy, i == 1 ? 1 : 0, me, i == 0 ? 0f : i == 1 ? 0f : -0.6f)) used++;
             }
             // The player's Lancer marks the first dummy (the camera already faces it).
             var local = CombatView.Instance == null ? null : CombatView.Instance.Local;
             if (local != null) local.UseAbility(1, "lancer_mark");
-            if (used < 4) Debug.LogError("Duck and Cover: the capture's dummies used " + used + " abilities, expected 4.");
+            if (used < 3) Debug.LogError("Duck and Cover: the capture's dummies used " + used + " abilities, expected 3.");
             WatchFrom(new Vector3(-8f, 6f, -14f), new Vector3(-1f, 0f, 2f));
         }
 
-        static void DummyRaisesGate()
+        /// <summary>The Rigger dummy throws Hush Grenade at the player: the HUD says SILENCED for the next shots.</summary>
+        static void DummyThrowsHush()
         {
             var runner = SessionRunner.Instance;
-            if (runner == null || runner.Heroes == null) return;
+            if (runner == null || runner.Heroes == null || runner.Client == null) return;
             int rigger = CombatServer.FirstDummyId + 1;
-            int formLevel = runner.Heroes.Progression.Rules.UltimateFormLevel();
-            while (runner.Heroes.Progression.Level(rigger) < formLevel && runner.Heroes.Progression.Grant(rigger, 500f, ExperienceSource.Match) > 0f) { }
-            if (formLevel > 0) runner.Heroes.Progression.Apply(new ChooseUpgradeCommand { playerId = rigger, level = formLevel, option = 0 });
-            var unit = runner.Combat.Abilities.Unit(rigger);
-            if (unit != null) unit.ultimateCharge = runner.Match.Rules.ultimateChargeMax;
-            if (!DummyCast(runner, rigger, 2, runner.Client.PlayerId, 0f)) Debug.LogError("Duck and Cover: the capture's Rigger could not raise its gate.");
+            int me = runner.Client.PlayerId;
+            if (!DummyCast(runner, rigger, 2, me, 0f)) Debug.LogError("Duck and Cover: the capture's Rigger could not throw Hush Grenade.");
+            CombatView.Instance.StartCoroutine(Expect(() => runner.Combat.Abilities.IsSilenced(me), 0.5f, "the player silenced by Hush Grenade"));
         }
 
         /// <summary>Back to the player's eyes, a few levels up, so the ability bar and the upgrade on offer show.</summary>

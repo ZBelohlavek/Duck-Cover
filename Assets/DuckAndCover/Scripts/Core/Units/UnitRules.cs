@@ -117,8 +117,8 @@ namespace DuckAndCover.Core
 
         /// <summary>
         /// Walk a living unit by a step (the lane walker's move): like <see cref="Move"/>, but it stops
-        /// short of map geometry and of any placed object that blocks movement (Bastion Panel, Lockout
-        /// Gate), as those objects' colliders stop heroes. Returns the metres actually walked.
+        /// short of map geometry and of any placed object that blocks movement (Bastion Panel, a
+        /// placed gate), as those objects' colliders stop heroes. Returns the metres actually walked.
         /// </summary>
         public float Walk(int unitId, Vec3 step, float yaw)
         {
@@ -147,7 +147,7 @@ namespace DuckAndCover.Core
         /// target's chest that no map geometry and no enemy barrier or gate stops. The unit's own
         /// team's barriers let its shots through, as they do for heroes; other bodies don't block.
         /// Range is the caller's to check. Minion attacks call this before
-        /// <see cref="DamageRules.Damage"/>, so Bastion Panel and Lockout Gate shelter heroes from a wave.
+        /// <see cref="DamageRules.Damage"/>, so Bastion Panel and placed gates shelter heroes from a wave.
         /// </summary>
         public bool LineOfFire(int unitId, int targetId)
         {
