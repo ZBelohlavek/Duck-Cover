@@ -45,7 +45,9 @@ namespace DuckAndCover.Game
             new Shot("05b-pick", HostPracticeMatch, 1.5f),
             new Shot("06-spawn", StartPracticeMatch, 5.5f),
             new Shot("07-dummies", () => Stand(new Vec3(-4f, 0f, -8.5f)), 1.2f),
-            new Shot("08-after-shots", () => Shoot(12), 1.6f),
+            // 8 rifle hits (18 each at the chest) leave the 200-health dummy standing: shot 10 needs it alive, and with no
+            // hero shields any more 12 hits killed it.
+            new Shot("08-after-shots", () => Shoot(8), 1.6f),
             new Shot("09-bodies", () => WatchFrom(new Vector3(-2.5f, 2.2f, 4f), new Vector3(1.5f, 1f, 9f)), 0.5f),
             // Hero kits (WP11): the dummies are given heroes and use their abilities toward the player.
             new Shot("10-abilities", DummiesUseAbilities, 1.6f),
