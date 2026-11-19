@@ -155,14 +155,21 @@ static class OverrunSim
 
         int target = PickTarget(h, b, m.position);
         if (target < 0) return;
-        // A bot with healing rounds loaded (Mender's Mending Rounds) shoots a hurt teammate first.
-        int patient = h.Combat.Weapons.Weapons(b.id).healRounds > 0 ? PickPatient(h, b, m.position) : -1;
-        Vec3 aim = h.ChestOf(patient >= 0 ? patient : target);
+        // Healing rounds (Mender's Mending Rounds) only heal: a bot loads them when a teammate is hurt, shoots that
+        // teammate while they last, and reloads back to plain rounds when nobody needs them.
+        int patient = PickPatient(h, b, m.position);
+        var weapons = h.Combat.Weapons.Weapons(b.id);
+        Vec3 aim = h.ChestOf(weapons.healRounds > 0 && patient >= 0 ? patient : target);
         if (rng.Next() > b.accuracy) aim = aim + right * 3f + Vec3.Up * 1.5f; // a miss
         Vec3 eye = h.Eye(b.id);
         var hero = h.Combat.Damage.Unit(b.id);
         for (int slot = 0; slot < hero.slots.Count; slot++)
+        {
+            var def = h.Combat.Abilities.AbilityIn(b.id, slot);
+            if (patient < 0 && def != null && def.effects.Any(e => e != null && e.kind == EffectKinds.HealRounds)) continue;
             h.Combat.Apply(new UseAbilityCommand { playerId = b.id, slot = slot, abilityId = "", aimOrigin = eye, aimDirection = (h.ChestOf(target) - eye).Normalized, tick = h.S.tick });
+        }
+        if (weapons.healRounds > 0 && patient < 0) { h.Combat.Apply(new ReloadCommand { playerId = b.id }); return; }
         h.FireAt(b.id, aim);
     }
 

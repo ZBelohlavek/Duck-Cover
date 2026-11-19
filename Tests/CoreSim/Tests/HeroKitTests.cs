@@ -371,7 +371,7 @@ static class HeroKitTests
         h.Place(A2, 5f, 5f);
         h.Run(0.2f);
         h.FireAt(A1, h.ChestOf(B1));
-        Check.Near(enemy - 15f, h.Health(B1), "a healing round still hurts an enemy");
+        Check.Near(enemy, h.Health(B1), "a healing round does no harm to an enemy");
 
         Check.True(h.Combat.Apply(new ReloadCommand { playerId = A1 }).IsAccepted, "a normal reload");
         h.Run(2f);
