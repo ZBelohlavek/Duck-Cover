@@ -123,6 +123,7 @@ namespace DuckAndCover.Core
             unit.passiveId = passiveId ?? "";
 
             foreach (var slot in unit.slots) if (slot.casting) slot.casting = false;
+            for (int i = 0; i < unit.slots.Count; i++) Lower(unit, i, "lowered");
             unit.slots.Clear();
             foreach (var id in abilityIds)
                 unit.slots.Add(new AbilitySlotState { abilityId = id, charges = Resolved(unit, id).def.charges });
@@ -264,12 +265,23 @@ namespace DuckAndCover.Core
 
         CommandResult Use(UseAbilityCommand use)
         {
+            // A held ability that is up comes down whatever else is going on (silenced, out of charges).
+            var holder = Combat.Unit(use.playerId);
+            if (holder != null && use.slot >= 0 && use.slot < holder.slots.Count && (string.IsNullOrEmpty(use.abilityId) || use.abilityId == holder.slots[use.slot].abilityId))
+            {
+                var held = holder.slots[use.slot];
+                if (held.raised) { Lower(holder, use.slot, "lowered"); return CommandResult.Accepted; }
+                if (use.lower) return CommandResult.Accepted; // released before it went up: nothing to do
+            }
+            else if (use.lower) return CommandResult.Accepted;
+
             var can = CanUse(use.playerId, use.slot, use.abilityId);
             if (!can.IsAccepted) return can;
             var unit = Combat.Unit(use.playerId);
             var s = unit.slots[use.slot];
             var ability = Resolved(unit, s.abilityId);
             var def = ability.def;
+            if (def.held) return Raise(unit, use.slot, use);
 
             Vec3 dir = use.aimDirection.Normalized;
             if (dir == Vec3.Zero) dir = Vec3.Forward;
@@ -405,6 +417,7 @@ namespace DuckAndCover.Core
                         s.rechargeLeft = s.charges < def.charges ? s.rechargeLeft + def.cooldown : 0f;
                     }
                 }
+                if (def.held) TickHeld(unit, i, Resolved(unit, s.abilityId), dt);
                 if (s.casting)
                 {
                     s.castLeft -= dt;
@@ -454,7 +467,7 @@ namespace DuckAndCover.Core
                     ClearStatuses(unit, "respawned");
                     Combat.OnSpawned(spawned.playerId);
                     if (Rules.resetCooldownsOnRespawn)
-                        foreach (var s in unit.slots) { s.charges = Resolved(unit, s.abilityId).def.charges; s.rechargeLeft = 0f; s.activeLeft = 0f; }
+                        foreach (var s in unit.slots) { s.charges = Resolved(unit, s.abilityId).def.charges; s.rechargeLeft = 0f; s.activeLeft = 0f; s.reserve = 1f; s.downFor = 0f; }
                     break;
                 }
                 case PlayerEliminatedEvent down:
@@ -462,6 +475,7 @@ namespace DuckAndCover.Core
                     var unit = Combat.Unit(down.playerId);
                     if (unit == null) return;
                     CancelCasts(unit, "eliminated");
+                    for (int i = 0; i < unit.slots.Count; i++) Lower(unit, i, "lowered");
                     ClearStatuses(unit, "eliminated");
                     Combat.OnEliminated(down.playerId);
                     foreach (var s in unit.slots) s.activeLeft = 0f;

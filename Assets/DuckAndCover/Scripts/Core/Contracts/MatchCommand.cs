@@ -27,6 +27,11 @@ namespace DuckAndCover.Core
         public string abilityId;
         public Vec3 aimOrigin;
         public Vec3 aimDirection;
+        /// <summary>
+        /// For a held ability (a shield): the key was released, so take it down. Does nothing if it is
+        /// not up. Without it, using a held ability that is up also lowers it.
+        /// </summary>
+        public bool lower;
     }
 
     /// <summary>Use something in the world: pick up the kit, plant, defuse, open a door.</summary>

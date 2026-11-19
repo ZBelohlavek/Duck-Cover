@@ -5,87 +5,87 @@
     "weaponId": "shotgun",
     "maxHealth": 300,
     "abilities": [
-        "bulwark_panel",
-        "bulwark_rush"
+        "bulwark_rampart",
+        "bulwark_drone"
     ],
-    "ultimateId": "bulwark_hold",
+    "ultimateId": "bulwark_bulkhead",
     "passiveId": "",
     "levels": [
         {
             "level": 2,
             "options": [
-                "bulwark_thick_hide",
-                "bulwark_anchor"
+                "bulwark_thick_plating",
+                "bulwark_close_quarters"
             ]
         },
         {
             "level": 4,
             "options": [
-                "bulwark_long_rush",
-                "bulwark_reinforced_panel"
+                "bulwark_dense_field",
+                "bulwark_spare_parts"
             ]
         },
         {
             "level": 6,
             "options": [
-                "bulwark_close_quarters",
-                "bulwark_steady_guard"
+                "bulwark_anchor",
+                "bulwark_quick_build"
             ]
         },
         {
             "level": 8,
             "options": [
-                "bulwark_crushing_line",
-                "bulwark_lockdown"
+                "bulwark_reinforced_bulkhead",
+                "bulwark_wide_bulkhead"
             ]
         },
         {
             "level": 10,
             "options": [
-                "bulwark_second_wind",
-                "bulwark_braced"
+                "bulwark_braced",
+                "bulwark_second_wind"
             ]
         },
         {
             "level": 12,
             "options": [
-                "bulwark_shockwave",
-                "bulwark_bastion_aura"
+                "bulwark_deflector",
+                "bulwark_armoured_drone"
             ]
         },
         {
             "level": 14,
             "options": [
-                "bulwark_last_stand",
-                "bulwark_point_warden"
+                "bulwark_steady_guard",
+                "bulwark_rattling_spread"
             ]
         },
         {
             "level": 16,
             "options": [
-                "bulwark_double_rush",
-                "bulwark_wide_panel"
+                "bulwark_broad_rampart",
+                "bulwark_shield_drone"
             ]
         },
         {
             "level": 18,
             "options": [
-                "bulwark_rallying_rush",
-                "bulwark_twin_panels"
+                "bulwark_mobile_rampart",
+                "bulwark_field_repairs"
             ]
         },
         {
             "level": 20,
             "options": [
-                "bulwark_unbreakable",
-                "bulwark_fortress"
+                "bulwark_mirror_rampart",
+                "bulwark_point_blank"
             ]
         }
     ],
     "upgrades": [
         {
-            "id": "bulwark_thick_hide",
-            "displayName": "Thick Hide",
+            "id": "bulwark_thick_plating",
+            "displayName": "Thick Plating",
             "description": "+25 max health.",
             "kind": "trait",
             "stats": [
@@ -97,63 +97,6 @@
                 }
             ],
             "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "bulwark_anchor",
-            "displayName": "Anchor",
-            "description": "Take 8% less damage on a point your team holds, or beside your own minions.",
-            "kind": "trait",
-            "stats": [
-                {
-                    "stat": "damageTaken",
-                    "op": "multiply",
-                    "value": 0.92,
-                    "when": "onHeldPoint"
-                }
-            ],
-            "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "bulwark_long_rush",
-            "displayName": "Long Rush",
-            "description": "Breach Rush goes 2 m further and knocks enemies 2 m further.",
-            "kind": "talent",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "bulwark_rush",
-                    "param": "range",
-                    "op": "add",
-                    "value": 2,
-                    "text": ""
-                },
-                {
-                    "ability": "bulwark_rush",
-                    "param": "effect.push.amount",
-                    "op": "add",
-                    "value": 2,
-                    "text": ""
-                }
-            ],
-            "scriptId": ""
-        },
-        {
-            "id": "bulwark_reinforced_panel",
-            "displayName": "Reinforced Panel",
-            "description": "Bastion Panel has 30% more health.",
-            "kind": "talent",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "bulwark_panel",
-                    "param": "object.health",
-                    "op": "multiply",
-                    "value": 1.3,
-                    "text": ""
-                }
-            ],
             "scriptId": ""
         },
         {
@@ -173,69 +116,124 @@
             "scriptId": ""
         },
         {
-            "id": "bulwark_steady_guard",
-            "displayName": "Steady Guard",
-            "description": "Abilities recover 10% faster.",
-            "kind": "trait",
-            "stats": [
-                {
-                    "stat": "cooldownRate",
-                    "op": "percent",
-                    "value": 0.1,
-                    "when": ""
-                }
-            ],
-            "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "bulwark_crushing_line",
-            "displayName": "Crushing Line",
-            "description": "Hold the Line wears enemies down twice as fast.",
-            "kind": "ultimate",
+            "id": "bulwark_dense_field",
+            "displayName": "Dense Field",
+            "description": "Rampart holds 20% more damage and regains its strength 30% faster.",
+            "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
-                    "ability": "bulwark_hold",
-                    "param": "object.effect.damage.amount",
+                    "ability": "bulwark_rampart",
+                    "param": "object.health",
                     "op": "multiply",
-                    "value": 2,
+                    "value": 1.2,
+                    "text": ""
+                },
+                {
+                    "ability": "bulwark_rampart",
+                    "param": "object.regen",
+                    "op": "percent",
+                    "value": 0.3,
                     "text": ""
                 }
             ],
             "scriptId": ""
         },
         {
-            "id": "bulwark_lockdown",
-            "displayName": "Lockdown",
-            "description": "Enemies caught when Hold the Line goes up are rooted for 1.5 seconds.",
-            "kind": "ultimate",
+            "id": "bulwark_spare_parts",
+            "displayName": "Spare Parts",
+            "description": "Patch Drone heals 30% more.",
+            "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
-                    "ability": "bulwark_hold",
-                    "param": "enable",
-                    "op": "set",
-                    "value": 0,
-                    "text": "holdRoot"
+                    "ability": "bulwark_drone",
+                    "param": "object.effect.heal.amount",
+                    "op": "multiply",
+                    "value": 1.3,
+                    "text": ""
                 }
             ],
             "scriptId": ""
         },
         {
-            "id": "bulwark_second_wind",
-            "displayName": "Second Wind",
-            "description": "Passive. Regain 8 health a second when you haven't been hit for a while.",
-            "kind": "passive",
+            "id": "bulwark_anchor",
+            "displayName": "Anchor",
+            "description": "Take 8% less damage on a point your team holds, or beside your own minions.",
+            "kind": "trait",
             "stats": [
                 {
-                    "stat": "healthRegen",
-                    "op": "add",
-                    "value": 8,
+                    "stat": "damageTaken",
+                    "op": "multiply",
+                    "value": 0.92,
+                    "when": "onHeldPoint"
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "bulwark_quick_build",
+            "displayName": "Quick Build",
+            "description": "Bulkhead charges 15% faster.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "ultimateChargeRate",
+                    "op": "percent",
+                    "value": 0.15,
                     "when": ""
                 }
             ],
             "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "bulwark_reinforced_bulkhead",
+            "displayName": "Reinforced Bulkhead",
+            "description": "Bulkhead holds twice as much damage and stands 4 seconds longer.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bulwark_bulkhead",
+                    "param": "object.health",
+                    "op": "multiply",
+                    "value": 2,
+                    "text": ""
+                },
+                {
+                    "ability": "bulwark_bulkhead",
+                    "param": "object.lifetime",
+                    "op": "add",
+                    "value": 4,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bulwark_wide_bulkhead",
+            "displayName": "Wide Bulkhead",
+            "description": "Bulkhead is 4 m wider and 1 m taller.",
+            "kind": "ultimate",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bulwark_bulkhead",
+                    "param": "object.width",
+                    "op": "add",
+                    "value": 4,
+                    "text": ""
+                },
+                {
+                    "ability": "bulwark_bulkhead",
+                    "param": "object.height",
+                    "op": "add",
+                    "value": 1,
+                    "text": ""
+                }
+            ],
             "scriptId": ""
         },
         {
@@ -255,183 +253,213 @@
             "scriptId": ""
         },
         {
-            "id": "bulwark_shockwave",
-            "displayName": "Shockwave",
-            "description": "Breach Rush stuns the enemies you hit for 0.6 seconds.",
-            "kind": "talent",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "bulwark_rush",
-                    "param": "enable",
-                    "op": "set",
-                    "value": 0,
-                    "text": "rushStun"
-                }
-            ],
-            "scriptId": ""
-        },
-        {
-            "id": "bulwark_bastion_aura",
-            "displayName": "Bastion Aura",
-            "description": "Teammates within 4 m of where you plant Bastion Panel gain 15 shield a second while it stands.",
-            "kind": "talent",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "bulwark_panel",
-                    "param": "enable",
-                    "op": "set",
-                    "value": 0,
-                    "text": "bastionAura"
-                }
-            ],
-            "scriptId": ""
-        },
-        {
-            "id": "bulwark_last_stand",
-            "displayName": "Last Stand",
-            "description": "Take 15% less damage while at half health or less.",
-            "kind": "trait",
+            "id": "bulwark_second_wind",
+            "displayName": "Second Wind",
+            "description": "Passive. Regain 8 health a second when you haven't been hit for a while.",
+            "kind": "passive",
             "stats": [
                 {
-                    "stat": "damageTaken",
-                    "op": "multiply",
-                    "value": 0.85,
-                    "when": "lowHealth"
-                }
-            ],
-            "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "bulwark_point_warden",
-            "displayName": "Point Warden",
-            "description": "Your weapons deal 12% more damage while on a point, or beside your own minions.",
-            "kind": "trait",
-            "stats": [
-                {
-                    "stat": "weaponDamage",
-                    "op": "percent",
-                    "value": 0.12,
-                    "when": "onPoint"
-                }
-            ],
-            "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "bulwark_double_rush",
-            "displayName": "Double Rush",
-            "description": "Breach Rush holds two charges.",
-            "kind": "talent",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "bulwark_rush",
-                    "param": "charges",
+                    "stat": "healthRegen",
                     "op": "add",
-                    "value": 1,
+                    "value": 8,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "bulwark_deflector",
+            "displayName": "Deflector",
+            "description": "Rampart sends 25% of the damage it blocks back at whoever dealt it.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bulwark_rampart",
+                    "param": "object.reflect",
+                    "op": "add",
+                    "value": 0.25,
                     "text": ""
                 }
             ],
             "scriptId": ""
         },
         {
-            "id": "bulwark_wide_panel",
-            "displayName": "Wide Panel",
-            "description": "Bastion Panel is 1.5 m wider.",
+            "id": "bulwark_armoured_drone",
+            "displayName": "Armoured Drone",
+            "description": "Patch Drone has twice the health and stays 4 seconds longer.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
-                    "ability": "bulwark_panel",
+                    "ability": "bulwark_drone",
+                    "param": "object.health",
+                    "op": "multiply",
+                    "value": 2,
+                    "text": ""
+                },
+                {
+                    "ability": "bulwark_drone",
+                    "param": "object.lifetime",
+                    "op": "add",
+                    "value": 4,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bulwark_steady_guard",
+            "displayName": "Steady Guard",
+            "description": "Abilities recover 15% faster, so a broken Rampart comes back sooner.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "cooldownRate",
+                    "op": "percent",
+                    "value": 0.15,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "bulwark_rattling_spread",
+            "displayName": "Rattling Spread",
+            "description": "Your shotgun slows the enemies it hits by 15% for a second.",
+            "kind": "trait",
+            "stats": [
+                {
+                    "stat": "weaponSlow",
+                    "op": "add",
+                    "value": 0.15,
+                    "when": ""
+                }
+            ],
+            "abilityChanges": [],
+            "scriptId": ""
+        },
+        {
+            "id": "bulwark_broad_rampart",
+            "displayName": "Broad Rampart",
+            "description": "Rampart opens 1.5 m wider and stands 0.4 m taller.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bulwark_rampart",
                     "param": "object.width",
                     "op": "add",
                     "value": 1.5,
                     "text": ""
+                },
+                {
+                    "ability": "bulwark_rampart",
+                    "param": "object.height",
+                    "op": "add",
+                    "value": 0.4,
+                    "text": ""
                 }
             ],
             "scriptId": ""
         },
         {
-            "id": "bulwark_rallying_rush",
-            "displayName": "Rallying Rush",
-            "description": "Breach Rush gives you a 60 shield for 3 seconds.",
+            "id": "bulwark_shield_drone",
+            "displayName": "Shield Drone",
+            "description": "Patch Drone also gives you 6 shield every half second.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
-                    "ability": "bulwark_rush",
+                    "ability": "bulwark_drone",
                     "param": "enable",
                     "op": "set",
                     "value": 0,
-                    "text": "rushShield"
+                    "text": "droneShield"
                 }
             ],
             "scriptId": ""
         },
         {
-            "id": "bulwark_twin_panels",
-            "displayName": "Twin Panels",
-            "description": "Bastion Panel holds two charges, and two can stand at once.",
+            "id": "bulwark_mobile_rampart",
+            "displayName": "Mobile Rampart",
+            "description": "Move at full speed while Rampart is up.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [
                 {
-                    "ability": "bulwark_panel",
-                    "param": "charges",
-                    "op": "add",
-                    "value": 1,
-                    "text": ""
-                },
-                {
-                    "ability": "bulwark_panel",
-                    "param": "object.maxPerOwner",
-                    "op": "add",
-                    "value": 1,
+                    "ability": "bulwark_rampart",
+                    "param": "stat.moveSpeed",
+                    "op": "set",
+                    "value": 0,
                     "text": ""
                 }
             ],
             "scriptId": ""
         },
         {
-            "id": "bulwark_unbreakable",
-            "displayName": "Unbreakable",
-            "description": "+75 max health and 5 more health regained a second.",
+            "id": "bulwark_field_repairs",
+            "displayName": "Field Repairs",
+            "description": "Patch Drone also heals teammates within 5 m of it.",
+            "kind": "talent",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bulwark_drone",
+                    "param": "object.affects",
+                    "op": "set",
+                    "value": 0,
+                    "text": "alliesAndSelf"
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bulwark_mirror_rampart",
+            "displayName": "Mirror Rampart",
+            "description": "Rampart sends back 35% more of the damage it blocks, and regains its strength twice as fast.",
+            "kind": "capstone",
+            "stats": [],
+            "abilityChanges": [
+                {
+                    "ability": "bulwark_rampart",
+                    "param": "object.reflect",
+                    "op": "add",
+                    "value": 0.35,
+                    "text": ""
+                },
+                {
+                    "ability": "bulwark_rampart",
+                    "param": "object.regen",
+                    "op": "multiply",
+                    "value": 2,
+                    "text": ""
+                }
+            ],
+            "scriptId": ""
+        },
+        {
+            "id": "bulwark_point_blank",
+            "displayName": "Point Blank",
+            "description": "Your shotgun deals 15% more damage and knocks enemies back.",
             "kind": "capstone",
             "stats": [
                 {
-                    "stat": "maxHealth",
-                    "op": "add",
-                    "value": 75,
+                    "stat": "weaponDamage",
+                    "op": "percent",
+                    "value": 0.15,
                     "when": ""
                 },
                 {
-                    "stat": "healthRegen",
+                    "stat": "weaponPush",
                     "op": "add",
-                    "value": 5,
+                    "value": 0.5,
                     "when": ""
                 }
             ],
             "abilityChanges": [],
-            "scriptId": ""
-        },
-        {
-            "id": "bulwark_fortress",
-            "displayName": "Fortress",
-            "description": "Hold the Line also gives teammates inside it 20 shield a second.",
-            "kind": "capstone",
-            "stats": [],
-            "abilityChanges": [
-                {
-                    "ability": "bulwark_hold",
-                    "param": "enable",
-                    "op": "set",
-                    "value": 0,
-                    "text": "fortress"
-                }
-            ],
             "scriptId": ""
         }
     ]
