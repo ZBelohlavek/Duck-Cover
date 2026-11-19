@@ -22,7 +22,7 @@
     {
       "id": "bolete_rot",
       "displayName": "Rot Spore",
-      "description": "Throw a rotten spore pod where you aim. It bursts a second later: enemies within 3.5 m are poisoned for 10 damage a second and Wilt (deal 20% less damage) for 5 seconds.",
+      "description": "Throw a rotten spore pod where you aim. It bursts a second later: enemies within 3.5 m are poisoned for 7 damage a second and Wilt (deal 20% less damage) for 5 seconds. Cooldown 15 s.",
       "cooldown": 15,
       "targeting": {
         "shape": "sphere",
@@ -58,7 +58,6 @@
       "id": "bolete_frenzy",
       "displayName": "Frenzy Cap",
       "description": "Grow a frenzy mushroom on the teammate you aim at: for 6 seconds they fire 25% faster and deal 15% more damage. With no teammate there, nothing is spent. Cooldown 20 s.",
-      "ultimate": false,
       "targeting": {
         "shape": "sphere",
         "origin": "aimPoint",
@@ -132,7 +131,7 @@
       "tickEffects": [
         {
           "kind": "damage",
-          "amount": 5
+          "amount": 3.5
         }
       ]
     },

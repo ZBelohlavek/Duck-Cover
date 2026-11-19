@@ -88,8 +88,6 @@ namespace DuckAndCover.Core
         public const string ShieldStrength = "shieldStrength";
         /// <summary>Cooldown seconds recovered per second (1.2 = cooldowns run 20% faster).</summary>
         public const string CooldownRate = "cooldownRate";
-        /// <summary>Multiplier on ultimate charge gained.</summary>
-        public const string UltimateChargeRate = "ultimateChargeRate";
         /// <summary>Multiplier on ability area radii (sphere targeting and spawned objects).</summary>
         public const string AbilityRadius = "abilityRadius";
         /// <summary>Multiplier on status durations this hero applies.</summary>
@@ -152,7 +150,6 @@ namespace DuckAndCover.Core
                 case HealingTaken:
                 case ShieldStrength:
                 case CooldownRate:
-                case UltimateChargeRate:
                 case AbilityRadius:
                 case StatusDuration:
                 case FireRate:

@@ -53,7 +53,7 @@ static class VampireKitTests
         var darts = h.Combat.Weapons.Library.Weapon("blood_darts");
         Check.Equal(WeaponKind.Projectile, darts.kind, "darts fly");
         Check.True(darts.NoAmmo(), "and spend no ammo");
-        Check.False(h.Abilities.AbilityIn(A1, Sweep).ultimate, "Crimson Sweep runs on a cooldown");
+        Check.Near(16f, h.Abilities.AbilityIn(A1, Sweep).cooldown, "Crimson Sweep runs on a plain 16 s cooldown");
         Check.Near(250f, h.Health(A1), "250 health");
         Check.True(h.Use(A1, Sweep, Ahead).IsAccepted, "and works at level 1");
     }
@@ -160,10 +160,10 @@ static class VampireKitTests
         h.Unit(A1).health = 100f;
         float b1 = h.Health(B1), b2 = h.Health(B2), a2 = h.Health(A2);
         Check.True(h.Use(A1, Sweep, Ahead).IsAccepted, "Crimson Sweep");
-        Check.Near(b1 - 55f, h.Health(B1), "55 to the enemy on the left", 0.01f);
-        Check.Near(b2 - 55f, h.Health(B2), "and the one on the right", 0.01f);
+        Check.Near(b1 - 50f, h.Health(B1), "50 to the enemy on the left", 0.01f);
+        Check.Near(b2 - 50f, h.Health(B2), "and the one on the right", 0.01f);
         Check.Near(a2, h.Health(A2), "the teammate is untouched");
-        Check.Near(100f + 110f * 0.4f, h.Health(A1), "he heals 40% of the 110 dealt", 0.01f);
+        Check.Near(100f + 100f * 0.4f, h.Health(A1), "he heals 40% of the 100 dealt", 0.01f);
         Check.Equal(0, h.Abilities.State.objects.Count, "no aura without the talent");
 
         var miss = Duel(3f);
@@ -201,13 +201,13 @@ static class VampireKitTests
 
         h.Unit(A1).health = 100f;
         Check.True(h.Use(A1, Sweep, Ahead).IsAccepted, "Crimson Sweep");
-        Check.Near(100f + 55f * 0.6f * 1.1f, h.Health(A1), "Deep Siphon: 60% back, and Blood Bank on top", 0.05f);
+        Check.Near(100f + 50f * 0.6f * 1.1f, h.Health(A1), "Deep Siphon: 60% back, and Blood Bank on top", 0.05f);
 
         h.Place(B1, 3.5f, 0.5f); // beside him: inside a 180 degree, 6.5 m sweep
         h.Run(16.1f);
         float before = h.Health(B1);
         Check.True(h.Use(A1, Sweep, Ahead).IsAccepted, "again");
-        Check.Near(before - 55f, h.Health(B1), "Wide Sweep reaches beside him", 0.01f);
+        Check.Near(before - 50f, h.Health(B1), "Wide Sweep reaches beside him", 0.01f);
 
         float max = h.Combat.Damage.MaxHealth(B1);
         Check.True(h.UseAt(A1, Grasp, B1).IsAccepted, "Grasping Claw");
@@ -236,11 +236,11 @@ static class VampireKitTests
         Check.Equal(1, h.Abilities.State.objects.Count, "Blood Aura is up");
         float b1 = h.Health(B1), hp = h.Health(A1);
         h.Run(2f);
-        Check.Near(b1 - 30f, h.Health(B1), "15 health a second from enemies within 4 m", 0.6f);
-        Check.True(h.Health(A1) > hp + 3 * 30f - 2f, "and he gains what they lose");
+        Check.Near(b1 - 20f, h.Health(B1), "10 health a second from enemies within 4 m", 0.6f);
+        Check.True(h.Health(A1) > hp + 3 * 20f - 2f, "and he gains what they lose");
         h.Place(A1, 0f, -20f); // he walks off: the aura goes with him
         h.Run(1f);
-        Check.Near(b1 - 30f, h.Health(B1), "out of its reach once he leaves", 0.6f);
+        Check.Near(b1 - 20f, h.Health(B1), "out of its reach once he leaves", 0.6f);
         h.Run(2.5f);
         Check.Equal(0, h.Abilities.State.objects.Count, "gone after 5 seconds");
 

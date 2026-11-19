@@ -179,6 +179,10 @@ When you add a screen or a scene worth checking, add a shot to `ScreenshotDirect
 - The vampire's kit added: `StatusDef.invulnerable` (no damage, no enemy debuffs), `EffectDef.lifeSteal` and
   `minTargets`, the `execute` effect (heroes only, never units), `PushDirections.Caster` (a pull), the `headDamage` stat,
   and projectile direct hits that count head and legs like bullets.
+- Ability rules (Zach, Nov 19): no ultimates (every ability, X included, is a plain cooldown), 13 to 20 s cooldowns
+  (`Ruleset.abilityCooldownFloor`/`Ceiling`; cooldown-rate stats can't beat the floor; anything shorter needs
+  `AbilityDef.shortCooldownReason`), no single ability kills a full-health hero, and area damage stays below
+  single-target damage. `AbilityRulesTests` checks every hero in the data; `report abilities` prints the table.
 - Stealth (Rigger's Cloak) is a status flag, `StatusDef.stealth`: `HeroUnit.stealthed` is on while a stealth status is
   up and no reveal status is. Turrets (objects with maxTargets), minions and Bastions skip a stealthed enemy
   (`DamageRules.IsHidden`); `CombatView` hides them beyond `Ruleset.stealthShimmerRange`. Firing (`WeaponRules.BeforeShot`)

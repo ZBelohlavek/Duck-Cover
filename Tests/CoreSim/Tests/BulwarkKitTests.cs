@@ -256,7 +256,6 @@ static class BulwarkKitTests
         var h = Lineup();
         h.LevelTo(A1, h.Heroes.Progression.Rules.UltimateFormLevel());
         Check.True(h.PickForm(A1, form).IsAccepted, "pick " + form);
-        h.Unit(A1).ultimateCharge = h.R.ultimateChargeMax;
         return h;
     }
 
@@ -265,10 +264,9 @@ static class BulwarkKitTests
     {
         var h = Lineup();
         Check.Equal(1, h.Heroes.Progression.Level(A1), "level 1, no upgrade picked");
-        h.Unit(A1).ultimateCharge = h.R.ultimateChargeMax;
-        Check.True(h.Use(A1, Bulkhead, new Vec3(0f, 0f, 10f) - h.Eye(A1)).IsAccepted, "Bulkhead goes up once charged");
+        Check.True(h.Use(A1, Bulkhead, new Vec3(0f, 0f, 10f) - h.Eye(A1)).IsAccepted, "Bulkhead goes up straight away");
         Check.True(Held(h, "bulwark_bulkhead") != null, "the wall is out");
-        Check.False(h.Use(A1, Bulkhead, Ahead).IsAccepted, "and needs charging again");
+        Check.Equal("on cooldown", h.Use(A1, Bulkhead, Ahead).reason, "and then waits out its cooldown");
     }
 
     [Test]

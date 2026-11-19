@@ -330,7 +330,7 @@
         {
             "id": "vampire_blood_aura",
             "displayName": "Blood Aura",
-            "description": "When Crimson Sweep hits 3 or more enemies, you wear a draining aura for 5 seconds: enemies within 4 m lose 15 health a second, and you gain what they lose.",
+            "description": "When Crimson Sweep hits 3 or more enemies, you wear a draining aura for 5 seconds: enemies within 4 m lose 10 health a second, and you gain what they lose.",
             "kind": "talent",
             "stats": [],
             "abilityChanges": [

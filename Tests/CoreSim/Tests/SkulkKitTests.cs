@@ -75,7 +75,7 @@ static class SkulkKitTests
         Check.Equal("skulk_jungle_stalker", unit.passiveId, "Jungle Stalker is his base passive");
         Check.Equal("scrap_rifle", h.Combat.Weapons.Weapons(A1).weapons[0], "the Scrap Rifle in hand");
         Check.Equal(1, h.Combat.Weapons.Weapons(A1).weapons.Length, "and no other gun");
-        Check.False(h.Abilities.AbilityIn(A1, Knife).ultimate, "the knife runs on a cooldown");
+        Check.True(h.Abilities.AbilityIn(A1, Knife).cooldown > 0f, "the knife runs on a cooldown");
         Check.Equal(AbilityKeys.E, AbilityKeys.ForSlot(Shrapnel, 2, true), "E is Shrapnel Charge");
         Check.Equal(AbilityKeys.X, AbilityKeys.ForSlot(Knife, 2, true), "X is the knife");
         Check.Equal(-1, AbilityKeys.SlotFor(AbilityKeys.F, 2, true), "F is the passive's place: no key");
@@ -399,7 +399,7 @@ static class SkulkKitTests
                 if (!h.S.IsAlive(B1)) Revive(h);
             }
             var kit = new[] { h.Abilities.AbilityIn(A1, Shrapnel), knife };
-            foreach (var a in kit) Check.True(!a.ultimate && a.cooldown >= 13f && a.cooldown <= 20f, a.id + " cooldown " + a.cooldown + " s");
+            foreach (var a in kit) Check.True(a.cooldown >= 13f && a.cooldown <= 20f, a.id + " cooldown " + a.cooldown + " s");
         }
     }
 }

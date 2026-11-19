@@ -173,12 +173,11 @@ namespace DuckAndCover.UI
         {
             for (int i = 0; i < 3; i++)
             {
-                bool ultimate = i == 2;
                 var slot = new AbilitySlot
                 {
-                    x = 960f + (i - 1) * 156f + (ultimate ? 8f : 0f),
-                    width = ultimate ? 128f : 112f,
-                    height = ultimate ? 76f : 66f,
+                    x = 960f + (i - 1) * 156f,
+                    width = 112f,
+                    height = 66f,
                 };
                 slot.lines = UIKit.Lines(f, "Ability" + i);
                 float top = SlotY + slot.height;
@@ -555,19 +554,13 @@ namespace DuckAndCover.UI
                 s.key.text = AbilityKeys[i];
                 s.name.text = def.displayName.ToUpperInvariant();
 
-                // How full the slot is (recharge or ultimate charge), whether it is ready, and what it says.
+                // How full the slot is, whether it is ready, and what it says.
                 float fill;
                 bool ready = false;
                 int pips = 0;
                 string status = "";
                 Color edge = UITheme.VisorFaint, text = UITheme.Text;
-                if (def.ultimate)
-                {
-                    fill = Mathf.Clamp01(unit.ultimateCharge / Mathf.Max(1f, def.ultimateCost));
-                    if (unit.ultimateCharge >= def.ultimateCost - 0.01f) { status = "READY"; text = UITheme.Warning; edge = UITheme.Warning; ready = true; }
-                    else status = Mathf.FloorToInt(100f * fill) + "%";
-                }
-                else if (def.held && (slot.raised || slot.charges > 0))
+                if (def.held && (slot.raised || slot.charges > 0))
                 {
                     // A held shield: how much strength it has, and whether it is up.
                     fill = Mathf.Clamp01(slot.raised ? ShieldShare(snapshot, slot) : slot.reserve);
@@ -586,7 +579,7 @@ namespace DuckAndCover.UI
                 }
                 else
                 {
-                    float rate = Mathf.Max(0.01f, unit.stats.Get(StatIds.CooldownRate));
+                    float rate = Mathf.Max(0.01f, AbilityRunner.RechargeRate(unit.stats.Get(StatIds.CooldownRate), def.cooldown, rules.abilityCooldownFloor));
                     fill = def.cooldown > 0f ? 1f - Mathf.Clamp01(slot.rechargeLeft / def.cooldown) : 0f;
                     status = (slot.rechargeLeft / rate).ToString("0.0");
                     text = UITheme.TextDim;
@@ -596,7 +589,7 @@ namespace DuckAndCover.UI
                 s.status.text = status;
                 s.status.color = text;
                 s.name.color = UITheme.Text;
-                DrawSlot(s, fill, ready, pips, edge, def.ultimate ? UITheme.Warning : hero);
+                DrawSlot(s, fill, ready, pips, edge, hero);
             }
         }
 

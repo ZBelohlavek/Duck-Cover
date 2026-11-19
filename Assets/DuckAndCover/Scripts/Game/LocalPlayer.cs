@@ -273,7 +273,7 @@ namespace DuckAndCover.Game
 
         readonly bool[] heldDown = new bool[8];
 
-        /// <summary>E is the first ability, F the second, X the last (the third); a hero with a base passive has no F.</summary>
+        /// <summary>E is the first ability, F the second, X the last; a hero with a base passive has no F.</summary>
         static UnityEngine.InputSystem.Controls.KeyControl AbilityKey(Keyboard keyboard, int slot, HeroUnit unit)
         {
             switch (AbilityKeys.ForSlot(slot, unit.slots.Count, !string.IsNullOrEmpty(unit.passiveId)))

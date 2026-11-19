@@ -171,13 +171,6 @@ namespace DuckAndCover.Core
         public int byPlayerId = -1;
     }
 
-    /// <summary>A hero's ultimate became ready.</summary>
-    public sealed class UltimateReadyEvent : GameEvent
-    {
-        public int playerId;
-        public string abilityId;
-    }
-
     /// <summary>A killing blow paid a kill reward (<see cref="KillRewardDef"/>) on one of the hero's abilities or their passive.</summary>
     public sealed class KillRewardEvent : GameEvent
     {

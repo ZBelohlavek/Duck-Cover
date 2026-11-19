@@ -80,7 +80,7 @@
     {
       "id": "vampire_sweep",
       "displayName": "Crimson Sweep",
-      "description": "Rake your claws through everyone in a 120 degree arc up to 5 m in front of you: 55 damage each, and you heal for 40% of the damage dealt. Cooldown 16 s.",
+      "description": "Rake your claws through everyone in a 120 degree arc up to 5 m in front of you: 50 damage each, and you heal for 40% of the damage dealt. Cooldown 16 s.",
       "cooldown": 16,
       "targeting": {
         "shape": "arc",
@@ -91,7 +91,7 @@
       "effects": [
         {
           "kind": "damage",
-          "amount": 55,
+          "amount": 50,
           "lifeSteal": 0.4
         },
         {
@@ -177,7 +177,7 @@
       "effects": [
         {
           "kind": "damage",
-          "amount": 7.5,
+          "amount": 5,
           "lifeSteal": 1
         }
       ]
