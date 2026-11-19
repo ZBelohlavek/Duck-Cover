@@ -28,26 +28,18 @@ namespace DuckAndCover.Core
         public bool friendlyFire = false;
 
         // ---- Abilities ----
-        /// <summary>Cooldowns and charges refill on respawn. Ultimate charge always carries over.</summary>
+        /// <summary>Cooldowns and charges refill on respawn.</summary>
         public bool resetCooldownsOnRespawn = true;
         /// <summary>No talent can take a cooldown below this.</summary>
         public float minCooldownSeconds = 0.5f;
-        /// <summary>Share of an ultimate's cost given back when a stun or death interrupts its wind-up.</summary>
-        public float ultimateInterruptRefund = 0.5f;
-        /// <summary>Ultimate charge gained per second while alive, from level 1 (100 = full for a cost-100 ultimate).</summary>
-        public float ultimateChargePerSecond = 0.8f;
-        /// <summary>Ultimate charge per point of damage dealt to enemies.</summary>
-        public float ultimateChargePerDamage = 0.05f;
-        /// <summary>Ultimate charge per point of healing or shield given to teammates.</summary>
-        public float ultimateChargePerHealing = 0.05f;
         /// <summary>
-        /// Share of the damage and healing charge above that counts when the other side is a unit (a
-        /// minion, Bastion or camp guard) rather than a hero, so clearing waves doesn't bring ultimates
-        /// round far faster than fighting heroes does (WP20).
+        /// Shortest cooldown an ability recharges in (so abilities aren't spammed): cooldown-rate stats
+        /// can't take an ability below it. Abilities whose own cooldown is shorter (they give a
+        /// <see cref="AbilityDef.shortCooldownReason"/>) are exempt.
         /// </summary>
-        public float ultimateChargeUnitShare = 0.5f;
-        /// <summary>Most charge a hero can bank.</summary>
-        public float ultimateChargeMax = 100f;
+        public float abilityCooldownFloor = 13f;
+        /// <summary>Longest cooldown an ability should have; the ability rules test holds every hero to it.</summary>
+        public float abilityCooldownCeiling = 20f;
 
         // ---- Status effects ----
         /// <summary>Slows can't take a hero below this share of their move speed.</summary>
@@ -80,11 +72,8 @@ namespace DuckAndCover.Core
             if (regenDelaySeconds < 0f) e.Add("regenDelaySeconds can't be negative");
             if (lowHealthShare < 0f || lowHealthShare > 1f) e.Add("lowHealthShare must be between 0 and 1");
             if (minCooldownSeconds < 0f) e.Add("minCooldownSeconds can't be negative");
-            if (ultimateInterruptRefund < 0f || ultimateInterruptRefund > 1f) e.Add("ultimateInterruptRefund must be between 0 and 1");
-            if (ultimateChargePerSecond < 0f || ultimateChargePerDamage < 0f || ultimateChargePerHealing < 0f) e.Add("ultimate charge rates can't be negative");
-            if (ultimateChargeUnitShare < 0f) e.Add("ultimateChargeUnitShare can't be negative");
+            if (abilityCooldownFloor < 0f || abilityCooldownCeiling < abilityCooldownFloor) e.Add("abilityCooldownFloor must be between 0 and abilityCooldownCeiling");
             if (escortRadius < 0f) e.Add("escortRadius can't be negative");
-            if (ultimateChargeMax <= 0f) e.Add("ultimateChargeMax must be positive");
             if (minMoveSpeed < 0f || minMoveSpeed > 1f) e.Add("minMoveSpeed must be between 0 and 1");
             if (maxStunSeconds <= 0f) e.Add("maxStunSeconds must be positive");
             if (ambushSeconds < 0f) e.Add("ambushSeconds can't be negative");

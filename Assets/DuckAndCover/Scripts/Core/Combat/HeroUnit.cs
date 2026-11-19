@@ -74,7 +74,6 @@ namespace DuckAndCover.Core
         public float health;
         /// <summary>Seconds since this hero last took damage (health regen waits on it).</summary>
         public float sinceDamaged;
-        public float ultimateCharge;
         /// <summary>Hidden from the other team right now: a stealth status is on and no reveal status (AbilityRunner keeps it).</summary>
         public bool stealthed;
         /// <summary>Seconds left in the ambush window that opens when the hero attacks out of stealth (StatConditions.Ambush).</summary>

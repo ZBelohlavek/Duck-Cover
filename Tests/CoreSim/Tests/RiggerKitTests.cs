@@ -44,7 +44,7 @@ static class RiggerKitTests
         var slots = h.Unit(A1).slots.Select(s => s.abilityId).ToArray();
         Check.Equal("rigger_cloak,rigger_stim,rigger_hush", string.Join(",", slots), "E, F and X");
         Check.Equal("smg", h.Combat.Weapons.Weapons(A1).weapons[0], "the SMG in hand");
-        Check.False(h.Abilities.AbilityIn(A1, Hush).ultimate, "Hush Grenade runs on a cooldown, not ultimate charge");
+        Check.True(h.Abilities.AbilityIn(A1, Hush).cooldown > 0f, "Hush Grenade runs on a cooldown");
         Check.True(h.UseAt(A1, Hush, B1).IsAccepted, "and works at level 1");
     }
 

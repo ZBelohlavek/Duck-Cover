@@ -170,11 +170,4 @@ namespace DuckAndCover.Core
         /// <summary>Who destroyed it, or -1.</summary>
         public int byPlayerId = -1;
     }
-
-    /// <summary>A hero's ultimate became ready.</summary>
-    public sealed class UltimateReadyEvent : GameEvent
-    {
-        public int playerId;
-        public string abilityId;
-    }
 }

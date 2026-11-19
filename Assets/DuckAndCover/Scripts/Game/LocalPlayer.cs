@@ -270,7 +270,7 @@ namespace DuckAndCover.Game
 
         readonly bool[] heldDown = new bool[8];
 
-        /// <summary>E is the first ability, F the second, X the last (the ultimate).</summary>
+        /// <summary>E is the first ability, F the second, X the third.</summary>
         static UnityEngine.InputSystem.Controls.KeyControl AbilityKey(Keyboard keyboard, int slot, int count)
         {
             if (slot == count - 1 && count > 2) return keyboard.xKey;

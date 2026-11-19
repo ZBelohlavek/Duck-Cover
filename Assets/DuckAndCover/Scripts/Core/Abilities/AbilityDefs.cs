@@ -9,7 +9,7 @@ namespace DuckAndCover.Core
     // ones), so the rules treat an empty kind or id as "not set".
 
     /// <summary>
-    /// One ability: a resource (cooldown with charges, or ultimate charge), an optional wind-up,
+    /// One ability: a cooldown with charges, an optional wind-up,
     /// a targeting shape, and a list of standard effects. A test ability needs nothing but this.
     /// </summary>
     [Serializable]
@@ -19,12 +19,16 @@ namespace DuckAndCover.Core
         public string displayName = "";
         public string description = "";
 
-        /// <summary>Uses ultimate charge instead of a cooldown. Like every ability, usable from level 1.</summary>
-        public bool ultimate;
-        /// <summary>Charge an ultimate costs.</summary>
-        public float ultimateCost = 100f;
-        /// <summary>Seconds to recover one charge.</summary>
+        /// <summary>
+        /// Seconds to recover one charge. Every ability runs on a cooldown (there is no ultimate charge),
+        /// and most sit between <see cref="Ruleset.abilityCooldownFloor"/> and <see cref="Ruleset.abilityCooldownCeiling"/>.
+        /// </summary>
         public float cooldown;
+        /// <summary>
+        /// Why this ability may recharge faster than <see cref="Ruleset.abilityCooldownFloor"/> (a held shield,
+        /// a reload). Empty for every other ability; the ability rules test lists the exceptions.
+        /// </summary>
+        public string shortCooldownReason = "";
         /// <summary>Uses banked before the cooldown blocks it.</summary>
         public int charges = 1;
         /// <summary>Wind-up: the effects land this many seconds after the cast starts. A stun cancels it.</summary>

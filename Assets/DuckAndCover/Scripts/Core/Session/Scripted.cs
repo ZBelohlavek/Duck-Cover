@@ -187,7 +187,7 @@ namespace DuckAndCover.Core
             flagSpots = { new Vec3(-10f, 0f, 0f), new Vec3(0f, 0f, 0f), new Vec3(10f, 0f, 0f) },
         };
 
-        /// <summary>The usual ruleset with a short hero pick and deploy, a capped overtime and quick ultimates, so a scripted run starts, uses everything and ends.</summary>
+        /// <summary>The usual ruleset with a short hero pick and deploy, a capped overtime so a scripted run starts, uses everything and ends.</summary>
         public static Ruleset SmokeRuleset()
         {
             var r = Ruleset.Default;
@@ -195,7 +195,6 @@ namespace DuckAndCover.Core
             r.deploySeconds = 2f;
             r.matchEndSeconds = 5f;
             r.overtimeMaxSeconds = 30f; // scripted players never give a point up, so overtime needs an end
-            r.ultimateChargePerSecond = 4f; // ultimates come up within a short scripted match
             r.flagFirstSpawnSeconds = 5f;   // Flag Rush: flags come round quickly too
             r.flagAfterCaptureSeconds = 4f;
             return r;
@@ -334,7 +333,7 @@ namespace DuckAndCover.Core
                 int enemy = FirstLivingEnemy(state, me);
                 if (enemy > 0) ShootAt(enemy);
             }
-            // Once a plan, use an ability at the nearest enemy (the ultimate when it is ready), and
+            // Once a plan, use an ability at the nearest enemy (the next one that is ready), and
             // take every upgrade as soon as it is offered: abilities and leveling run over the network too.
             if (plan != abilityPlan && plan % 3 == 1)
             {
@@ -428,9 +427,14 @@ namespace DuckAndCover.Core
             var mine = snap == null || snap.abilities == null ? null : snap.abilities.Unit(me.id);
             var m = snap == null ? null : snap.Motion(me.id);
             if (mine == null || m == null || mine.slots.Count == 0) return;
-            int slot = (plan / 3 + me.id) % Math.Min(2, mine.slots.Count);
-            int ult = mine.slots.Count - 1;
-            if (mine.slots.Count > 2 && mine.ultimateCharge >= rules.ultimateChargeMax - 0.01f) slot = ult;
+            // Take turns through the slots, skipping any still recharging.
+            int first = (plan / 3 + me.id) % mine.slots.Count, slot = -1;
+            for (int k = 0; k < mine.slots.Count && slot < 0; k++)
+            {
+                int i = (first + k) % mine.slots.Count;
+                if (mine.slots[i].charges > 0) slot = i;
+            }
+            if (slot < 0) return;
             Vec3 eye = m.position + Vec3.Up * Hitboxes.EyeHeight(rules, m.crouched);
             Vec3 aim = Vec3.Forward;
             int enemy = FirstLivingEnemy(state, me);
