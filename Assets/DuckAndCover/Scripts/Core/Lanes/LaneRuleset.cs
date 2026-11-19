@@ -86,8 +86,13 @@ namespace DuckAndCover.Core
         // ---- Waves ----
         /// <summary>Seconds from the start of play to the first wave.</summary>
         public float firstWaveSeconds = 0f;
-        /// <summary>Seconds between waves.</summary>
-        public float waveSeconds = 30f;
+        /// <summary>
+        /// Seconds between waves, on a fixed timer (nobody calls a wave). Sized on Breakwater so that with no
+        /// heroes in the way the next waves reach the spot where the last pair met about 5 s after the last
+        /// minion there fell: a wave walks ~28 s to the middle and two mirrored waves take ~30 s to wear each
+        /// other out (`report wavepace`, checked by WavePaceTests).
+        /// </summary>
+        public float waveSeconds = 36f;
         public WaveRow[] waveRows = { new WaveRow(0f, 3, 1) };
         /// <summary>No new minions for a team that has this many alive (keeps a lane match near 40 units).</summary>
         public int maxMinionsPerTeam = 20;

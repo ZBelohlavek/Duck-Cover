@@ -13,7 +13,7 @@ namespace DuckAndCover.UI
     /// rounds; the hero's abilities as slanted slots that fill as they recharge; the upgrade on offer;
     /// the score header at the top (team bars meeting at the clock) with each mode's own parts: the
     /// zones in the zone modes, the flag line in Flag Rush (WP21), and in Overrun (WP19) the four
-    /// Bastions with their shields and health, the next wave and the late push. Also the respawn
+    /// Bastions with their shields and health and the late push. Also the respawn
     /// countdown and who took whom down.
     /// The visor's edge takes the hero's identity colour; team colours stay on everything about teams.
     /// It reads the latest state and the local player; it decides nothing.
@@ -77,6 +77,10 @@ namespace DuckAndCover.UI
         }
         readonly List<BastionCard> bastionCards = new List<BastionCard>();
         const float CardWidth = 196f, CardHeight = 54f;
+        /// <summary>Pixels a Bastion card's top leans sideways: A's lean left, B's right, mirrored across the clock.</summary>
+        static float CardSlant(TeamId team) => team == TeamId.A ? -10f : 10f;
+        /// <summary>Pixels between a card's leaning side and its labels.</summary>
+        const float CardLabelMargin = 12f;
 
         readonly List<KeyValuePair<float, string>> feed = new List<KeyValuePair<float, string>>();
         SessionClient client;
@@ -254,9 +258,14 @@ namespace DuckAndCover.UI
                 string name = "Bastion" + team + tier;
                 var card = new BastionCard { team = team, tier = tier, x = x };
                 card.lines = UIKit.Lines(overrunRow.transform, name);
-                float top = HeaderY + CardHeight * 0.5f;
-                UIKit.Readout(overrunRow.transform, name + "Name", new Vector2(x - 44f, top - 14f), new Vector2(110f, 20f), TierName(tier).ToUpperInvariant(), 17, UITheme.Text, TextAnchor.MiddleLeft, true);
-                card.state = UIKit.Readout(overrunRow.transform, name + "State", new Vector2(x + 50f, top - 14f), new Vector2(90f, 20f), "", 16, UITheme.TextDim, TextAnchor.MiddleRight, true);
+                // The card leans (see CardSlant), so its sides move with height: keep both labels inside the
+                // edges at the height they sit, with a margin, or they hang out of the leaning side.
+                float labelY = HeaderY + CardHeight * 0.5f - 14f;
+                float lean = CardSlant(team) * (labelY - (HeaderY - CardHeight * 0.5f)) / CardHeight;
+                float inner = x - CardWidth * 0.5f + lean + CardLabelMargin, outer = x + CardWidth * 0.5f + lean - CardLabelMargin;
+                const float nameWidth = 110f, stateWidth = 80f;
+                UIKit.Readout(overrunRow.transform, name + "Name", new Vector2(inner + nameWidth * 0.5f, labelY), new Vector2(nameWidth, 20f), TierName(tier).ToUpperInvariant(), 17, UITheme.Text, TextAnchor.MiddleLeft, true);
+                card.state = UIKit.Readout(overrunRow.transform, name + "State", new Vector2(outer - stateWidth * 0.5f, labelY), new Vector2(stateWidth, 20f), "", 16, UITheme.TextDim, TextAnchor.MiddleRight, true);
                 bastionCards.Add(card);
             }
         }
@@ -804,7 +813,7 @@ namespace DuckAndCover.UI
                 var b = o.Bastion(card.team, card.tier);
                 if (b == null) continue;
                 Color team = UITheme.ForTeam(card.team);
-                float slant = card.team == TeamId.A ? -10f : 10f;
+                float slant = CardSlant(card.team);
                 float left = card.x - CardWidth * 0.5f, bottom = HeaderY - CardHeight * 0.5f;
                 var g = card.lines;
                 g.Clear();
@@ -849,10 +858,7 @@ namespace DuckAndCover.UI
                     color = UITheme.Danger;
                 }
                 else
-                {
-                    float next = snapshot.lanes == null ? 0f : snapshot.lanes.nextWaveIn;
-                    line = "Next wave in " + Mathf.Max(0, Mathf.CeilToInt(next)) + "   Heroes hurt a Bastion only with their own minions near it";
-                }
+                    line = "Heroes hurt a Bastion only with their own minions near it";
             }
             SetStatus(line, color);
         }

@@ -30,6 +30,7 @@ static class Program
         { "lanestudy", LaneStudyTests.Report },
         { "waves", LaneTests.Report },
         { "overrun", OverrunSim.Report },
+        { "wavepace", WavePaceTests.Report },
         { "breakwater", BreakwaterTests.Report },
     };
 

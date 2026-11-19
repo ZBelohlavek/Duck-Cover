@@ -185,7 +185,7 @@ static class OverrunTests
         var r = QuickRules();
         r.overrun.latePushMinute = 1f;
         var h = new OverrunHarness(r, waves: true);
-        Check.Near(30f, h.Lanes.Rules.waveSeconds, "30 s waves before");
+        Check.Near(Ruleset.Default.lanes.waveSeconds, h.Lanes.Rules.waveSeconds, "the usual wave timer before");
         h.Run(61f);
         Check.True(h.Overrun.State.latePush, "late push on");
         Check.Equal(1, h.Of<LatePushStartedEvent>().Count, "announced once");

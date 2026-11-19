@@ -122,10 +122,10 @@ static class LaneTests
         var ax = h.Minions(TeamId.A).Select(u => new Vec3(u.position.x, 0f, -u.position.z)).OrderBy(p => p.x).ThenBy(p => p.z).ToList();
         Check.True(ax.Zip(bx, (a, b) => Vec3.Distance(a, b)).All(d => d < 0.01f), "team B's wave is team A's mirrored end to end");
         h.H.Forget();
-        h.Run(29.7f);
-        Check.Equal(0, h.H.Of<WaveSpawnedEvent>().Count, "nothing more before 30 s");
+        h.Run(h.L.Rules.waveSeconds - 0.3f);
+        Check.Equal(0, h.H.Of<WaveSpawnedEvent>().Count, "nothing more before " + h.L.Rules.waveSeconds + " s");
         h.Run(0.3f);
-        Check.Equal(2, h.H.Of<WaveSpawnedEvent>().Count, "the next waves at 30 s");
+        Check.Equal(2, h.H.Of<WaveSpawnedEvent>().Count, "the next waves at " + h.L.Rules.waveSeconds + " s, with no one asking");
         Check.True(h.H.Of<WaveSpawnedEvent>().All(w => w.wave == 2 && w.unitIds.Length == 4), "numbered, four minions each");
     }
 
@@ -165,7 +165,8 @@ static class LaneTests
             foreach (var u in h.Minions(TeamId.B)) furthestB = Math.Min(furthestB, u.position.z);
             most = Math.Max(most, h.L.State.minions.Count);
         });
-        Check.Equal(21, h.L.State.wavesA, "21 waves in 10 minutes (at 0, 30 s, ... 600 s)");
+        int waves = 1 + (int)Math.Floor(600f / h.L.Rules.waveSeconds + 1e-4f);
+        Check.Equal(waves, h.L.State.wavesA, waves + " waves in 10 minutes (one at 0, then every " + h.L.Rules.waveSeconds + " s)");
         Check.True(deaths.Count >= 120, "the waves fought: " + deaths.Count + " minions destroyed");
         Check.True(deaths.All(z => Math.Abs(z) < 25f), "every minion fell in the middle quarter of the lane: " + deaths.Min() + " .. " + deaths.Max());
         Check.True(furthestA < 25f && furthestB > -25f, "neither side got past the middle: A " + furthestA + ", B " + furthestB);
@@ -481,7 +482,7 @@ static class LaneTests
         h.L.FillSnapshot(snap);
         var copy = ((SnapshotMessage)WireCodec.Decode(WireCodec.Encode(new SnapshotMessage { snapshot = snap }))).snapshot;
         Check.Equal(1, copy.lanes.wavesA, "wave count");
-        Check.Near(30f - 6.1f, copy.lanes.nextWaveIn, "next wave timer", 0.1f);
+        Check.Near(h.L.Rules.waveSeconds - 6.1f, copy.lanes.nextWaveIn, "next wave timer", 0.1f);
         Check.Equal(1, copy.lanes.camps.Count, "the camp");
         Check.Equal(CampPhase.Resting, copy.lanes.camps[0].phase, "resting");
         Check.Equal(TeamId.A, copy.lanes.camps[0].takenBy, "taken by A");
