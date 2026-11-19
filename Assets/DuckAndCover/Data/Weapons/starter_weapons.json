@@ -18,6 +18,8 @@
       "falloffEnd": 60,
       "falloffMinShare": 0.6,
       "allyHeal": 0,
+      "arcDegrees": 0,
+      "maxTargets": 0,
       "projectileSpeed": 30,
       "projectileGravity": 9,
       "splashRadius": 0,
@@ -42,6 +44,8 @@
       "falloffEnd": 30,
       "falloffMinShare": 0.5,
       "allyHeal": 0,
+      "arcDegrees": 0,
+      "maxTargets": 0,
       "projectileSpeed": 30,
       "projectileGravity": 9,
       "splashRadius": 0,
@@ -66,6 +70,8 @@
       "falloffEnd": 18,
       "falloffMinShare": 0.3,
       "allyHeal": 0,
+      "arcDegrees": 0,
+      "maxTargets": 0,
       "projectileSpeed": 30,
       "projectileGravity": 9,
       "splashRadius": 0,
@@ -90,6 +96,8 @@
       "falloffEnd": 45,
       "falloffMinShare": 0.55,
       "allyHeal": 0,
+      "arcDegrees": 0,
+      "maxTargets": 0,
       "projectileSpeed": 30,
       "projectileGravity": 9,
       "splashRadius": 0,
@@ -114,10 +122,38 @@
       "falloffEnd": 50,
       "falloffMinShare": 0.6,
       "allyHeal": 0,
+      "arcDegrees": 0,
+      "maxTargets": 0,
       "projectileSpeed": 32,
       "projectileGravity": 9,
       "splashRadius": 3.5,
       "splashDamage": 70,
+      "splashMinShare": 0.3
+    },
+    {
+      "id": "greataxe",
+      "displayName": "Greataxe",
+      "kind": 2,
+      "automatic": true,
+      "fireInterval": 0.75,
+      "magazine": 1,
+      "reloadSeconds": 0,
+      "damage": 60,
+      "headMultiplier": 1,
+      "legsMultiplier": 1,
+      "pellets": 1,
+      "spreadDegrees": 0,
+      "range": 3.2,
+      "falloffStart": 25,
+      "falloffEnd": 50,
+      "falloffMinShare": 0.6,
+      "allyHeal": 0,
+      "arcDegrees": 100,
+      "maxTargets": 0,
+      "projectileSpeed": 30,
+      "projectileGravity": 9,
+      "splashRadius": 0,
+      "splashDamage": 0,
       "splashMinShare": 0.3
     },
     {
@@ -138,6 +174,8 @@
       "falloffEnd": 35,
       "falloffMinShare": 0.5,
       "allyHeal": 0,
+      "arcDegrees": 0,
+      "maxTargets": 0,
       "projectileSpeed": 30,
       "projectileGravity": 9,
       "splashRadius": 0,
@@ -178,6 +216,12 @@
       "weapons": [
         "smg",
         "pistol"
+      ]
+    },
+    {
+      "heroId": "warchief",
+      "weapons": [
+        "greataxe"
       ]
     }
   ]

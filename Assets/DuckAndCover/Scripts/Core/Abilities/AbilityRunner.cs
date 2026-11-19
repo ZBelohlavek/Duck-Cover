@@ -231,7 +231,7 @@ namespace DuckAndCover.Core
             var def = Resolved(unit, s.abilityId).def;
             string why = UseCheck == null ? null : UseCheck(playerId, def.id);
             if (!string.IsNullOrEmpty(why)) return CommandResult.Reject(why);
-            if (IsSilenced(playerId)) return CommandResult.Reject(IsStunned(playerId) ? "stunned" : "silenced");
+            if (IsSilenced(playerId) && !def.breaksControl) return CommandResult.Reject(IsStunned(playerId) ? "stunned" : "silenced");
             foreach (var other in unit.slots) if (other.casting) return CommandResult.Reject("already casting");
             if (def.ultimate)
             {

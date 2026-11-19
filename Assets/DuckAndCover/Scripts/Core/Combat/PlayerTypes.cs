@@ -218,6 +218,21 @@ namespace DuckAndCover.Core
         public int ammoLeft;
     }
 
+    /// <summary>A melee swing (WeaponKind.Melee): who it reached. Damage follows as DamagedEvents.</summary>
+    public sealed class MeleeSwungEvent : GameEvent
+    {
+        public int playerId;
+        public string weaponId = "";
+        /// <summary>The swinger's eye.</summary>
+        public Vec3 origin;
+        /// <summary>Level direction of the swing.</summary>
+        public Vec3 direction;
+        public float reach;
+        public float arcDegrees;
+        /// <summary>Enemies (players or units) the swing reached, nearest first.</summary>
+        public int[] hitIds = new int[0];
+    }
+
     public sealed class ProjectileLaunchedEvent : GameEvent
     {
         public int projectileId;

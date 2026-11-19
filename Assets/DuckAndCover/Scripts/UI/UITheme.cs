@@ -38,7 +38,7 @@ namespace DuckAndCover.UI
 
         /// <summary>
         /// Each hero's identity colour, brightened to read as light on the visor: Lancer cobalt (navy camo),
-        /// Bulwark red, Mender jade, Rigger violet. The visor's edge and the hero's own slots take it.
+        /// Bulwark red, Mender jade, Rigger violet, the war chief saffron. The visor's edge and the hero's own slots take it.
         /// </summary>
         public static Color ForHero(string heroId)
         {
@@ -48,6 +48,7 @@ namespace DuckAndCover.UI
                 case "bulwark": return new Color(1.00f, 0.36f, 0.30f);
                 case "mender": return new Color(0.30f, 0.95f, 0.70f);
                 case "rigger": return new Color(0.74f, 0.50f, 1.00f);
+                case "warchief": return new Color(1.00f, 0.78f, 0.20f);
                 default: return Visor;
             }
         }

@@ -142,7 +142,8 @@ namespace DuckAndCover.Core
             if (!string.IsNullOrEmpty(cmd.weaponId) && cmd.weaponId != w.id) return CommandResult.Reject(cmd.weaponId + " is not in hand");
             if (s.switchLeft > 0f) return CommandResult.Reject("still raising the weapon");
             if (s.Reloading) return CommandResult.Reject("reloading");
-            if (s.CurrentAmmo <= 0) return CommandResult.Reject("empty");
+            bool melee = w.kind == WeaponKind.Melee;
+            if (!melee && s.CurrentAmmo <= 0) return CommandResult.Reject("empty");
             if (s.fireCredit < 1f - 1e-3f) return CommandResult.Reject("firing faster than the weapon allows");
 
             Vec3 dir = cmd.direction.Normalized;
@@ -155,9 +156,14 @@ namespace DuckAndCover.Core
             }
 
             s.fireCredit -= 1f;
-            s.ammo[s.current]--;
             s.shotsFired++;
             if (BeforeShot != null) BeforeShot(cmd.playerId);
+            if (melee)
+            {
+                Swing(cmd, w, dir);
+                return CommandResult.Accepted;
+            }
+            s.ammo[s.current]--;
             bool healRound = s.healRounds > 0;
             if (healRound) s.healRounds--;
             if (w.kind == WeaponKind.Projectile) Launch(cmd, w, s, dir);
@@ -230,6 +236,70 @@ namespace DuckAndCover.Core
                     if (healRound) SpreadHeal(cmd.playerId, targets[i], -amounts[i], s.healSplash, w.id, tick);
                 }
                 else AfterHit(cmd.playerId, targets[i], combat.Damage(cmd.playerId, targets[i], amounts[i], w.id), dir);
+            }
+            HurtObjects(cmd.playerId, objects, objectAmounts);
+        }
+
+        /// <summary>
+        /// A melee swing, judged against bodies as the swinger saw them: every enemy (player or unit) whose
+        /// chest is within the weapon's reach (times the weaponRange stat) of the swinger's eye, inside the
+        /// arc around their level aim and no more than <see cref="Ruleset.meleeReachUp"/> above or below,
+        /// with nothing of the map or an enemy barrier in between. Nearest first, up to maxTargets. Every hit
+        /// is a body hit with no falloff. An enemy object straight ahead within reach (a shield, a drone, a
+        /// wall) takes the swing too, and a solid one stops it from reaching anyone behind.
+        /// </summary>
+        void Swing(FireCommand cmd, WeaponDef w, Vec3 dir)
+        {
+            int tick = RewindTick(cmd.tick);
+            float reach = w.range * Math.Max(0.1f, combat.Stat(cmd.playerId, StatIds.WeaponRange));
+            Vec3 level = new Vec3(dir.x, 0f, dir.z);
+            if (level.Magnitude < 1e-4f) level = Vec3.Forward; // looking straight up or down: swing ahead
+            level = level.Normalized;
+            float halfArc = w.arcDegrees * 0.5f;
+
+            var found = new List<int>();
+            var dist = new List<float>();
+            foreach (int id in world.PlayersInSphere(cmd.origin, reach + Rules.meleeReachUp, tick))
+            {
+                if (id == cmd.playerId || !combat.IsAlive(id) || IsTeammate(cmd.playerId, id)) continue;
+                if (!world.History.PoseAt(id, tick, out var pose)) continue;
+                Vec3 chest = Hitboxes.Chest(Rules, pose);
+                Vec3 to = chest - cmd.origin;
+                if (Math.Abs(to.y) > Rules.meleeReachUp) continue;
+                Vec3 flat = new Vec3(to.x, 0f, to.z);
+                float d = flat.Magnitude;
+                // The body's own width counts: a chest just past the reach still takes the edge of the blade.
+                if (d > reach + Rules.bodyRadius) continue;
+                if (d > 1e-3f && halfArc < 180f)
+                {
+                    float cos = Vec3.Dot(flat / d, level);
+                    double angle = Math.Acos(Math.Max(-1f, Math.Min(1f, cos))) * 180.0 / Math.PI;
+                    if (angle > halfArc) continue;
+                }
+                if (!world.HasLineOfSightFor(cmd.playerId, cmd.origin, id, tick)) continue;
+                int k = 0;
+                while (k < dist.Count && (dist[k] < d || (dist[k] == d && found[k] < id))) k++;
+                found.Insert(k, id);
+                dist.Insert(k, d);
+            }
+            if (w.maxTargets > 0 && found.Count > w.maxTargets) found.RemoveRange(w.maxTargets, found.Count - w.maxTargets);
+
+            float scale = WeaponDamage(cmd.playerId);
+            var objects = new List<int>();
+            var objectAmounts = new List<float>();
+            if (world.RaycastFrom(cmd.playerId, cmd.origin, level, reach, tick, out var hit, PassThrough(cmd.playerId)) && hit.kind == HitKind.Device)
+                Add(objects, objectAmounts, hit.deviceId, w.damage * scale);
+
+            Publish(new MeleeSwungEvent
+            {
+                playerId = cmd.playerId, weaponId = w.id, origin = cmd.origin, direction = level,
+                reach = reach, arcDegrees = w.arcDegrees, hitIds = found.ToArray(),
+            });
+            foreach (int id in found)
+            {
+                Vec3 away = level;
+                if (world.History.PoseAt(id, tick, out var at)) away = at.position - cmd.origin;
+                AfterHit(cmd.playerId, id, combat.Damage(cmd.playerId, id, w.damage * scale, w.id), away);
             }
             HurtObjects(cmd.playerId, objects, objectAmounts);
         }
@@ -341,6 +411,7 @@ namespace DuckAndCover.Core
             var s = Weapons(playerId);
             var w = Current(s);
             if (w == null) return CommandResult.Reject("no weapon in hand");
+            if (w.kind == WeaponKind.Melee) return CommandResult.Reject("nothing to reload");
             if (s.Reloading) return CommandResult.Accepted;
             if (s.CurrentAmmo >= Magazine(playerId, w)) return CommandResult.Reject("already full");
             StartReload(s, w);
